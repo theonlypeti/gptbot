@@ -1,0 +1,921 @@
+[
+    {
+        "id": 569937005463601152,
+        "fap": 0,
+        "achi": [
+            "micropp",
+            "pill_popper",
+            "helping_hands",
+            "megapp"
+        ],
+        "items": [],
+        "pb": 398.42,
+        "pw": 0.162,
+        "cd": null,
+        "methods": 55,
+        "pill": null,
+        "pillPopTime": "2022-05-04T16:20:56.658771",
+        "dailyStreak": 1,
+        "dailyDate": "2022-05-04T00:00:00"
+    },
+    {
+        "id": 617840759466360842,
+        "fap": 0,
+        "achi": [
+            "morning",
+            "one_pump",
+            "micropp",
+            "megapp",
+            "flirty",
+            "helping_hands",
+            "friend_need",
+            "pill_popper",
+            "breaking_bad",
+            "tested",
+            "contributor",
+            "nice",
+            "dedicated",
+            "lucky_draw",
+            "playa"
+        ],
+        "items": [
+            [
+                0,
+                0
+            ],
+            [
+                1,
+                8
+            ],
+            [
+                2,
+                3
+            ]
+        ],
+        "pill": null,
+        "pillPopTime": "2022-08-12T09:53:55.882191",
+        "pb": 52869.899,
+        "pw": 0.013,
+        "cd": null,
+        "methods": 63,
+        "Date": "2021-04-06",
+        "dailyStreak": 1,
+        "dailyDate": "2022-08-12"
+    },
+    {
+        "id": 307985197926973452,
+        "dailyStreak": 1,
+        "fap": 0,
+        "achi": [
+            "morning",
+            "one_pump",
+            "micropp",
+            "megapp",
+            "helping_hands",
+            "friend_need",
+            "pill_popper",
+            "breaking_bad",
+            "tested"
+        ],
+        "items": [
+            [
+                0,
+                18
+            ],
+            [
+                1,
+                3
+            ],
+            [
+                2,
+                1
+            ]
+        ],
+        "pill": null,
+        "pillPopTime": "2021-02-16T14:57:33.221820",
+        "pb": 634.095,
+        "pw": 0.28,
+        "cd": null,
+        "methods": 63,
+        "dailyDate": "2021-03-26T00:00:00"
+    },
+    {
+        "id": 619586965171339274,
+        "dailyStreak": 1,
+        "fap": 0,
+        "achi": [
+            "morning",
+            "one_pump",
+            "micropp",
+            "megapp",
+            "flirty",
+            "playa",
+            "helping_hands",
+            "friend_need",
+            "pill_popper",
+            "tested"
+        ],
+        "items": [
+            [
+                0,
+                56
+            ],
+            [
+                1,
+                1
+            ]
+        ],
+        "pill": null,
+        "pillPopTime": "2021-02-14T13:57:11.527832",
+        "pb": 346.206,
+        "pw": 0.323,
+        "cd": null,
+        "methods": 63,
+        "dailyDate": "2021-04-28T00:00:00"
+    },
+    {
+        "id": 473895810157903883,
+        "dailyStreak": 0,
+        "fap": 0,
+        "achi": [
+            "morning",
+            "one_pump",
+            "micropp",
+            "playa",
+            "helping_hands",
+            "friend_need",
+            "pill_popper",
+            "breaking_bad",
+            "tested"
+        ],
+        "items": [
+            [
+                0,
+                13
+            ]
+        ],
+        "pill": null,
+        "pillPopTime": "2021-02-15T17:56:39.612848",
+        "pb": 160.567,
+        "pw": 0.323,
+        "cd": null,
+        "methods": 63
+    },
+    {
+        "id": 756092460265898054,
+        "dailyStreak": 0,
+        "fap": 0,
+        "achi": [
+            "helping_hands",
+            "friend_need",
+            "contributor"
+        ],
+        "items": [
+            [
+                0,
+                4
+            ]
+        ],
+        "pill": "None",
+        "pillPopTime": 0,
+        "pb": 232.578,
+        "pw": 0.697,
+        "cd": null,
+        "methods": 7
+    },
+    {
+        "id": 735473733753634827,
+        "dailyStreak": 1,
+        "fap": 2,
+        "achi": [
+            "morning",
+            "one_pump",
+            "micropp",
+            "megapp",
+            "flirty",
+            "helping_hands",
+            "friend_need",
+            "pill_popper",
+            "breaking_bad",
+            "tested",
+            "contributor"
+        ],
+        "items": [
+            [
+                0,
+                3
+            ],
+            [
+                1,
+                5
+            ]
+        ],
+        "pill": null,
+        "pillPopTime": "2021-02-25T08:07:06.470751",
+        "pb": 619.137,
+        "pw": 0.028,
+        "cd": null,
+        "methods": 63,
+        "dailyDate": "2021-06-07T00:00:00"
+    },
+    {
+        "id": 138303739982381056,
+        "dailyStreak": 1,
+        "fap": 0,
+        "achi": [
+            "morning",
+            "one_pump",
+            "micropp",
+            "helping_hands",
+            "friend_need",
+            "pill_popper",
+            "tested"
+        ],
+        "items": [
+            [
+                0,
+                5
+            ]
+        ],
+        "pill": null,
+        "pillPopTime": "2021-03-30T00:15:01.545833",
+        "pb": 206.801,
+        "pw": 0.049,
+        "cd": null,
+        "methods": 63,
+        "dailyDate": "2021-05-06T00:00:00"
+    },
+    {
+        "id": 780361023772426300,
+        "dailyStreak": 0,
+        "fap": 0,
+        "achi": [
+            "morning",
+            "micropp",
+            "helping_hands"
+        ],
+        "items": [
+            [
+                0,
+                21
+            ],
+            [
+                1,
+                1
+            ]
+        ],
+        "pill": "None",
+        "pillPopTime": 0,
+        "pb": 223.886,
+        "pw": 0.23,
+        "cd": null,
+        "methods": 8
+    },
+    {
+        "id": 752791254768681020,
+        "dailyStreak": 0,
+        "fap": 0,
+        "achi": [
+            "one_pump",
+            "micropp",
+            "helping_hands",
+            "friend_need",
+            "pill_popper",
+            "breaking_bad"
+        ],
+        "items": [
+            [
+                0,
+                21
+            ],
+            [
+                1,
+                1
+            ]
+        ],
+        "pill": null,
+        "pillPopTime": "2021-02-23T17:38:12.457106",
+        "pb": 221.221,
+        "pw": 0.06,
+        "cd": null,
+        "methods": 39
+    },
+    {
+        "id": 677496112860626975,
+        "dailyStreak": 0,
+        "fap": 0,
+        "achi": [
+            "morning",
+            "one_pump",
+            "micropp",
+            "helping_hands",
+            "friend_need"
+        ],
+        "items": [
+            [
+                0,
+                5
+            ]
+        ],
+        "pill": "None",
+        "pillPopTime": 0,
+        "pb": 108.271,
+        "pw": 0.156,
+        "cd": null,
+        "methods": 26
+    },
+    {
+        "id": 623926024714846213,
+        "dailyStreak": 18,
+        "fap": 0,
+        "achi": [
+            "morning",
+            "one_pump",
+            "micropp",
+            "megapp",
+            "flirty",
+            "playa",
+            "helping_hands",
+            "friend_need",
+            "pill_popper",
+            "breaking_bad",
+            "tested",
+            "contributor"
+        ],
+        "items": [
+            [
+                1,
+                8
+            ],
+            [
+                2,
+                5
+            ],
+            [
+                0,
+                28
+            ]
+        ],
+        "pill": null,
+        "pillPopTime": "2021-05-10T08:24:20.124704",
+        "pb": 19674.726,
+        "pw": 0.093,
+        "cd": "2021-06-18T06:46:15.542829",
+        "methods": 63,
+        "dailyDate": "2021-06-19T00:00:00"
+    },
+    {
+        "id": 367737394650152972,
+        "dailyStreak": 0,
+        "fap": 0,
+        "achi": [],
+        "items": {},
+        "pb": 174.791,
+        "pw": 174.791,
+        "cd": null,
+        "methods": 8,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 689532690860474374,
+        "dailyStreak": 0,
+        "fap": 0,
+        "achi": [
+            "one_pump",
+            "helping_hands"
+        ],
+        "items": [],
+        "pill": null,
+        "pillPopTime": "None",
+        "pb": 219.855,
+        "pw": 1.316,
+        "cd": null,
+        "methods": 5
+    },
+    {
+        "id": 138022532338024448,
+        "dailyStreak": 0,
+        "fap": 0,
+        "achi": [],
+        "items": {},
+        "pb": 105.942,
+        "pw": 0.601,
+        "cd": null,
+        "methods": 6,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 413759409634672642,
+        "dailyStreak": 0,
+        "fap": 0,
+        "achi": [],
+        "items": {},
+        "pb": 174.091,
+        "pw": 5.163,
+        "cd": null,
+        "methods": 20,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 692319558425509938,
+        "dailyStreak": 0,
+        "fap": 0,
+        "achi": [],
+        "items": {},
+        "pb": 4.473,
+        "pw": 4.473,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 348038728087764992,
+        "fap": 0,
+        "achi": [
+            "pill_popper",
+            "one_pump",
+            "nice",
+            "breaking_bad",
+            "morning"
+        ],
+        "items": [
+            [
+                0,
+                9
+            ],
+            [
+                1,
+                1
+            ]
+        ],
+        "pb": 182.259,
+        "pw": 0.546,
+        "cd": null,
+        "methods": 62,
+        "pill": null,
+        "pillPopTime": "2021-10-02T17:20:43.526982",
+        "dailyDate": "2022-01-28T00:00:00",
+        "dailyStreak": 1
+    },
+    {
+        "id": 346335316317044747,
+        "fap": 0,
+        "achi": [
+            "pill_popper",
+            "nice",
+            "megapp",
+            "contributor",
+            "one_pump"
+        ],
+        "items": [],
+        "pb": 307.733,
+        "pw": 0.708,
+        "cd": null,
+        "methods": 54,
+        "pill": 0,
+        "pillPopTime": "2021-11-13T16:55:13.101617",
+        "dailyDate": "2021-11-13T00:00:00",
+        "dailyStreak": 1
+    },
+    {
+        "id": 621371483373174814,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 86.277,
+        "pw": 0.852,
+        "cd": null,
+        "methods": 20,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 453146166591488003,
+        "fap": 0,
+        "achi": [
+            "flirty",
+            "micropp",
+            "contributor"
+        ],
+        "items": [],
+        "pb": 264.904,
+        "pw": 0.259,
+        "cd": null,
+        "methods": 6,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 284764580675190784,
+        "fap": 0,
+        "achi": [
+            "pill_popper",
+            "one_pump",
+            "breaking_bad",
+            "helping_hands",
+            "megapp",
+            "flirty",
+            "contributor",
+            "lucky_draw",
+            "micropp",
+            "nice",
+            "morning",
+            "tested",
+            "dedicated",
+            "friend_need"
+        ],
+        "items": [
+            [
+                0,
+                136
+            ],
+            [
+                1,
+                96
+            ],
+            [
+                2,
+                19
+            ]
+        ],
+        "pb": 1024.901,
+        "pw": 0.311,
+        "cd": null,
+        "methods": 63,
+        "pill": null,
+        "pillPopTime": "2021-10-19T19:48:47.346062",
+        "dailyDate": "2022-08-08T00:00:00",
+        "dailyStreak": 1
+    },
+    {
+        "id": 325581346963456010,
+        "fap": 0,
+        "achi": [
+            "pill_popper",
+            "helping_hands",
+            "breaking_bad",
+            "friend_need"
+        ],
+        "items": [
+            [
+                0,
+                1
+            ],
+            [
+                1,
+                2
+            ]
+        ],
+        "pb": 252.029,
+        "pw": 0.789,
+        "cd": null,
+        "methods": 39,
+        "pill": null,
+        "pillPopTime": "2022-05-04T16:02:06.265435",
+        "dailyDate": "2022-05-17T00:00:00",
+        "dailyStreak": 2
+    },
+    {
+        "id": 468117100628803584,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 81.156,
+        "pw": 0.1,
+        "cd": null,
+        "methods": 4,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 241985516914999296,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 92.102,
+        "pw": 92.102,
+        "cd": null,
+        "methods": 4,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 345901480319909898,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 121.183,
+        "pw": 10.6,
+        "cd": null,
+        "methods": 4,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 786672717533020170,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 53.695,
+        "pw": 53.695,
+        "cd": null,
+        "methods": 5,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 319840737359298560,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 73.78,
+        "pw": 73.78,
+        "cd": null,
+        "methods": 4,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 652902606963736589,
+        "fap": 0,
+        "achi": [
+            "helping_hands"
+        ],
+        "items": [],
+        "pb": 121.106,
+        "pw": 11.204,
+        "cd": null,
+        "methods": 17,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 302142965009088514,
+        "fap": 0,
+        "achi": [
+            "helping_hands",
+            "friend_need",
+            "megapp",
+            "contributor"
+        ],
+        "items": [],
+        "pb": 340.401,
+        "pw": 2.128,
+        "cd": null,
+        "methods": 1,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 358149204180205572,
+        "fap": 0,
+        "achi": [
+            "helping_hands"
+        ],
+        "items": [],
+        "pb": 223.863,
+        "pw": 1.714,
+        "cd": null,
+        "methods": 1,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 663892628902772760,
+        "fap": 0,
+        "achi": [
+            "helping_hands"
+        ],
+        "items": [],
+        "pb": 67.676,
+        "pw": 67.676,
+        "cd": null,
+        "methods": 1,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 835166714659995729,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 35.924,
+        "pw": 7.631,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 478185658859651103,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 54.464,
+        "pw": 54.464,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": 0
+    },
+    {
+        "id": 618079591965392896,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 0,
+        "pw": 500,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": 0,
+        "dailyStreak": 0
+    },
+    {
+        "id": 437296986593427458,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 87.643,
+        "pw": 17.322,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": 0,
+        "dailyStreak": 0
+    },
+    {
+        "id": 352515892950859776,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 242.458,
+        "pw": 8.397,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": 0,
+        "dailyStreak": 0
+    },
+    {
+        "id": 948639577546063932,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 64.503,
+        "pw": 64.503,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": 0,
+        "dailyStreak": 0
+    },
+    {
+        "id": 451460196410327051,
+        "fap": 0,
+        "achi": [
+            "pill_popper",
+            "megapp",
+            "helping_hands"
+        ],
+        "items": [
+            [
+                0,
+                2
+            ]
+        ],
+        "pb": 385.297,
+        "pw": 1.332,
+        "cd": "2022-05-04T16:33:12.341373",
+        "methods": 39,
+        "pill": 0,
+        "pillPopTime": "2022-05-04T16:22:06.667153",
+        "dailyStreak": 1,
+        "dailyDate": "2022-05-09T00:00:00"
+    },
+    {
+        "id": 393158564555784193,
+        "fap": 0,
+        "achi": [
+            "one_pump",
+            "micropp",
+            "megapp",
+            "breaking_bad",
+            "morning",
+            "lucky_draw",
+            "pill_popper"
+        ],
+        "items": [
+            [
+                0,
+                14
+            ],
+            [
+                1,
+                8
+            ],
+            [
+                2,
+                1
+            ]
+        ],
+        "pb": 634.65,
+        "pw": 0.137,
+        "cd": null,
+        "methods": 62,
+        "pill": null,
+        "pillPopTime": "2022-06-20T09:53:15.457250",
+        "dailyStreak": 7,
+        "dailyDate": "2022-07-11T00:00:00"
+    },
+    {
+        "id": 356446176012271616,
+        "fap": 0,
+        "achi": [],
+        "items": [
+            [
+                0,
+                1
+            ]
+        ],
+        "pb": 150.088,
+        "pw": 5.243,
+        "cd": null,
+        "methods": 4,
+        "pill": null,
+        "pillPopTime": 0,
+        "dailyStreak": 1,
+        "dailyDate": "2022-06-05T00:00:00"
+    },
+    {
+        "id": 626478563058778113,
+        "fap": 0,
+        "achi": [
+            "megapp",
+            "helping_hands"
+        ],
+        "items": [
+            [
+                0,
+                6
+            ]
+        ],
+        "pb": 369.945,
+        "pw": 1.0,
+        "cd": "2022-07-21T10:28:24.375971",
+        "methods": 21,
+        "pill": null,
+        "pillPopTime": 0,
+        "dailyStreak": 1,
+        "dailyDate": "2022-06-08T00:00:00"
+    },
+    {
+        "id": 688092286029922310,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 0,
+        "pw": 0,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": 0,
+        "dailyStreak": 0
+    },
+    {
+        "id": 555111438750973974,
+        "fap": 0,
+        "achi": [
+            "nice",
+            "pill_popper"
+        ],
+        "items": [],
+        "pb": 211.936,
+        "pw": 5.253,
+        "cd": null,
+        "methods": 38,
+        "pill": null,
+        "pillPopTime": "2022-06-26T20:48:01.655571",
+        "dailyStreak": 1,
+        "dailyDate": "2022-06-26T00:00:00"
+    },
+    {
+        "id": 620651833513213992,
+        "fap": 0,
+        "achi": [
+            "megapp"
+        ],
+        "items": [],
+        "pb": 316.525,
+        "pw": 316.525,
+        "cd": null,
+        "methods": 4,
+        "pill": null,
+        "pillPopTime": 0,
+        "dailyStreak": 0
+    }
+]

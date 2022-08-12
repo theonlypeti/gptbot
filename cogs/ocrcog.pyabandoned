@@ -1,0 +1,20 @@
+import nextcord as discord
+from nextcord.ext import commands
+from PIL import Image
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'F:\Program Files\Python39\tesseract-main\src\tesseract.exe'
+
+class OcrCog(commands.Cog):
+    def __init__(self,client):
+        self.client = client
+
+    @discord.slash_command(name="readtext", description="Get text from image")
+    async def getText(self, ctx, uploaded: discord.Attachment = discord.SlashOption(name="image",description="The image from which the text is read.",required=True)):
+        await ctx.response.defer()
+        with open("temp.png", "wb") as file:
+            await uploaded.save(file)
+        text = pytesseract.image_to_string(Image.open('temp.png'))
+        await ctx.send(text)
+
+def setup(client): #bot shit
+    client.add_cog(OcrCog(client))
