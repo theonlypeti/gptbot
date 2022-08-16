@@ -26,40 +26,36 @@
             "one_pump",
             "micropp",
             "megapp",
-            "flirty",
             "helping_hands",
             "friend_need",
-            "pill_popper",
-            "breaking_bad",
             "contributor",
             "nice",
             "dedicated",
             "lucky_draw",
+            "tested",
             "playa",
-            "tested"
+            "flirty",
+            "breaking_bad",
+            "pill_popper"
         ],
         "items": [
             [
-                0,
-                4
-            ],
-            [
                 1,
-                7
+                9
             ],
             [
                 2,
                 3
             ]
         ],
-        "pill": null,
-        "pillPopTime": "2022-08-13T23:20:54.820554",
+        "pill": 0,
+        "pillPopTime": "2022-08-16T20:24:05.592088",
         "pb": 52869.899,
         "pw": 0.013,
         "cd": null,
         "methods": 127,
         "dailyStreak": 1,
-        "dailyDate": "2022-08-16"
+        "dailyDate": "2022-08-16T00:00:00"
     },
     {
         "id": 307985197926973452,

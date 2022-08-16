@@ -31,6 +31,7 @@ parser.add_argument("--no_clovece",action="store_true",help="Disable clovece mod
 parser.add_argument("--no_topic",action="store_true",help="Disable topic module.")
 parser.add_argument("--no_currency",action="store_true",help="Disable currency exchange module.")
 parser.add_argument("--no_testing",action="store_true",help="Disable testing module.")
+parser.add_argument("--no_pipik",action="store_true",help="Disable pipikbot module.")
 args = parser.parse_args()
 
 pipikLogger = logging.getLogger("Base")
@@ -92,6 +93,9 @@ client.remove_command('help')
 ##async def t9r(interaction, text):
 ##    await interaction.send("".join([T9[letters] for letters in text.content.split(" ")]))
 
+
+#-------------------------------------------------#
+
 @client.message_command(name="En-/Decrypt")
 async def caesar(interaction, text):
     if text.type == discord.MessageType.chat_input_command and text.embeds[0].title == "Message":
@@ -138,7 +142,7 @@ async def bf_modal(ctx):
     modal = BfModal(title="Brainfuck")
     await ctx.response.send_modal(modal)
 
-@commands.has_permissions(manage_server=True)
+#@commands.has_permissions(manage_server=True)
 @client.slash_command(name="pfp", description="chooses a random emote for the servers profile pic.",guild_ids=[860527626100015154,552498097528242197],dm_permission=False)
 async def pfp(interaction: discord.Interaction):
     os.chdir("D:\\Users\\Peti.B\\Pictures\\microsoft\\emotes")
@@ -255,197 +259,175 @@ async def run(ctx, command):
 discord_emotes = {}
 
 @client.event
-async def on_ready(): #TODO move shit out of on_ready to pipikbot __init__
-    global pipikbot
-    pipikbot = client.get_cog("PipikBot")  # todo deprecate the global?
+async def on_ready():
     game = discord.Game(f"{linecount} lines of code; V3.0! use /help")
     await client.change_presence(status=discord.Status.online, activity=game)
     print(f"Signed in {datetime.now()}")
     pipikLogger.debug(f"{time_module.perf_counter() - start} Bootup time")
+    readEmotes()
 
-class BaseCog(commands.Cog):
-    def __init__(self, member):
-        self.client = member
+def saveEmotes():
+    with open(root+"/data/pipikemotes.txt", "w") as file:
+        json.dump(discord_emotes, file, indent=4)
+    pipikLogger.info("saved emotes")
 
-    def saveEmotes(self):
-        with open(root+"/data/pipikemotes.txt", "w") as file:
-            json.dump(discord_emotes, file, indent=4)
-        pipikLogger.info("saved emotes")
+def readEmotes():
+    global discord_emotes
+    with open(root+"/data/pipikemotes.txt", "r") as file:
+        discord_emotes = json.load(file)
+    pipikLogger.info("loaded emotes")
 
-    def readEmotes(self):
-        global discord_emotes
-        with open(root+"/data/pipikemotes.txt", "r") as file:
-            discord_emotes = json.load(file)
-        pipikLogger.info("loaded emotes")
+@client.command()
+async def registerEmote(ctx, *attr):
+    for emoji in attr:
+        discord_emotes.update({emoji.split(":")[-2]: emoji})
+    saveEmotes()
 
-    @commands.command()
-    async def registerEmote(self, ctx, *attr):
-        for emoji in attr:
-            discord_emotes.update({emoji.split(":")[-2]: emoji})
-        self.saveEmotes()
+@client.command()
+async def registerAnimatedEmotes(ctx, howmany):
+    howmany = int(howmany)
+    for emoji in reversed(ctx.message.guild.emojis):
+        if emoji.animated and howmany:
+            howmany -= 1
+            discord_emotes.update({emoji.name: f"<a:{emoji.name}:{emoji.id}>"})
+    saveEmotes()
 
-    @commands.command()
-    async def registerAnimatedEmotes(self, ctx, howmany):
-        howmany = int(howmany)
-        for emoji in reversed(ctx.message.guild.emojis):
-            if emoji.animated and howmany:
-                howmany -= 1
-                discord_emotes.update({emoji.name: f"<a:{emoji.name}:{emoji.id}>"})
-        self.saveEmotes()
+@client.command()
+async def reloadEmotes(ctx):
+    readEmotes()
 
-    @commands.command()
-    async def reloadEmotes(self, ctx):
-        self.readEmotes()
+async def getMsgFromLink(link):
+    link = link.split('/')
+    #server_id = int(link[4])
+    channel_id = int(link[5])
+    msg_id = int(link[6])
+    #server = client.get_guild(server_id)
+    channel = client.get_channel(channel_id)
+    message = await channel.fetch_message(msg_id)
+    return message
 
-    async def getMsgFromLink(self, link):  #TODO: simplify, message can be get from only the channel
-        link = link.split('/')
-        server_id = int(link[4])
-        channel_id = int(link[5])
-        msg_id = int(link[6])
-        server = client.get_guild(server_id)
-        channel = server.get_channel(channel_id)
-        message = await channel.fetch_message(msg_id)
-        return message
+@client.slash_command(name="emote", description="For using special emotes")
+async def emote(ctx,
+                emote=discord.SlashOption(name="emoji",description="An emoji name, leave blank if you want to list them all out.",required=False, default=None),
+                msg:str =discord.SlashOption(name="message_link",description="Use 'copy message link' to specify a message to react to.",required=False),
+                text:str = discord.SlashOption(name="text",description="The text message to send along with any emotes, use {emotename} as placeholder.",required=False, default=None)):
+    def check(reaction, user):
+        return not user.bot and (str(reaction.emoji) in list(discord_emotes.values()))
 
-    @client.slash_command(name="emote", description="For using special emotes")
-    async def emote(self, ctx,
-                    emote=discord.SlashOption(name="emoji",description="An emoji name, leave blank if you want to list them all out.",required=False, default=None),
-                    msg:str =discord.SlashOption(name="message_link",description="Use 'copy message link' to specify a message to react to.",required=False),
-                    text:str = discord.SlashOption(name="text",description="The text message to send along with any emotes, use {emotename} as placeholder.",required=False, default=None)):
-        def check(reaction, user):
-            return not user.bot and (str(reaction.emoji) in list(discord_emotes.values()))
+    pipikLogger.debug(f"{ctx.user}, {emote}, {datetime.now()}")
+    if msg and emote:
+        mess = await getMsgFromLink(msg)
+        await mess.add_reaction(discord_emotes[emote])
+        await ctx.send("Now go react on the message", ephemeral=True)
+        try:
+            reaction, user = await client.wait_for('reaction_add', timeout=6.0, check=check)
+        except asyncio.TimeoutError:
+            pipikLogger.debug("emote timed out")
+        finally:
+            await mess.remove_reaction(discord_emotes[emote], client.user)
+    elif text:
+        try:
+            text = text.replace("{", "{discord_emotes['")
+            text = text.replace("}", "']}")
+            text = eval(f'f"{text}"')
+            await ctx.send(f"{text}")
+        except Exception as e:
+            pipikLogger.warning(e)
+            await ctx.send(e,ephemeral=True)
 
-        pipikLogger.debug(f"{ctx.user}, {emote}, {datetime.now()}")
-        if msg and emote:
-            mess = await self.getMsgFromLink(msg)
-            await mess.add_reaction(discord_emotes[emote])
-            await ctx.send("Now go react on the message", ephemeral=True)
-            try:
-                reaction, user = await client.wait_for('reaction_add', timeout=6.0, check=check)
-            except asyncio.TimeoutError:
-                pipikLogger.debug("emote timed out")
-            finally:
-                await mess.remove_reaction(discord_emotes[emote], client.user)
-        elif text:
-            try:
-                text = text.replace("{", "{discord_emotes['")
-                text = text.replace("}", "']}")
-                text = eval(f'f"{text}"')
-                await ctx.send(f"{text}")
-            except Exception as e:
-                pipikLogger.warning(e)
-                await ctx.send(e,ephemeral=True)
+    elif not emote:
+        emotestr = ";".join([f"{v} {k}" for k, v in discord_emotes.items()])
+        splitat = emotestr[4096::-1].index(";") #hehe this is a funny way to do it
+        print(splitat)
+        embedVar = discord.Embed(title="Emotes", description=emotestr[:4096-splitat], color=ctx.user.color)
+        for i in range(4096-splitat, len(emotestr), 1024):
+            embedVar.add_field(name=i, value=emotestr[i:min(i + 1024, len(emotestr))])
+        embedVar.set_footer(text=f"{len(emotestr)} / 6000 chars in one message")
+        await ctx.send(embed=embedVar, ephemeral=True)
+        return
+    else:
+        await ctx.send(discord_emotes[emote])
 
-        elif not emote:
-            emotestr = ";".join([f"{v} {k}" for k, v in discord_emotes.items()])
-            splitat = emotestr[4096::-1].index(";") #hehe this is a funny way to do it
-            print(splitat)
-            embedVar = discord.Embed(title="Emotes", description=emotestr[:4096-splitat], color=ctx.user.color)
-            for i in range(4096-splitat, len(emotestr), 1024):
-                embedVar.add_field(name=i, value=emotestr[i:min(i + 1024, len(emotestr))])
-            embedVar.set_footer(text=f"{len(emotestr)} / 6000 chars in one message")
-            await ctx.send(embed=embedVar, ephemeral=True)
-            return
-        else:
-            await ctx.send(discord_emotes[emote])
+@emote.on_autocomplete("emote")
+async def emote_autocomplete(interaction, emote: str):
+    if not emote:
+        # send the full autocomplete list
+        randomemotes = list(discord_emotes.keys())
+        random.shuffle(randomemotes)
+        await interaction.response.send_autocomplete(randomemotes[:25])
+        return
+    # send a list of nearest matches from the list of emotes
+    get_near_emote = [i for i in discord_emotes.keys() if i.casefold().startswith(emote.casefold())]
+    get_near_emote = get_near_emote[:25]
+    await interaction.response.send_autocomplete(get_near_emote)
 
-    @emote.on_autocomplete("emote")
-    async def emote_autocomplete(self, interaction, emote: str):
-        if not emote:
-            # send the full autocomplete list
-            randomemotes = list(discord_emotes.keys())
-            random.shuffle(randomemotes)
-            await interaction.response.send_autocomplete(randomemotes[:25])
-            return
-        # send a list of nearest matches from the list of emotes
-        get_near_emote = [i for i in discord_emotes.keys() if i.casefold().startswith(emote.casefold())]
-        get_near_emote = get_near_emote[:25]
-        await interaction.response.send_autocomplete(get_near_emote)
+@client.event
+async def on_message(ctx):
+    if not ctx.author.bot:
+        #if spehmode:
+            #print("message at:",str(datetime.now()),"content:",ctx.content,"by:",ctx.author,"in:",ctx.channel.name)
+        if "free nitro" in antimakkcen(ctx.content).casefold():
+            await ctx.channel.send("bitch what the fok **/ban**")
+    await client.process_commands(ctx)
+
+@client.event
+async def on_reaction_add(reaction: discord.Reaction, user):
+    global already_checked
+
+    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>"):
+        if reaction.message.author.id == 569937005463601152:
+            if user.id == 569937005463601152:
+                boci: discord.Member = reaction.message.author
+                already_checked.append(reaction.message.id)
+                await boci.timeout(timedelta(minutes=3), reason="Saját magára rakta a keket")
+                uzenet = "Imagine saját vicceiden nevetni. " + random.choice("<:cringe:644026740242645023> <:OhNoCringe:945225281172553760> <:cassiecringe:859589366870573106> <:SCCRINGE:664519482416300053> <:Catastrophe_CringeBro:645327316540456998> <:AntonCringe:690691883500044409> <a:cringesmiley:774412323662069770> <a:cringepepepet:773106637774913586> <:notcringebutwtf:600071034229751848> <:flushcringe:644026697880043570> <:pepe_cringe:774411918081261578>".split(" "))
+                await reaction.message.reply(uzenet)
 
 
-    @commands.Cog.listener()
-    async def on_message(self, ctx):
-        if not ctx.author.bot:
-            #if spehmode:
-                #print("message at:",str(datetime.now()),"content:",ctx.content,"by:",ctx.author,"in:",ctx.channel.name)
-            if "free nitro" in antimakkcen(ctx.content).casefold():
-                await ctx.channel.send("bitch what the fok **/ban**")
-
-    @commands.Cog.listener()
-    async def on_reaction_add(self, reaction: discord.Reaction, user):
-        global already_checked
-
-        if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>"):
-            if reaction.message.author.id == 569937005463601152:
-                if user.id == 569937005463601152:
-                    boci: discord.Member = reaction.message.author
+    if reaction.emoji == emoji.emojize(":thumbs_down:"):
+        if reaction.message.author.id == 569937005463601152:
+            boci = reaction.message.author
+            if reaction.count >= 3:
+                if reaction.message.id not in already_checked:
                     already_checked.append(reaction.message.id)
-                    await boci.timeout(timedelta(minutes=3), reason="Saját magára rakta a keket")
-                    uzenet = "Imagine saját vicceiden nevetni. " + random.choice("<:cringe:644026740242645023> <:OhNoCringe:945225281172553760> <:cassiecringe:859589366870573106> <:SCCRINGE:664519482416300053> <:Catastrophe_CringeBro:645327316540456998> <:AntonCringe:690691883500044409> <a:cringesmiley:774412323662069770> <a:cringepepepet:773106637774913586> <:notcringebutwtf:600071034229751848> <:flushcringe:644026697880043570> <:pepe_cringe:774411918081261578>".split(" "))
+                    await boci.timeout(timedelta(minutes=2), reason="Nem volt vicces")
+                    uzenet = "Nem volt vicces, Boti. " + random.choice("<:cringe:644026740242645023> <:OhNoCringe:945225281172553760> <:cassiecringe:859589366870573106> <:SCCRINGE:664519482416300053> <:Catastrophe_CringeBro:645327316540456998> <:AntonCringe:690691883500044409> <a:cringesmiley:774412323662069770> <a:cringepepepet:773106637774913586> <:notcringebutwtf:600071034229751848> <:flushcringe:644026697880043570> <:pepe_cringe:774411918081261578>".split(" "))
                     await reaction.message.reply(uzenet)
 
+    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>"):
+        if reaction.message.author.id == 569937005463601152:
+            if reaction.count >= 3:
+                if reaction.message.id not in already_checked:
+                    already_checked.append(reaction.message.id)
+                    uzenet = f"Gratulálunk, ez vicces volt, Boti. {emoji.emojize(':clap:')} {emoji.emojize(':partying_face:')}"
+                    await reaction.message.reply(uzenet)
 
-        if reaction.emoji == emoji.emojize(":thumbs_down:"):
-            if reaction.message.author.id == 569937005463601152:
-                boci = reaction.message.author
-                if reaction.count >= 3:
-                    if reaction.message.id not in already_checked:
-                        already_checked.append(reaction.message.id)
-                        await boci.timeout(timedelta(minutes=2), reason="Nem volt vicces")
-                        uzenet = "Nem volt vicces, Boti. " + random.choice("<:cringe:644026740242645023> <:OhNoCringe:945225281172553760> <:cassiecringe:859589366870573106> <:SCCRINGE:664519482416300053> <:Catastrophe_CringeBro:645327316540456998> <:AntonCringe:690691883500044409> <a:cringesmiley:774412323662069770> <a:cringepepepet:773106637774913586> <:notcringebutwtf:600071034229751848> <:flushcringe:644026697880043570> <:pepe_cringe:774411918081261578>".split(" "))
-                        await reaction.message.reply(uzenet)
+    if spehmode:
+        print("react at:", str(datetime.now()),(emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:",user, "on message:", reaction.message.content)
 
-        if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>"):
-            if reaction.message.author.id == 569937005463601152:
-                if reaction.count >= 3:
-                    if reaction.message.id not in already_checked:
-                        already_checked.append(reaction.message.id)
-                        uzenet = f"Gratulálunk, ez vicces volt, Boti. {emoji.emojize(':clap:')} {emoji.emojize(':partying_face:')}"
-                        await reaction.message.reply(uzenet)
+@client.command(aliases=("angy", "angry"))
+async def upset(ctx):
+    embedVar = discord.Embed(title="There´s no need to be upset!", color=ctx.author.color)
+    await ctx.channel.send(embed=embedVar)
+    await ctx.channel.send("https://cdn.discordapp.com/attachments/800207393539620864/814231682307719198/matkospin.mp4")
 
-        if spehmode:
-            print("react at:", str(datetime.now()),(emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:",user, "on message:", reaction.message.content)
+@client.command(aliases=("spin", "spinme"))
+async def matkospin(ctx):
+    embedVar = discord.Embed(title="There´s no need to be upset!", color=ctx.author.color)
+    await ctx.channel.send(embed=embedVar)
+    await ctx.channel.send("https://cdn.discordapp.com/attachments/618082756584407041/814240245889105920/matkospinme_1.mp4")
 
-    @commands.command(aliases=("angy", "angry"))
-    async def upset(self, ctx):
-        embedVar = discord.Embed(title="There´s no need to be upset!", color=ctx.author.color)
-        await ctx.channel.send(embed=embedVar)
-        await ctx.channel.send("https://cdn.discordapp.com/attachments/800207393539620864/814231682307719198/matkospin.mp4")
+@client.command(aliases=("party",))
+async def poolparty(ctx):
+    embedVar = discord.Embed(title="There´s no need to be upset!", color=ctx.author.color)
+    await ctx.channel.send(embed=embedVar)
+    await ctx.channel.send("https://cdn.discordapp.com/attachments/800207393539620864/814260748074614794/matkopoolparty.mp4")
 
-    @commands.command(aliases=("spin", "spinme"))
-    async def matkospin(self, ctx):
-        embedVar = discord.Embed(title="There´s no need to be upset!", color=ctx.author.color)
-        await ctx.channel.send(embed=embedVar)
-        await ctx.channel.send("https://cdn.discordapp.com/attachments/618082756584407041/814240245889105920/matkospinme_1.mp4")
+@client.command()
+async def rename(ctx, name):
+    await ctx.message.guild.me.edit(nick=name)
 
-    @commands.command(aliases=("party",))
-    async def poolparty(self, ctx):
-        embedVar = discord.Embed(title="There´s no need to be upset!", color=ctx.author.color)
-        await ctx.channel.send(embed=embedVar)
-        await ctx.channel.send("https://cdn.discordapp.com/attachments/800207393539620864/814260748074614794/matkopoolparty.mp4")
-
-    @commands.command()
-    async def rename(self, ctx, name):
-        await ctx.message.guild.me.edit(nick=name)
-
-    class PillTakeDropdown(discord.ui.Select):
-        def __init__(self, user):
-            self.user = user
-            pillselect = [discord.SelectOption(label=pills[pill[0]]["name"],value=str(pill[0]),description=f"in inventory: {pill[1]}") for pill in self.user.items if pill[1] > 0] + [discord.SelectOption(label="Cancel",value="-1",emoji=emoji.emojize(":cross_mark:"))]
-
-            super().__init__(placeholder="Select a pill to consume", options=pillselect)  # TODO: embedize
-
-        async def callback(self, interaction):
-            if interaction.user.id == self.user.id:
-                if self.values[0] == "-1":
-                    await interaction.response.edit_message(content="Cancelled.", view=None)
-                else:
-                    await interaction.response.edit_message(content=f"You took a {pills[int(self.values[0])]['name']}\nNow go measure your pp before it wears out!",view=None)  # TODO: embedize
-                    await self.user.takePill(int(self.values[0]))
-                    if "pill_popper" not in self.user.achi:
-                        await self.user.updateUserAchi(interaction, "pill_popper")
-            else:
-                await interaction.send("This is not your prompt, use /pills to use your pills.",ephemeral=True)
+#-------------------------------------------------#
 
 os.chdir(root)
 if not args.minimal and not args.no_maths:
@@ -475,6 +457,7 @@ cogs.remove("cloveckocog.py") if args.no_clovece or args.minimal else None
 cogs.remove("topiccog.py") if args.no_topic or args.minimal else None
 cogs.remove("currencyCog.py") if args.no_currency or args.minimal else None
 cogs.remove("testing.py") if args.no_testing else None
+cogs.remove("pipikcog.py") if args.no_pipik else None
 
 for n, file in enumerate(cogs, start=1):
     if file.endswith(".py"):
@@ -487,7 +470,6 @@ sys.stdout.write("\rAll cogs loaded.                    \n")
 sys.stdout.flush()
 os.chdir(root)
 
-client.add_cog(PipikBot(client))
 client.run(os.getenv("MAIN_DC_TOKEN"))  # bogibot
 
 # 277129587776 reduced perms

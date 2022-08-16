@@ -3,6 +3,8 @@ import json
 import os
 import random
 from copy import deepcopy
+from typing import Dict, Union
+
 import emoji
 import nextcord as discord
 import pyowm
@@ -19,7 +21,7 @@ root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pip
 
 good_emojis = (':smiling_face_with_hearts:', ':smiling_face_with_heart-eyes:', ':face_blowing_a_kiss:', ':kissing_face:',':kissing_face_with_closed_eyes:')
 bad_emojis = (':rolling_on_the_floor_laughing:', ':cross_mark:', ':squinting_face_with_tongue:', ':thumbs_down:')
-good_words = {"affectionate", "admirable", "charm", "creative", "friend", "funny", "generous", "kind", "likable","loyal", "polite", "sincere", "pretty", "please", "love", "goodnight", "nite", "prett", "kind", "sugar","clever", "beaut", "star", "heart", "my", "wonderful", "legend", "neat", "good", "great", "amazing","marvelous", "fabulous", "hot", "best", "birthday", "bday", "ador", "cute", " king", "queen", "master","daddy", "lil", "zlat", "bby", "angel", "god", "cool", "nice", "lil", "marvelous", "magnificent", "cutie","handsome"}
+good_words = {"affectionate", "admirable", "charm", "creative", "friend", "funny", "generous", "kind", "likable","loyal", "polite", "sincere", "pretty", "please", "love", "goodnight", "nite", "prett", "kind", "sugar","clever", "beaut", "star", "heart", "my", "wonderful", "legend", "neat", "good", "great", "amazing","marvelous", "fabulous", "hot", "best", "birthday", "bday", "ador", "cute", " king", "queen", "master","daddy", "lil", "zlat", "bby", "angel", "god", "cool", "nice", "lil", "marvelous", "magnificent","lovely", "cutie","handsome","sweet"}
 bad_words = {"adopt", "dirt", "die", "kill", "cring", "selfish", "ugly", "dick", "small", "devil", "drb", "ass","autis", "deranged", "idiot", "cock", "cut", "d1e", "fuck", "slut", "d13", "fake", "a55", "retard","r3tard", "tard", "bitch", "nigga", "nibba", "nazi", "jew", "fag", "f4g", "feg", "feck", "pussy", "pvssy","stink", "smell", "stupid"}
 pills = [{"name": "\U0001F48A Size Up Forte", "effect": 5, "effectDur": timedelta(minutes=5), #TODO make custom emojis
           "badEffectDur": timedelta(seconds=0)},
@@ -97,11 +99,15 @@ default_achievements = (
 class Achievement(object):
     """achievement object
 icon = emoji
-shorthand = id string to save
+achiid = shorthand id string to save
 name = displayname in profile
 desc = description in DMs
 """
     def __init__(self, achi):
+        self.achiid: str
+        self.name: str
+        self.icon: str
+        self.desc: str
         if type(achi) == tuple:
             for k, v in zip(("achiid", "icon", "name", "desc"), achi):
                 setattr(self, k, v)
@@ -111,8 +117,7 @@ desc = description in DMs
 
 
 class PipikUser(object):
-    def __init__(self, discorduser,client):
-        self.pipikbot = client
+    def __init__(self, discorduser):
         if type(discorduser) == dict:
             for k, v in discorduser.items():
                 if k != "xp":
@@ -121,16 +126,17 @@ class PipikUser(object):
         if type(discorduser) != int:
             discorduser = discorduser.id
         self.id = discorduser
-        self.fap = 0
+        self.fap: int = 0
         self.achi = []
         self.items = []
-        self.pb = 0
-        self.pw = 0
+        self.pb: int = 0
+        self.pw: int = 0
         self.cd = None
-        self.methods = 0
-        self.pill = None
-        self.pillPopTime = timedelta()
-        self.dailyStreak = 0
+        self.methods: int = 0
+        self.pill: int = None
+        self.pillPopTime = datetime.now() # placeholder
+        self.dailyStreak: int = 0
+        self.dailyDate = datetime.now() - timedelta(days=1)
 
     def __hash__(self):
         return hash(self.id)
@@ -139,25 +145,21 @@ class PipikUser(object):
         if isinstance(other, PipikUser):
             return self.id == other.id
         else:
-            raise NotImplemented(f"Comparsion between {type(self)} and {type(other)}")
+            raise NotImplemented(f"Comparison between {type(self)} and {type(other)}")
 
     def __str__(self):
-        return f"[{str(self.id)} with {str(len(self.achi))} achis; {str(self.dailyStreak)} streak; {str(self.pb)} pb and {str(self.methods)} methods]"
+        return f"[{self.id} with {len(self.achi)} achis; {str(self.dailyStreak)} streak; {self.pb} pb {self.cd} cd and {self.methods} methods]"
 
-    async def takePill(self, which):
+    def __repr__(self):
+        return f"[{self.id} with {len(self.achi)} achis; {str(self.dailyStreak)} streak; {self.pb} pb {self.cd} cd and {self.methods} methods]"
+
+    async def takePill(self, which,cog):
         self.pill = self.items[which][0]
         self.pillPopTime = datetime.now()
         self.items[which][1] -= 1
         if self.items[which][1] == 0:
             del (self.items[which])
-        self.pipikbot.saveFile()
-
-    async def updateUserAchi(self, ctx, achi,name=None):  # TODO: look into this? overengineered? Im sure theres some reason for this but idk what. Yes but im way too lazy to do that
-        self.achi.append(achi)
-        user = name or ctx.user.display_name
-        achi = self.pipikbot.achievements[achi]
-        await ctx.channel.send(embed=discord.Embed(title=f"{user} just got the achievement:", description=str(achi),color=discord.Colour.gold()))
-        self.pipikbot.saveFile()
+        cog.saveFile()
 
 class PipikBot(commands.Cog):
     def __init__(self, client,baselogger):
@@ -165,7 +167,7 @@ class PipikBot(commands.Cog):
         self.usedcompliments = {"placeholder", }
         self.client = client
         self.temperature = 0
-        self.holding = {}
+        self.holding: Dict[int,discord.Member] = dict()
         self.weatherUpdatedTime = datetime.now()
         self.leaderboards = {}
         self.loserboards = {}
@@ -194,32 +196,37 @@ class PipikBot(commands.Cog):
                     user["dailyDate"] = datetime.fromisoformat(user["dailyDate"])
                 except:
                     pass
-                newUser = PipikUser(user,self.client)
+                newUser = PipikUser(user)
                 if newUser not in self.users:
                     self.users.append(newUser)
                 else: #TODO: depreacate, should not happen
-                    self.self.pipikLogger.debug(f"found and ignored duplicate entry with id: {newUser.id}")
-            self.pipikLogger.debug(self.users)
+                    self.pipikLogger.debug(f"found and ignored duplicate entry with id: {newUser.id}")
+            self.pipikLogger.debug(self.users,"all-users")
 
-        self.readEmotes()
+    async def updateUserAchi(self, ctx: discord.Interaction, user: discord.Member, achi: str):
+        achi: Achievement = self.achievements[achi]
+        await ctx.channel.send(embed=discord.Embed(title=f"{user.display_name} just got the achievement:", description=str(achi),color=discord.Colour.gold()))
+        user = self.getUserFromDC(user)
+        user.achi.append(achi.achiid)
+        self.saveFile() #any action that warrants an achievement already saves the users #not true lol, in pp func theres bunch of occasions where it doesnt save
 
-    def updateLeaderBoard(self, ldb, id, value):
+    def updateLeaderBoard(self, ldb, dcid, value):
         try:
             self.leaderboards[str(ldb)]
         except KeyError:
-            self.leaderboards[str(ldb)] = []
-        self.leaderboards[ldb].append((id, value))
+            self.leaderboards[str(ldb)] = [] #i knew what i was doing, dont try to reinvent the wheel
+        self.leaderboards[ldb].append((dcid, value))
         self.leaderboards[ldb].sort(key=lambda a: a[1], reverse=True)
         self.leaderboards[ldb] = self.leaderboards[ldb][:5]
         with open(root+"/data/pipikv3top.txt", "w") as file:
             json.dump(self.leaderboards, file, indent=4)
 
-    def updateLoserBoard(self, ldb, id, value):
+    def updateLoserBoard(self, ldb, dcid, value):
         try:
             self.loserboards[str(ldb)]
         except KeyError:
             self.loserboards[str(ldb)] = []
-        self.loserboards[ldb].append((id, value))
+        self.loserboards[ldb].append((dcid, value))
         self.loserboards[ldb].sort(key=lambda a: a[1], reverse=False)
         self.loserboards[ldb] = self.loserboards[ldb][:5]
         with open(root+"/data/pipikv3low.txt", "w") as file:
@@ -261,7 +268,7 @@ class PipikBot(commands.Cog):
             self.temperature = settings["temperature"]
             self.sunrise_date = datetime.fromisoformat(settings["sunrise"])
             
-    def getUserFromDC(self, dcUser):
+    def getUserFromDC(self, dcUser: Union[discord.Member, discord.User, int, PipikUser]):
         if isinstance(dcUser, int):
             lookingfor = dcUser
         elif isinstance(dcUser, PipikUser):
@@ -308,7 +315,7 @@ class PipikBot(commands.Cog):
         self.saveSettings()
 
     @discord.user_command(name="Hold pp", dm_permission=False)
-    async def holding(self, interaction, member):
+    async def holding(self, interaction: discord.Interaction, member: discord.Member):
         if interaction.user.id != member.id:
             await interaction.send(f"You are now holding {member.display_name}'s pp. This will be in effect until the next measurement done by anyone on this server.",ephemeral=True)
             self.holding.update({interaction.guild.id: interaction.user})
@@ -384,7 +391,7 @@ class PipikBot(commands.Cog):
                 user.dailyStreak += 1
                 if user.dailyStreak >= 30:
                     if "dedicated" not in user.achi:
-                        await user.updateUserAchi(ctx, "dedicated")
+                        await self.updateUserAchi(ctx,ctx.user, "dedicated")
                 embedVar = discord.Embed(title="Daily pills", color=ctx.user.color)
                 embedVar.add_field(name="Current streak", value=user.dailyStreak)
             else:
@@ -397,14 +404,14 @@ class PipikBot(commands.Cog):
             if user.dailyStreak >= random.randint(0, 99):
                 await self.addPill(ctx, ctx.user.color, user, 1, random.randint(1, 2))  # red pill
             if user.dailyStreak / 10 >= random.randint(0, 99):
+                await self.addPill(ctx, ctx.user.color, user, 2, 1)  # blue pill
                 if "lucky_draw" not in user.achi:
-                    await user.updateUserAchi(ctx, "lucky_draw")
-                    await self.addPill(ctx, ctx.user.color, user, 2, 1)  # blue pill
-            self.saveFile()
+                    await self.updateUserAchi(ctx,ctx.user, "lucky_draw")
+            #self.saveFile() saving happens in addpill() too
 
     @discord.slash_command(name="max", description="Leaderboard of biggest pps", dm_permission=False)
     async def max(self, ctx: discord.Interaction, server: str = discord.SlashOption("leaderboard",description="User leaderboard or server leaderboards",required=False, choices=("This server", "Between servers"), default="This server")):
-        embedVar = discord.Embed(title="Leaderboard of biggest pps", description=25 * "-")
+        embedVar = discord.Embed(title="Leaderboard of {} biggest pps".format(ctx.guild.name + '\'s' if server == 'This server' else ''), description=25 * "-") #cant do f string
         if server == "This server":
             try:
                 ldb = self.leaderboards[str(ctx.guild_id)]
@@ -420,8 +427,7 @@ class PipikBot(commands.Cog):
                     user = self.client.get_user(int(i[0])).name
             except ValueError:
                 user = i[0]
-            embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}",
-                               inline=False)
+            embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}",inline=False)
         await ctx.send(embed=embedVar)
 
     @discord.slash_command(name="min", description="Leaderboard of smallest pps", dm_permission=False)
@@ -431,12 +437,11 @@ class PipikBot(commands.Cog):
             try:
                 ldb = self.loserboards[str(ctx.guild_id)]
             except KeyError:
-                await ctx.send(embed=discord.Embed(title="Loserboard empty",
-                                                   description="Use the /pp command to measure your pp first"))
+                await ctx.send(embed=discord.Embed(title="Loserboard empty",description="Use the /pp command to measure your pp first"))
                 return
         elif server == "Between servers":
             ldb = sorted([(self.client.get_guild(int(id)).name, round(sum(map(lambda user: user[1], users)), 5)) for id, users in self.loserboards.items()], key=lambda x: x[1], reverse=False)[:5]
-        embedVar = discord.Embed(title="Leaderboard of smallest pps", description=25 * "-")
+        embedVar = discord.Embed(title="Leaderboard of {} smallest pps".format(ctx.guild.name + '\'s' if server == 'This server' else ''), description=25 * "-") #cant do f string
         for i in ldb:
             try:
                 user = ctx.guild.get_member(int(i[0])).display_name
@@ -550,17 +555,18 @@ class PipikBot(commands.Cog):
                     # amount = int(attr[2] or 1) #TODO: do multiselect again or just add it as options
                     amount = 1
                     self.user.items[which][1] -= amount * 10
+                    if "breaking_bad" not in self.user.achi:
+                        await self.cog.updateUserAchi(interaction, interaction.user, "breaking_bad") #moved this up so achi adding happens before savefile gets called in addpill
                     await self.cog.addPill(interaction, interaction.user.color, self.user,(self.user.items[which][0]) + 1, amount)
                     await interaction.response.edit_message(content=f"You crushed up 10 {pills[int(self.values[0])]['name']}",view=None)  # TODO emedize these
                     if self.user.items[which][1] == 0:
                         del (self.user.items[which])
-                    if "breaking_bad" not in self.user.achi:
-                        await self.user.updateUserAchi(interaction, "breaking_bad")
+
             else:
                 await interaction.send("This is not your prompt, use /pills to use your pills.", ephemeral=True)
 
     class PillsButtonsConsume(discord.ui.Button):
-        def __init__(self, user, cog):
+        def __init__(self, user: PipikUser, cog):
             self.user = user
             self.cog = cog
             canConsume = len(user.items) != 0 and self.user.pill not in range(0, len(pills))
@@ -575,7 +581,7 @@ class PipikBot(commands.Cog):
                 child.disabled = True
             await interaction.response.edit_message(view=self.view)
             viewObj = discord.ui.View()
-            viewObj.add_item(self.cog.PillTakeDropdown(self.cog.getUserFromDC(interaction.user)))
+            viewObj.add_item(self.cog.PillTakeDropdown(self.user,self.cog))
             await interaction.send("Pill consumption", view=viewObj)  # TODO: embedize
 
     class PillsButtonsCraft(discord.ui.Button):
@@ -597,6 +603,27 @@ class PipikBot(commands.Cog):
             viewObj = discord.ui.View()
             viewObj.add_item(self.cog.PillCraftDropdown(self.user,self.cog))
             await interaction.send("Pill crafting", view=viewObj)  # TODO: embedize
+
+    class PillTakeDropdown(discord.ui.Select):
+        def __init__(self, user: PipikUser,cog):
+            self.user = user
+            self.cog = cog
+            pillselect = [discord.SelectOption(label=pills[pill[0]]["name"],value=str(pill[0]),description=f"in inventory: {pill[1]}") for pill in self.user.items if pill[1] > 0] + [discord.SelectOption(label="Cancel",value="-1",emoji=emoji.emojize(":cross_mark:"))]
+
+            super().__init__(placeholder="Select a pill to consume", options=pillselect)
+
+        async def callback(self, interaction: discord.Interaction):
+            if interaction.user.id == self.user.id:
+                if self.values[0] == "-1":
+                    await interaction.response.edit_message(content="Cancelled.", view=None)
+                else:
+                    await interaction.response.edit_message(content=None,embed=discord.Embed(title=f"You took a {pills[int(self.values[0])]['name']}",description="Now go measure your pp before it wears out!",color=interaction.user.color),view=None)
+                    if "pill_popper" not in self.user.achi:
+                        await self.cog.updateUserAchi(interaction,interaction.user, "pill_popper") #moved this above takepill so achi adding happens before savefile gets called
+                    await self.user.takePill(int(self.values[0]),self.cog)
+
+            else:
+                await interaction.send("This is not your prompt, use /pills to use your pills.",ephemeral=True)
 
     @discord.slash_command(description="See, manage and use your pill inventory.")
     async def pills(self, ctx):
@@ -623,9 +650,10 @@ class PipikBot(commands.Cog):
         await ctx.send(content=text, view=viewObj)
 
     class FapButton(discord.ui.Button):
-        def __init__(self, user):
+        def __init__(self, user,cog):
             self.user = user
-            if user.cd is not None:
+            self.cog = cog
+            if user.cd is None:
                 color = discord.ButtonStyle.green
                 label = f"Combo: {user.fap}"
                 emojiLabel = emoji.emojize(":fist:", language="alias")
@@ -651,7 +679,7 @@ class PipikBot(commands.Cog):
                 self.label = "Oops!"
                 if self.user.fap == 0:
                     if "one_pump" not in self.user.achi:
-                        await self.user.updateUserAchi(interaction, "one_pump")
+                        await self.cog.updateUserAchi(interaction,interaction.user, "one_pump")
                 self.user.cd = datetime.now() + timedelta(minutes=5)
                 self.user.fap = 0
             await interaction.response.edit_message(view=self.view)
@@ -659,16 +687,16 @@ class PipikBot(commands.Cog):
     @discord.slash_command(name="fap", description="Increase your pp length by repeatedly mashing a button.")
     async def fap(self, ctx):
         user = self.getUserFromDC(ctx.user)
-        if user.cd != None:
+        if user.cd is not None:
             if user.cd == 0 or user.cd - datetime.now() < timedelta(seconds=0):
                 user.cd = None
-        if user.cd == None:
+        if user.cd is None:
             text = "Use repeatedly to increase length."
         else:
             timestr = "<t:" + str(int(user.cd.timestamp())) + ":R>"
             text = f"Come back {timestr}"
         viewObj = discord.ui.View()
-        viewObj.add_item(self.FapButton(user))
+        viewObj.add_item(self.FapButton(user,self))
         await ctx.send(content=text, view=viewObj)  # TODO: embedize
 
     @discord.slash_command(name="profile", description="See your, or someone else's pp profile") #oh my god this is ugly
@@ -775,7 +803,7 @@ class PipikBot(commands.Cog):
             curve -= 0.5
             currmethods = currmethods | 8
             if "morning" not in user.achi:
-                await user.updateUserAchi(ctx, "morning")
+                await self.updateUserAchi(ctx,ctx.user, "morning")
 
         # compliment checker
         compliments = 0
@@ -788,8 +816,15 @@ class PipikBot(commands.Cog):
             msg = await ctx.original_message()
             await asyncio.sleep(2)
             if message not in self.usedcompliments:
-                messagelist = [antimakkcen(word.casefold()) for word in message.split(" ")]
-                compliments = len(good_words.intersection(messagelist)) - len(bad_words.intersection(messagelist))
+                #messagelist = [antimakkcen(word.casefold()) for word in message.split(" ")]
+                #compliments = len(good_words.intersection(messagelist)) - len(bad_words.intersection(messagelist))
+
+                for word in good_words:
+                    if word in message.casefold():
+                        compliments += 1
+                for word in bad_words:
+                    if word in message.casefold():
+                        compliments -= 1
 
                 multiplier += 2.2 * min(5, compliments)
                 curve -= min(5, compliments) * 0.12
@@ -799,12 +834,12 @@ class PipikBot(commands.Cog):
                 else:
                     embedMsg.add_field(name=random.choice(good_responses), value=emoji.emojize(random.choice(good_emojis)),inline=False)
                     currmethods = currmethods | 2
-
                 # compliment achi checker
+                print(compliments)
                 if compliments > 4 and "flirty" not in user.achi:
-                    await user.updateUserAchi(ctx, "flirty")
+                    await self.updateUserAchi(ctx,ctx.user, "flirty")
                 elif compliments < -4 and "playa" not in user.achi:
-                    await user.updateUserAchi(ctx, "playa")
+                    await self.updateUserAchi(ctx,ctx.user, "playa")
 
                 #compliment logger
                 if len(self.usedcompliments) > 5:
@@ -830,24 +865,26 @@ class PipikBot(commands.Cog):
         # holding checker
         try:
             self.pipikLogger.debug(f"holdings table {self.holding} curr chanel {ctx.channel_id}, author {ctx.user}")
+            #if True:
             if self.holding[ctx.guild.id] not in ("", " ", None) and self.holding[ctx.guild.id] != ctx.user:
                 currmethods = currmethods | 1
                 curve -= 0.4
                 multiplier += 11
-                holder = self.holding[ctx.guild.id]
-                held = self.getUserFromDC(ctx.user)
+                holder: discord.Member = self.holding[ctx.guild.id]
+                held: PipikUser = self.getUserFromDC(ctx.user)
                 embedMsg.add_field(name="With helping hands from:", value=holder.display_name)
+                holder = self.getUserFromDC(holder)
                 if msg:
                     await msg.edit(embed=embedMsg)
                 if "helping_hands" not in held.achi:  # helpout
-                    await held.updateUserAchi(ctx, "helping_hands", name=ctx.user.display_name)  # holding achis
+                    await self.updateUserAchi(ctx,ctx.user, "helping_hands")  # holding achis
                 if "friend_need" not in holder.achi:
-                    await holder.updateUserAchi(ctx, "friend_need")
+                    await self.updateUserAchi(ctx,holder, "friend_need")
             self.holding.update({ctx.guild.id: None})
             if not any(self.holding.values()):
                 self.holding = {}
         except KeyError as e:
-            self.pipikLogger.error(e)
+            self.pipikLogger.debug(str(e) + " - in this guild noone is holding anything")
 
         # final calculation
         if curve < 0:
@@ -883,13 +920,13 @@ class PipikBot(commands.Cog):
         # size achi checker
         if pipik > 300:
             if "megapp" not in user.achi:
-                await user.updateUserAchi(ctx, "megapp")
+                await self.updateUserAchi(ctx,ctx.user, "megapp")
         elif pipik < 0.5:
             if "micropp" not in user.achi:
-                await user.updateUserAchi(ctx, "micropp")
+                await self.updateUserAchi(ctx,ctx.user, "micropp")
         elif 69 <= pipik < 70:
             if "nice" not in user.achi:
-                await user.updateUserAchi(ctx, "nice")
+                await self.updateUserAchi(ctx,ctx.user, "nice")
 
         # pp enlargement methods achi checker
         try:
@@ -897,11 +934,11 @@ class PipikBot(commands.Cog):
         except KeyError:
             user.methods = 0
         if currmethods == 127 and "desperate" not in user.achi:
-            await user.updateUserAchi(ctx, "desperate")
+            await self.updateUserAchi(ctx,ctx.user, "desperate")
         if currmethods | user.methods != user.methods:
             await self.updateUserStats(user, "methods", user.methods | currmethods)
         if user.methods == 127 and "tested" not in user.achi:
-            await user.updateUserAchi(ctx, "tested")
+            await self.updateUserAchi(ctx,ctx.user, "tested")
 
         # final printer
         footertext = f'{emoji.emojize(":handshake:",language="alias") if currmethods & 1 else ""}{emoji.emojize(":heart_eyes:",language="alias") if currmethods & 2 else ""}{emoji.emojize(":thermometer:",language="alias") if currmethods & 4 else ""}{emoji.emojize(":sunrise:",language="alias") if currmethods & 8 else ""}{emoji.emojize(":fist:",language="alias") if currmethods & 16 else ""}{emoji.emojize(":pill:",language="alias") if currmethods & 32 else ""}{emoji.emojize(":waning_gibbous_moon:",language="alias") if currmethods & 64 else ""}'
