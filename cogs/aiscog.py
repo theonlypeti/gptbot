@@ -110,7 +110,7 @@ class AisCog(commands.Cog):
 
     @printer.before_loop
     async def before_printer(self):
-        self.aisLogger.info('getting temy')
+        self.aisLogger.debug('getting temy')
         await self.client.wait_until_ready()
 
     @discord.slash_command(description="Commands for STU bakalarka témy")
