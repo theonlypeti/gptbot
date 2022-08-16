@@ -122,5 +122,6 @@
     "investigation": "<:investigation:931183309097160735>",
     "blueflagboard": "<:blueflagboard:948505520753487903>",
     "ded": "<:ded:1003398366077665421>",
-    "tiphat": "<:tiphat:760147853070303285>"
+    "tiphat": "<:tiphat:760147853070303285>",
+    "nothapi": "<:nothapi:1007757789629796422>"
 }

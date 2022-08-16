@@ -31,21 +31,21 @@
             "friend_need",
             "pill_popper",
             "breaking_bad",
-            "tested",
             "contributor",
             "nice",
             "dedicated",
             "lucky_draw",
-            "playa"
+            "playa",
+            "tested"
         ],
         "items": [
             [
                 0,
-                0
+                4
             ],
             [
                 1,
-                8
+                7
             ],
             [
                 2,
@@ -53,14 +53,13 @@
             ]
         ],
         "pill": null,
-        "pillPopTime": "2022-08-12T09:53:55.882191",
+        "pillPopTime": "2022-08-13T23:20:54.820554",
         "pb": 52869.899,
         "pw": 0.013,
         "cd": null,
-        "methods": 63,
-        "Date": "2021-04-06",
+        "methods": 127,
         "dailyStreak": 1,
-        "dailyDate": "2022-08-12"
+        "dailyDate": "2022-08-16"
     },
     {
         "id": 307985197926973452,

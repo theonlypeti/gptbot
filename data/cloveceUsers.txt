@@ -32,7 +32,8 @@
                     ":panda_face:",
                     ":pig:",
                     ":monkey_face:",
-                    ":rooster:"
+                    ":rooster:",
+                    ":mouse:"
                 ],
                 "symbols": [
                     ":globe_with_meridians:",
@@ -63,7 +64,8 @@
                 "items": [
                     ":fire_extinguisher:",
                     ":bulb:",
-                    ":paperclip:"
+                    ":paperclip:",
+                    ":drop_of_blood:"
                 ],
                 "flags": [
                     ":flag_jp:",
@@ -111,13 +113,13 @@
             "Second places": 4,
             "Third places": 0,
             "Dice thrown": 848,
-            "Spins": 50,
-            "Default icons owned": 54,
+            "Spins": 52,
+            "Default icons owned": 56,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":icecream:",
         "ready": false,
-        "dailyDate": "2022-07-26T00:00:00",
+        "dailyDate": "2022-08-16",
         "inLobby": null
     },
     {
@@ -438,7 +440,7 @@
         },
         "icon": ":vampire:",
         "ready": false,
-        "dailyDate": "2022-08-08",
+        "dailyDate": "2022-08-08T00:00:00",
         "inLobby": null
     },
     {

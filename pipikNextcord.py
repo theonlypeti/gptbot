@@ -7,6 +7,7 @@ from datetime import datetime, date, timedelta
 import json
 from copy import deepcopy
 import pyowm
+from astral import moon
 import pytz
 import unicodedata
 import emoji
@@ -71,12 +72,11 @@ already_checked = []
 # TODO properly integrate matstat stuff
 # TODO make emojis for pills
 # TODO make a better help command
-# TODO line counter for the utils
-# TODO implement anti compliment stealing
-# TODO pyowm onecall api has a moon phase attr!!!!!!!! but only 1000 calls/day
 # TODO redo the leaderboards because i am storing a pair of (user, score) in a list lol, actually not even a user, but only their name
 # TODO make pipikbot users a dict of id:user instead of a list of users, also redo the getUserFromDC func then
 # TODO make an actual lobby extension
+# TODO make pills buttons edit message not reply
+# TODO move pipipkcog into a separate file
 
 def antimakkcen(slovo):  # it just works
     normalized = unicodedata.normalize('NFD', slovo)
@@ -140,7 +140,7 @@ class BfModal(discord.ui.Modal):
 
     async def callback(self, ctx):
         output = bf(self.codetext.value, self.inputtext.value)
-        embedVar = discord.Embed(title="Brainfuck", type="rich", description=output)
+        embedVar = discord.Embed(title="Brainfuck code output", type="rich", description=output)
         embedVar.set_author(name=ctx.user.display_name, icon_url=ctx.user.avatar.url)
         await ctx.send(embed=embedVar)
 
@@ -296,7 +296,18 @@ bad_responses = ("Sorry, i´m not very impressed.",
                  "Maybe next time.",
                  "Sooooo funny.",
                  "Ah well.",
-                 "Too long, didn't read xd")
+                 "Too long, didn't read xd",
+                 "ratio.")
+duplicate_responses = ("I've heard this one before!",
+                       "Boooooriiiiing!",
+                       "You can do better than that!",
+                       "Come on, be a little more original!",
+                       "Chivalry is dead ugh.",
+                       "Can't you come up with something better?",
+                       "Do you really need a wingman for this?",
+                       "Jeez that's embarrassing.",
+                       "Wanna try again?",
+                       "How original...")
 
 discord_emotes = {}
 good_emojis = (':smiling_face_with_hearts:', ':smiling_face_with_heart-eyes:', ':face_blowing_a_kiss:', ':kissing_face:',':kissing_face_with_closed_eyes:')
@@ -305,9 +316,9 @@ good_words = {"affectionate", "admirable", "charm", "creative", "friend", "funny
 bad_words = {"adopt", "dirt", "die", "kill", "cring", "selfish", "ugly", "dick", "small", "devil", "drb", "ass","autis", "deranged", "idiot", "cock", "cut", "d1e", "fuck", "slut", "d13", "fake", "a55", "retard","r3tard", "tard", "bitch", "nigga", "nibba", "nazi", "jew", "fag", "f4g", "feg", "feck", "pussy", "pvssy","stink", "smell", "stupid"}
 pills = [{"name": "\U0001F48A Size Up Forte", "effect": 5, "effectDur": timedelta(minutes=5), #TODO make custom emojis
           "badEffectDur": timedelta(seconds=0)},
-         {"name": "\U0001F608 Clavin Extra", "effect": 10, "effectDur": timedelta(minutes=20), #TODO make into class
+         {"name": "\U0001F608 Calvin Extra", "effect": 10, "effectDur": timedelta(minutes=20), #TODO make into class
           "badEffectDur": timedelta(minutes=20)},
-         {"name": "\U0001F535 Viagra XXL", "effect": 15, "effectDur": timedelta(minutes=60),
+         {"name": "\U0001F535 Niagara XXL", "effect": 15, "effectDur": timedelta(minutes=60),
           "badEffectDur": timedelta(hours=2, minutes=30)}]
 
 default_achievements = (
@@ -346,7 +357,7 @@ desc = description in DMs
 @client.event
 async def on_ready(): #TODO move shit out of on_ready to pipikbot __init__
     global pipikbot
-    pipikbot: discord.ext.commands.cog = client.get_cog("PipikBot")  # todo deprecate the global?
+    pipikbot = client.get_cog("PipikBot")  # todo deprecate the global?
     game = discord.Game(f"{linecount} lines of code; V3.0! use /help")
     await client.change_presence(status=discord.Status.online, activity=game)
     print(f"Signed in {datetime.now()}")
@@ -443,24 +454,23 @@ class PipikBot(commands.Cog): #TODO: move this into a separate cog file
 
         self.readEmotes()
 
-    def updateLeaderBoard(self, ldb, name, value):
+    def updateLeaderBoard(self, ldb, id, value):
         try:
             self.leaderboards[str(ldb)]
         except KeyError:
             self.leaderboards[str(ldb)] = []
-        self.leaderboards[ldb].append((name, value))
+        self.leaderboards[ldb].append((id, value))
         self.leaderboards[ldb].sort(key=lambda a: a[1], reverse=True)
         self.leaderboards[ldb] = self.leaderboards[ldb][:5]
         with open(root+"/data/pipikv3top.txt", "w") as file:
             json.dump(self.leaderboards, file, indent=4)
 
-    def updateLoserBoard(self, ldb, name, value):
+    def updateLoserBoard(self, ldb, id, value):
         try:
             self.loserboards[str(ldb)]
         except KeyError:
             self.loserboards[str(ldb)] = []
-        self.loserboards[ldb] = self.loserboards[ldb][:5]  # needed because on_ready runs more times per login and loads the items more than once
-        self.loserboards[ldb].append((name, value))
+        self.loserboards[ldb].append((id, value))
         self.loserboards[ldb].sort(key=lambda a: a[1], reverse=False)
         self.loserboards[ldb] = self.loserboards[ldb][:5]
         with open(root+"/data/pipikv3low.txt", "w") as file:
@@ -796,34 +806,47 @@ wordle = Play a game of co-op wordle
         await ctx.channel.send("https://cdn.discordapp.com/attachments/800207393539620864/814260748074614794/matkopoolparty.mp4")
 
     @client.slash_command(name="max", description="Leaderboard of biggest pps",dm_permission=False)
-    async def max(self, ctx, server: str = discord.SlashOption("leaderboard",description="User leaderboard or server leaderboards",required=False,choices=("This server","Between servers"),default="This server")):
-        try:
-            if server == "This server":
+    async def max(self, ctx: discord.Interaction, server: str = discord.SlashOption("leaderboard",description="User leaderboard or server leaderboards",required=False,choices=("This server","Between servers"),default="This server")):
+        embedVar = discord.Embed(title="Leaderboard of biggest pps", description=25 * "-")
+        if server == "This server":
+            try:
                 ldb = self.leaderboards[str(ctx.guild_id)]
-            elif server == "Between servers":
-                ldb = sorted([(client.get_guild(int(id)),round(sum(map(lambda user: user[1],users)),3)) for id,users in self.leaderboards.items()],key=lambda x:x[1],reverse=True)[:5]
-        except KeyError:
-            await ctx.send(embed=discord.Embed(title="Leaderboard empty",description="Use the /pp command to measure your pp first"))
-        else:
-            embedVar = discord.Embed(title="Leaderboard of biggest pps", description=25 * "-")
-            for i in ldb:
-                embedVar.add_field(name=i[0], value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
-            await ctx.send(embed=embedVar)
+            except KeyError:
+                await ctx.send(embed=discord.Embed(title="Leaderboard empty",description="Use the /pp command to measure your pp first"))
+                return
+        elif server == "Between servers":
+                ldb = sorted([(client.get_guild(int(id)).name,round(sum(map(lambda user: user[1],users)),3)) for id,users in self.leaderboards.items()],key=lambda x:x[1],reverse=True)[:5]
+        for i in ldb:
+            try:
+                user = ctx.guild.get_member(int(i[0])).display_name
+                if user is None:
+                    user = client.get_user(int(i[0])).name
+            except ValueError:
+                user = i[0]
+            embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
+        await ctx.send(embed=embedVar)
 
     @client.slash_command(name="min", description="Leaderboard of smallest pps",dm_permission=False)
-    async def min(self, ctx,server: str = discord.SlashOption("leaderboard",description="User leaderboard or server leaderboards",required=False,choices=("This server","Between servers"),default="This server")):
-        try:
-            if server == "This server":
+    async def min(self, ctx: discord.Interaction,server: str = discord.SlashOption("leaderboard",description="User leaderboard or server leaderboards",required=False,choices=("This server","Between servers"),default="This server")):
+
+        if server == "This server":
+            try:
                 ldb = self.loserboards[str(ctx.guild_id)]
-            elif server == "Between servers":
-                ldb = sorted([(client.get_guild(int(id)), round(sum(map(lambda user: user[1], users)),5)) for id, users in self.loserboards.items()], key=lambda x: x[1], reverse=False)[:5]
-        except KeyError:
-            await ctx.send(embed=discord.Embed(title="Loserboard empty",description="Use the /pp command to measure your pp first"))
-        else:
-            embedVar = discord.Embed(title="Leaderboard of smallest pps", description=25 * "-")
-            for i in ldb:
-                embedVar.add_field(name=i[0], value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
-            await ctx.send(embed=embedVar)
+            except KeyError:
+                await ctx.send(embed=discord.Embed(title="Loserboard empty",description="Use the /pp command to measure your pp first"))
+                return
+        elif server == "Between servers":
+            ldb = sorted([(client.get_guild(int(id)).name, round(sum(map(lambda user: user[1], users)),5)) for id, users in self.loserboards.items()], key=lambda x: x[1], reverse=False)[:5]
+        embedVar = discord.Embed(title="Leaderboard of smallest pps", description=25 * "-")
+        for i in ldb:
+            try:
+                user = ctx.guild.get_member(int(i[0])).display_name
+                if user is None:
+                    user = client.get_user(int(i[0])).name
+            except ValueError:
+                user = i[0]
+            embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
+        await ctx.send(embed=embedVar)
 
     @client.slash_command(name="weather",description="Current weather at location, or simply see how your pp is affected at the moment.")
     async def weather(self, ctx, location:str =discord.SlashOption(name="city",description="City name, for extra precision add a comma and a country code e.g. London,UK",required=False)):
@@ -883,11 +906,13 @@ A lot of things can influence your pp's size.
 For your convenience i'll share some tips and tricks
 for you here:
 --------------------------------------------------
-+I´ve heard your pp looks bigger in other people´s hands, so try asking others to hold it for you. (keyword: holding)
++I´ve heaRd your pp looks Mightier in other people´s hands But not in yours, so try asking others to hold it for you. 
 
 +The bot likes compliments, try some sweet words on it.
 
 -The bot however dislikes insults.
+
++Full moon is the best time to get a big pp.
 
 -Lower temperatures may cause your pp to shrink, consider measuring it when it´s warmer outside.
 
@@ -972,7 +997,7 @@ You can get free pills each day with the /daily command
             canCraft = any([i[1] >= 10 for i in user.items])
             super().__init__(label="Craft", disabled=not canCraft, style=discord.ButtonStyle.gray,emoji=emoji.emojize(":hammer:"))
 
-        async def callback(self, interaction):
+        async def callback(self, interaction: discord.Interaction):
             if interaction.user.id != self.user.id:
                 await interaction.send("This is not your inventory, use /pills to see your pills.", ephemeral=True)
                 return
@@ -1109,7 +1134,7 @@ You can get free pills each day with the /daily command
         await ctx.send("```\n" + text + "\n```", ephemeral=True)
 
     @discord.slash_command(name="pp", description="For measuring your pp.",dm_permission=False)
-    async def pp(self,ctx,message:str =discord.SlashOption(name="message", description="Would you like to tell me something?",required=False, default=None)):
+    async def pp(self,ctx: discord.Interaction, message:str =discord.SlashOption(name="message", description="Would you like to tell me something?",required=False, default=None)):
         await ctx.response.defer()
         msg = None
         embedMsg = discord.Embed(description=".", color=ctx.user.color)  # placeholders
@@ -1122,14 +1147,14 @@ You can get free pills each day with the /daily command
         else:
             pipikLogger.debug("temp up to date")
 
-        curve = 1.85
-        multiplier = 90
+        curve = 2
+        multiplier = 100
 
         # pill checker
         if user.pill in range(0, len(pills)) and user.pill not in (None, "none", "None"):  # fucking inconsistent
-            currmethods = currmethods | 32
             takenAgo = datetime.now() - user.pillPopTime
             if takenAgo < pills[user.pill]["effectDur"]:
+                currmethods = currmethods | 32
                 curve -= pills[user.pill]["effect"] / 15
                 multiplier += pills[user.pill]["effect"]
             elif takenAgo < pills[user.pill]["effectDur"] + pills[user.pill]["badEffectDur"]:
@@ -1140,7 +1165,7 @@ You can get free pills each day with the /daily command
                 user.pill = None
 
         # fap checker
-        if user.cd != None:
+        if user.cd is not None:
             if user.cd == 0 or user.cd - datetime.now() < timedelta(seconds=0):
                 user.cd = None
             else:
@@ -1157,7 +1182,7 @@ You can get free pills each day with the /daily command
         tz_info = self.sunrise_date.tzinfo
         sunrise = self.sunrise_date - datetime.now(tz_info)
         pipikLogger.debug(f"morning wood check, {self.sunrise_date}, sunrise date (gmt) # {sunrise}, until sunrise {datetime.now(tz_info)}, current time (gmt)")
-        if sunrise < timedelta(hours=1) and sunrise > timedelta(hours=-1):
+        if timedelta(hours=1) > sunrise > timedelta(hours=-1):
             multiplier += 10
             curve -= 0.5
             currmethods = currmethods | 8
@@ -1174,12 +1199,9 @@ You can get free pills each day with the /daily command
             await ctx.send(embed=embedMsg)
             msg = await ctx.original_message()
             await asyncio.sleep(2)
-            if len(self.usedcompliments) > 5:
-                self.usedcompliments.pop()
-            self.usedcompliments.add(message)
             if message not in self.usedcompliments:
-                message = [antimakkcen(word.casefold()) for word in message.split(" ")]
-                compliments = len(good_words.intersection(message)) - len(bad_words.intersection(message))
+                messagelist = [antimakkcen(word.casefold()) for word in message.split(" ")]
+                compliments = len(good_words.intersection(messagelist)) - len(bad_words.intersection(messagelist))
 
                 multiplier += 2.2 * min(5, compliments)
                 curve -= min(5, compliments) * 0.12
@@ -1196,12 +1218,26 @@ You can get free pills each day with the /daily command
                 elif compliments < -4 and "playa" not in user.achi:
                     await user.updateUserAchi(ctx, "playa")
 
+                #compliment logger
+                if len(self.usedcompliments) > 5:
+                    self.usedcompliments.pop()
+                self.usedcompliments.add(message)
+            else:
+                embedMsg.add_field(name=random.choice(duplicate_responses),value=emoji.emojize(random.choice(bad_emojis)),inline=False)
+
+
         # temperature adjustment
         pocasieOffset = ((7 - abs(7 - datetime.now().month)) - 1) * 3  # average temperature okolo ktorej bude pocitat <zcvrk alebo rast>
         if self.temperature > pocasieOffset + 5:
             currmethods = currmethods | 4
         curve -= (self.temperature - pocasieOffset) / 20
         multiplier += self.temperature - pocasieOffset
+
+        #moon phase checker
+        if int(moon.phase()) in range(14,21):
+            multiplier += 10
+            curve -= 0.1
+            currmethods = currmethods | 64
 
         # holding checker
         try:
@@ -1249,12 +1285,12 @@ You can get free pills each day with the /daily command
                 await ctx.channel.send(embed=discord.Embed(title=(str(3 * star) + "Wow! {} has made a new record!" + str(3 * star)).format(ctx.user.name),description="Drumroll please... " + emoji.emojize(":drum:"), color=discord.Colour.gold()))
                 await asyncio.sleep(2)
             if pipik > self.leaderboards[str(ctx.guild_id)][4][1]:  # if bigger than the smallest on the leaderboard
-                self.updateLeaderBoard(str(ctx.guild_id), ctx.user.name, pipik)
+                self.updateLeaderBoard(str(ctx.guild_id), ctx.user.id, pipik)
             if pipik < self.loserboards[str(ctx.guild_id)][4][1]:  # if smaller than the biggest on the leaderboard
-                self.updateLoserBoard(str(ctx.guild_id), ctx.user.name, pipik)
+                self.updateLoserBoard(str(ctx.guild_id), ctx.user.id, pipik)
         else:
-            self.updateLeaderBoard(str(ctx.guild_id), ctx.user.name, pipik)
-            self.updateLoserBoard(str(ctx.guild_id), ctx.user.name, pipik)
+            self.updateLeaderBoard(str(ctx.guild_id), ctx.user.id, pipik)
+            self.updateLoserBoard(str(ctx.guild_id), ctx.user.id, pipik)
 
         # size achi checker
         if pipik > 300:
@@ -1272,22 +1308,23 @@ You can get free pills each day with the /daily command
             user.methods
         except KeyError:
             user.methods = 0
-        if currmethods == 63 and "desperate" not in user.achi:
+        if currmethods == 127 and "desperate" not in user.achi:
             await user.updateUserAchi(ctx, "desperate")
-        await self.updateUserStats(user, "methods", user.methods | currmethods)
-        if user.methods == 63 and "tested" not in user.achi:
+        if currmethods | user.methods != user.methods:
+            await self.updateUserStats(user, "methods", user.methods | currmethods)
+        if user.methods == 127 and "tested" not in user.achi:
             await user.updateUserAchi(ctx, "tested")
 
         # final printer
+        footertext = f'{emoji.emojize(":handshake:",language="alias") if currmethods & 1 else ""}{emoji.emojize(":heart_eyes:",language="alias") if currmethods & 2 else ""}{emoji.emojize(":thermometer:",language="alias") if currmethods & 4 else ""}{emoji.emojize(":sunrise:",language="alias") if currmethods & 8 else ""}{emoji.emojize(":fist:",language="alias") if currmethods & 16 else ""}{emoji.emojize(":pill:",language="alias") if currmethods & 32 else ""}{emoji.emojize(":waning_gibbous_moon:",language="alias") if currmethods & 64 else ""}'
         embedMsg.title = f"*{ctx.user.display_name}* has **{pipik}** cm long pp!"
         embedMsg.description = str("o" + (min(4094, (int(pipik) // 10)) * "=") + "3")
+        embedMsg.set_footer(text=footertext,icon_url=ctx.user.avatar.url)
+        embedMsg.timestamp = datetime.now()
         if msg:
             await msg.edit(embed=embedMsg)
         else:
-            msg = await ctx.send(embed=embedMsg)
-        if sunrise and type(sunrise) != str:
-            if timedelta(hours=1) > sunrise > timedelta(hours=-1):
-                await msg.add_reaction(emoji.emojize(":sunrise:"))
+            await ctx.send(embed=embedMsg)
 
 os.chdir(root)
 if not args.minimal and not args.no_maths:

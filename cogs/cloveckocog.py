@@ -528,7 +528,6 @@ class LobbyCog(commands.Cog):
             if result!="-1":
                 cloveceLogger.debug(f"kicking player number {result}")
                 tokick = self.lobby.players[int(result)]
-                print(tokick,self.lobby.players)
                 if isinstance(tokick,LobbyCog.Bot):
                     self.lobby.bot_icons.append(tokick.icon)
                     self.lobby.bot_names.append(tokick.name)
