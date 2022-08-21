@@ -22,6 +22,7 @@ class PsCog(commands.Cog):
             try:
                 gener = broadcasty(ip)
             except ValueError as e:
+                pslogger.error(e)
                 return interaction.send(f"Oopsie {e}")
             embedVar = discord.Embed(title="Broadcast kalkulačka", description=f"pre adresu {ip}", color=interaction.user.color,timestamp=datetime.now())
             broadcaststr,idstr = "",""
@@ -36,39 +37,45 @@ class PsCog(commands.Cog):
     class IpCalcModal(discord.ui.Modal):
         def __init__(self):
             super().__init__(title="IP kalkulačka")
+
             self.iplabel = discord.ui.TextInput(label="IP", default_value="192.168.1.", max_length=15, required=True)
             self.add_item(self.iplabel)
-            #self.masklabel = discord.ui.TextInput(label="Maska (/)", placeholder="24-30", max_length=2, required=False)
-            #self.add_item(self.masklabel)
-            #self.adresslabel = discord.ui.TextInput(label="Počet adries", placeholder="0-256", max_length=3, required=False)
-            #self.add_item(self.adresslabel)
 
-            self.adressselect = discord.ui.Select(placeholder="Počet adries | Maska",options=[discord.SelectOption(value=str(32-i),label=f"Počet adries: {2 ** i}/ Maska: {32-i}") for i in range(1,9)])
-            self.add_item(self.adressselect)
+            self.masklabel = discord.ui.TextInput(label="Maska (/)", placeholder="24-30", max_length=2, required=False)
+            self.add_item(self.masklabel)
+            self.adresslabel = discord.ui.TextInput(label="alebo Počet adries", placeholder="0-256", max_length=3, required=False)
+            self.add_item(self.adresslabel)
+
+            #self.adressselect = discord.ui.Select(placeholder="Počet adries | Maska",options=[discord.SelectOption(value=str(32-i),label=f"Počet adries: {2 ** i}/ Maska: {32-i}") for i in range(1,9)])
+            #self.add_item(self.adressselect)
 
         async def callback(self, interaction: discord.Interaction):
             ip = self.iplabel.value
-            #try:
-                #mask = int(self.masklabel.value) if self.masklabel.value else None
-                #adress = int(self.adresslabel.value) if self.adresslabel.value else None
-            #except ValueError as e:
-                #await interaction.send(f"{e.args[0]} musí byt čislo!")
-                #return
             if "/" in ip:
                 ip,mask = ip.split("/")
-            #if mask and adress:
-            #    await interaction.send(f"Zadaj iba jedno z polí: \n__Maska__ ALEBO __Počet adries__")
-            #if not (mask or adress):
-            #    await interaction.send(f"Zadaj aspoň jedno z polí: \n__Maska__ ALEBO __Počet adries__")
-            #if mask and not 24 <= mask <= 32:
-            #    await interaction.send(f"Maska musí byť medzi 24 a 32")
-            #if adress and not 0 <= adress <= 256:
-            #    await interaction.send(f"Počet adries musí byť medzi 0 a 256")
-            mask = int(self.adressselect.values[0])
+
             try:
-                calc = Adress(ip,mask)
-                pslogger.debug(calc.__dict__)
+                mask = int(self.masklabel.value) if self.masklabel.value else None
+                adress = int(self.adresslabel.value) if self.adresslabel.value else None
             except ValueError as e:
+                await interaction.send(f"{e.args[0]} musí byt čislo!")
+                return
+
+            if mask and adress:
+               await interaction.send(f"Zadaj iba jedno z polí: \n__Maska__ ALEBO __Počet adries__")
+            if not (mask or adress):
+               await interaction.send(f"Zadaj aspoň jedno z polí: \n__Maska__ ALEBO __Počet adries__")
+            if mask and not 24 <= mask <= 32:
+               await interaction.send(f"Maska musí byť medzi 24 a 32")
+            if adress and not 0 <= adress <= 256:
+               await interaction.send(f"Počet adries musí byť medzi 0 a 256")
+
+            #mask = int(self.adressselect.values[0])
+            try:
+                calc = Adress(ip, mask)
+                #pslogger.debug(calc.__dict__)
+            except ValueError as e:
+                pslogger.error(e)
                 await interaction.send(f"Oops {e.args[0]}")
                 return
             embedVar = discord.Embed(title="Subnetwork calc",color=interaction.user.color,timestamp=datetime.now())

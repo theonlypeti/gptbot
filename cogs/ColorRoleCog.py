@@ -106,12 +106,12 @@ class ColorRoleCog(commands.Cog):
         await self.resetcustomcolor(interaction)
         await interaction.send("Done", ephemeral=True)
 
-    @mycolor.subcommand(name="fromrgb", description="Pick a color from RGB values")
+    @mycolor.subcommand(name="rgb", description="Pick a color from RGB values")
     async def mycolorrgb(self,interaction):
         modal = self.RGBModal(self)
         await interaction.response.send_modal(modal)
 
-    @mycolor.subcommand(name="fromhex", description="Pick a color with a hex code")
+    @mycolor.subcommand(name="hex", description="Pick a color with a hex code")
     async def mycolorhex(self,interaction):
         modal = self.HexModal(self)
         await interaction.response.send_modal(modal)
@@ -125,7 +125,7 @@ class ColorRoleCog(commands.Cog):
         for n, color in enumerate(palette):
             im1 = npzeros((100, 100, 3), dtype='uint8')
             im1[:, :] = color
-            imsave("fname.png", im1)
+            imsave("fname.png", im1) # TODO do with IO again
             with open("fname.png", "rb") as file:
                 emojis.append(await self.emoteserver.create_custom_emoji(name="a".join(map(str, color)), image=file.read()))
             os.remove("fname.png")
@@ -134,14 +134,14 @@ class ColorRoleCog(commands.Cog):
         await interaction.send(view=viewObj)
 
     @mycolor.subcommand(description="Lets you pick your color from any uploaded picture.")
-    async def uploadimg(self,interaction, uploaded: discord.Attachment = discord.SlashOption(name="image",description="The image from which the colors are picked from.",required=True)):
+    async def image(self,interaction, uploaded: discord.Attachment = discord.SlashOption(name="image",description="The image from which the colors are picked from.",required=True)):
         await interaction.response.defer()
         with open("temp.png", "wb") as file:
-            await uploaded.save(file)
+            await uploaded.save(file) #TODO learn how to do this with IO without downloading the whole file
         await self.pickColorFromPic(interaction)
 
     @mycolor.subcommand(description="Lets you pick your color from your profile picture.")
-    async def frompfp(self,interaction):
+    async def pfp(self,interaction):
         await interaction.response.defer()
         with open("temp.png", "wb") as file:
             await interaction.user.display_avatar.save(file)
@@ -156,12 +156,12 @@ class ColorRoleCog(commands.Cog):
         hexcode = f"{hex(color.r)[2:].zfill(2)}{hex(color.g)[2:].zfill(2)}{hex(color.b)[2:].zfill(2)}".upper()
         embedVar = discord.Embed(title="Color", color=color)
         embedVar.add_field(name="#", value=hexcode,inline=False)
-        colors = (emoji.emojize(i) for i in [":red_square:",":green_square:",":blue_square:"])
+        colors = (emoji.emojize(i) for i in [":red_square:", ":green_square:", ":blue_square:"])
         for key,val in zip(colors,color.to_rgb()):
             embedVar.add_field(name=f"{key}", value=f"{val}", inline=True)
         embedVar.fields[1].inline = False
         embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}", icon_url=interaction.user.avatar.url)
         await interaction.send(embed=embedVar)
 
-def setup(client,baselogger):
+def setup(client,baselogger): #TODO maybe add some logging messages
     client.add_cog(ColorRoleCog(client))

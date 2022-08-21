@@ -86,8 +86,12 @@ class AisCog(commands.Cog):
                         await channel.send(embed=embedVar,view=viewObj)
         self.temy = c
 
-    class NotificationButton(discord.ui.View):
+    @printer.before_loop
+    async def before_printer(self):
+        self.aisLogger.debug('getting temy')
+        await self.client.wait_until_ready()
 
+    class NotificationButton(discord.ui.View):
         @discord.ui.button(emoji=emoji.emojize(':no_bell:', language="alias"),label="Don't notify me")
         async def unsub(self, button, ctx: discord.Interaction):
             try:
@@ -108,11 +112,6 @@ class AisCog(commands.Cog):
             super().__init__(timeout=None)
             self.add_item(discord.ui.Button(label="Zobraz temy (copy link)",url="https://is.stuba.sk/auth/student/zp_temata.pl?seznam=1",style=discord.ButtonStyle.url,emoji=emoji.emojize(":globe_with_meridians:")))
 
-    @printer.before_loop
-    async def before_printer(self):
-        self.aisLogger.debug('getting temy')
-        await self.client.wait_until_ready()
-
     @discord.slash_command(description="Commands for STU bakalarka témy")
     async def bakalarka(self, interaction):
         pass
@@ -124,7 +123,7 @@ class AisCog(commands.Cog):
             await interaction.send(embed=discord.Embed(description="Tento channel už má setupované notifikácie.",color=discord.Color.red()),ephemeral=True)
             return
         self.channels.append(interaction.channel.id)
-        with open(root+r"/data/ais_notif_channels.txt", "w",encoding="UTF-8") as file:
+        with open(root+r"/data/ais_notif_channels.txt", "w", encoding="UTF-8") as file:
             json.dump(self.channels, file, indent=4)
         if (role:=(discord.utils.find(lambda m: m.name == 'Bakalarka notifications', interaction.guild.roles))) is None:
             role = await interaction.guild.create_role(name="Bakalarka notifications",mentionable=True,color=discord.Color.dark_red())
@@ -140,30 +139,29 @@ class AisCog(commands.Cog):
         with open(root+r"/data/ais_notif_channels.txt", "w",encoding="UTF-8") as file:
             json.dump(self.channels, file, indent=4)
         viewObj = self.RemoveRoleView(interaction.user)
-        msg = await interaction.send(embed=discord.Embed(description="Notifikácie pre témy bakalárskych prác boli odstránené v tomto kanáli.",color=discord.Color.dark_red()),view=viewObj)
-        viewObj.message = msg
+        await interaction.send(embed=discord.Embed(description="Notifikácie pre témy bakalárskych prác boli odstránené v tomto kanáli.",color=discord.Color.dark_red()),view=viewObj)
 
     class RemoveRoleView(discord.ui.View):
         def __init__(self,user: discord.User):
             self.original_user = user
-            self.message: discord.Message = None
             super().__init__(timeout=None)
+
+        async def interaction_check(self, interaction: discord.Interaction) -> bool:
+            return interaction.user == self.original_user #TODO test this
 
         @discord.ui.button(emoji=emoji.emojize(':wastebasket:', language="alias"), label="Vymaž aj rolu",style=discord.ButtonStyle.danger)
         async def deleterole(self, button, interaction:discord.Interaction):
             try:
                 if (role := discord.utils.find(lambda m: m.name == 'Bakalarka notifications',interaction.guild.roles)) is not None:
                     await role.delete(reason=f"{interaction.user.name}#{interaction.user.discriminator} disabled notification channel {interaction.channel.name} for bakalarka temy")
-                await self.message.edit(view=None)
+                await interaction.message.edit(view=None)
             except Exception as e:
                 logging.error(e)
                 await interaction.send(e)
 
         @discord.ui.button(emoji=emoji.emojize(':check_mark_button:', language="alias"), label="Iba presúvam channel")
         async def keeprole(self, button, interaction:discord.Interaction):
-            await self.message.edit(view=None)
-
-
+            await interaction.message.edit(view=None)
 
 def setup(client,baselogger): #bot shit
     client.add_cog(AisCog(client,baselogger))
