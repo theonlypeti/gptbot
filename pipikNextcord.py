@@ -455,7 +455,7 @@ cogs.remove("cloveckocog.py") if args.no_clovece or args.minimal else None
 cogs.remove("topiccog.py") if args.no_topic or args.minimal else None
 cogs.remove("currencyCog.py") if args.no_currency or args.minimal else None
 cogs.remove("testing.py") if args.no_testing else None
-cogs.remove("pipikcog.py") if args.no_pipik else None
+cogs.remove("pipikcog.py") if args.no_pipik or args.minimal else None
 
 for n, file in enumerate(cogs, start=1):
     if file.endswith(".py"):
