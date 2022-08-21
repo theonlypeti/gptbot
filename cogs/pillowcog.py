@@ -1,5 +1,5 @@
 import io
-
+import os
 import PIL.ImageQt
 import emoji
 import nextcord as discord
@@ -7,10 +7,12 @@ from nextcord.ext import commands
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageFilter, ImageOps
 from io import BytesIO
 
-THUMBNAIL_SIZE = (720,480)
+THUMBNAIL_SIZE = (720, 480)
+
+#TODO make working on selections only
 
 class PillowCog(commands.Cog):
-    def __init__(self,client,baselogger):
+    def __init__(self,client, baselogger):
         self.client = client
 
     class EditorView(discord.ui.View):
@@ -62,6 +64,7 @@ class PillowCog(commands.Cog):
             await interaction.response.defer()
             self.img.save(f"{interaction.user.id}.{self.filetype}")
             await self.message.edit(file=discord.File(f"{interaction.user.id}.{self.filetype}"),view=None)
+            os.remove(f"{interaction.user.id}.{self.filetype}") #somehow learn how to do IOBytes :(
 
     class RescaleView(discord.ui.View):
         def __init__(self,returnView: discord.ui.View):
@@ -217,7 +220,7 @@ class PillowCog(commands.Cog):
             await self.message.edit(file=discord.File(f"{interaction.user.id}.{self.filetype}"))
 
         @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"))
-        async def finalizecropbutton(self, button, interaction):
+        async def finalizeflipbutton(self, button, interaction):
             await interaction.response.defer()
             await self.message.edit(view=self.cog.EditorView(self.cog, self.message, self.img, self.filetype))
 
@@ -350,7 +353,7 @@ class PillowCog(commands.Cog):
         filetype = img.content_type.split("/")[1]
         image = await img.read()
         image = Image.open(BytesIO(image))
-        self.makeThumbnail(interaction, image, filetype)
+        await self.makeThumbnail(interaction, image, filetype)
         viewObj = self.EditorView(self, interaction.message, image, filetype)
         message = await interaction.send(file=discord.File(f"{interaction.user.id}.{filetype}"), view=viewObj)
         viewObj.message = message

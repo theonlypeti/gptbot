@@ -9,7 +9,7 @@ class FujkinCog(commands.Cog):
 
     @tasks.loop(minutes=30)
     async def fujkin(self):
-        wind = round(pyowm.OWM("385bfdf19d55e8f1d667cad1fad28568").weather_manager().weather_at_place("Dunajská Streda,sk").weather.wind()["speed"] * 3.6,2)
+        wind = round(pyowm.OWM("385bfdf19d55e8f1d667cad1fad28568").weather_manager().weather_at_place("Dunajská Streda,sk").weather.wind()["speed"] * 3.6, 2)
         if wind > 30:
             if not self.does_it_fujkin: #ne spameljen annyit
                 self.does_it_fujkin = True

@@ -1,5 +1,5 @@
 import random
-from typing import Union
+from typing import Union, List
 import nextcord as discord
 from nextcord.ext import commands
 import numpy as np
@@ -9,7 +9,6 @@ from random import choices,choice,randint
 #import __future__.annotations
 from copy import deepcopy as new #maybe useful for equipping items
 from funcy import print_durations
-#from pipikNextcord import cogs #maybe stupid, used for getCurrentTile -> notation
 
 def chance(percent: Union[int, float]) ->bool:
     return choices((True,False),weights=(percent,100-percent))[0]
@@ -92,7 +91,8 @@ class Noise(object):
         plt.show()
         return grid
 
-class RPGGame(object):
+
+class RPGGame:
 
     class Spell(object):
         def __init__(self,name,manacost,effects,selfeffects,hpcost=0,mpcost=0,duration=0,cooldown=0,lvl=1,description=''):
@@ -166,7 +166,7 @@ class RPGGame(object):
             player.hp -= self.atk
             return f"{self.display_name} attacks {player.display_name} for {self.atk} damage!"
 
-        def recalculateStats(self):
+        def recalculateStats(self): #TODO use @property decorator instead maybe? might be too invested in this
             self.stunned = False
             for effect in self.effects:
                 if effect.hasattr("hpeffect"):
@@ -314,15 +314,15 @@ class RPGGame(object):
 
     # ------------------------------------------
 
-    class Effect(object):
+    class Effect(object): #might be a bad and weak and rigid implementation
         def __init__(self,name,duration,target,**kwargs):
             self.wherefrom = "Unknown" #Where the effect came from potion or item or whatever
             self.name = name
             self.duration = duration  # turns
             self.target = target #Who the effect is applied to  #not unused, used in ticking down
 
-            self.hpeffect = {"flat":0,"multiplier":1,"set":None} #beware, multiplier deals based on maxhealth
-            self.manaeffect = {"flat":0,"multiplier":1,"set":None} #beware, multiplier deals based on maxmana
+            self.hpeffect = {"flat": 0,"multiplier": 1,"set": None} #beware, multiplier deals based on maxhealth
+            self.manaeffect = {"flat": 0,"multiplier": 1,"set": None} #beware, multiplier deals based on maxmana
 
             # #these up are applied forever, below are temporary
             # self.maxhpeffect = {"flat":0,"multiplier":1,"set":None}
@@ -388,7 +388,7 @@ class RPGGame(object):
             return self.isPlayer or self.icon
 
     class Player(object):
-        def __init__(self, user, terkep, _base_baseintelligence=None):
+        def __init__(self, user, terkep):
             self.id = user.id
             self.name = user.display_name
             #self.viewport
@@ -437,7 +437,7 @@ class RPGGame(object):
 
             #effects apply to below values
             self.strength = self._base_strength
-            self.intelligence = _base_baseintelligence
+            self.intelligence = self._base_intelligence
             self.agility = self._base_agility
 
             self.calculateTurn() #calculate all the stats
@@ -473,19 +473,19 @@ class RPGGame(object):
                 if effect.hasattr("strengtheffect"):
                     self.strength += effect.strengtheffect["flat"]
                     self.strength = effect.strengtheffect["multiplier"]*self.strength
-                    if effect.strengtheffect["set"] != None:
+                    if effect.strengtheffect["set"] is not None:
                         self.strength = effect.strengtheffect["set"]
 
                 if effect.hasattr("intelligenceeffect"):
                     self.intelligence += effect.intelligenceeffect["flat"]
                     self.intelligence = effect.intelligenceeffect["multiplier"]*self.intelligence
-                    if effect.intelligenceeffect["set"] != None:
+                    if effect.intelligenceeffect["set"] is not None:
                         self.intelligence = effect.intelligenceeffect["set"]
 
                 if effect.hasattr("agilityeffect"):
                     self.agility += effect.agilityeffect["flat"]
                     self.agility = effect.agilityeffect["multiplier"]*self.agility
-                    if effect.agilityeffect["set"] != None:
+                    if effect.agilityeffect["set"] is not None:
                         self.agility = effect.agilityeffect["set"]
 
 
@@ -535,13 +535,13 @@ class RPGGame(object):
                 if effect.hasattr("critchanceeffect"):
                     self.critchance += effect.critchanceeffect["flat"]
                     self.critchance += self.critchance * effect.critchanceeffect["multiplier"]
-                    if effect.critchanceeffect["set"]!= None:
+                    if effect.critchanceeffect["set"] is not None:
                         self.critchance = effect.critchanceeffect["set"]
 
                 if effect.hasattr("luckeffect"):
                     self.luck += effect.luckeffect["flat"]
                     self.luck *= effect.luckeffect["multiplier"]
-                    if effect.luckeffect["set"]!= None:
+                    if effect.luckeffect["set"] is not None:
                         self.luck = effect.luckeffect["set"]
 
                 effect.tickEffect()
@@ -555,14 +555,14 @@ class RPGGame(object):
             if self.agility >= random.randint(0,sum([i.attack for i in enemies])):
                 return True
 
-        def getCurrentTile(self): #-> Tile:
+        def getCurrentTile(self):# -> RPGGame.Tile:
             x,y = self.position
             return self.terkep.grid[x][y]
 
         def levelup(self) -> None:
             if self.xp >= self.xpreq:
                 self.xp -= self.xpreq
-                self.xpreq *=2
+                self.xpreq *= 2
                 self.lvl += 1
 
         class LvlUpButtons(discord.ui.View):
@@ -572,17 +572,17 @@ class RPGGame(object):
 
             @discord.ui.button(emoji=emoji.emojize(":fist:",language="alias"),label="STR",style=discord.ButtonStyle.red)
             async def strbutton(self,button,ctx):
-                self.player.strength+=1
+                self.player.strength += 1
                 await self.finishlevelup(ctx)
 
             @discord.ui.button(emoji=emoji.emojize(":magic_wand:",language="alias"),label="INT",style=discord.ButtonStyle.blurple)
             async def intbutton(self,button,ctx):
-                self.player.intelligence +=1
+                self.player.intelligence += 1
                 await self.finishlevelup(ctx)
 
             @discord.ui.button(emoji=emoji.emojize(":man_running:",language="alias"),label="AGI",style=discord.ButtonStyle.green)
             async def agibutton(self,button,ctx):
-                self.player.agility+=1
+                self.player.agility += 1
                 await self.finishlevelup(ctx)
 
             @discord.ui.button(emoji=emoji.emojize(":x:", language="alias"), label="Back", style=discord.ButtonStyle.grey)
@@ -636,9 +636,9 @@ class RPGGame(object):
 
         class EquipButtons(discord.ui.View):
             def __init__(self,player,backview,backembed):
-                self.player:RPGGame.Player = player
-                self.backview:discord.ui.View = backview
-                self.backembed:discord.Embed = backembed
+                self.player: RPGGame.Player = player
+                self.backview: discord.ui.View = backview
+                self.backembed: discord.Embed = backembed
                 print("Sanika",self.player)
                 super().__init__()
 
@@ -879,7 +879,7 @@ class RPGCog(commands.Cog):
     class MapMoveButtons(discord.ui.View):
         def __init__(self,player, timeout=180):
             super().__init__(timeout=timeout)
-            self.player = player
+            self.player: RPGGame.Player = player
 
         #async def interaction_check(self, interaction):
             #return self.ctx.author == interaction.user
@@ -898,7 +898,7 @@ class RPGCog(commands.Cog):
             await interaction.response.edit_message(content=self.player.move("up right",self),embed=self.player.statEmbed(interaction.user.color),view=self)
 
         @discord.ui.button(style=discord.ButtonStyle.gray,emoji=emoji.emojize(":shirt:",language="alias"))
-        async def showeqpbut(self,button,interaction):
+        async def showeqpbut(self,button,interaction: discord.Interaction):
             await interaction.edit(embed=self.player.showEqp(),view=self.player.EquipButtons(self.player,self,interaction.message.embeds[0]))
 
         @discord.ui.button(style=discord.ButtonStyle.grey,emoji=emoji.emojize(":star:",language="alias"),disabled=False)

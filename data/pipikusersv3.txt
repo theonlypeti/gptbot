@@ -46,16 +46,20 @@
             [
                 2,
                 3
+            ],
+            [
+                0,
+                1
             ]
         ],
-        "pill": 0,
+        "pill": null,
         "pillPopTime": "2022-08-16T20:24:05.592088",
         "pb": 52869.899,
         "pw": 0.013,
-        "cd": null,
+        "cd": "2022-08-21T00:04:33.430277",
         "methods": 127,
         "dailyStreak": 1,
-        "dailyDate": "2022-08-16T00:00:00"
+        "dailyDate": "2022-08-21"
     },
     {
         "id": 307985197926973452,
@@ -154,7 +158,8 @@
         "pb": 160.567,
         "pw": 0.323,
         "cd": null,
-        "methods": 63
+        "methods": 63,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 756092460265898054,
@@ -176,7 +181,8 @@
         "pb": 232.578,
         "pw": 0.697,
         "cd": null,
-        "methods": 7
+        "methods": 7,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 735473733753634827,
@@ -264,7 +270,8 @@
         "pb": 223.886,
         "pw": 0.23,
         "cd": null,
-        "methods": 8
+        "methods": 8,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 752791254768681020,
@@ -293,7 +300,8 @@
         "pb": 221.221,
         "pw": 0.06,
         "cd": null,
-        "methods": 39
+        "methods": 39,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 677496112860626975,
@@ -317,7 +325,8 @@
         "pb": 108.271,
         "pw": 0.156,
         "cd": null,
-        "methods": 26
+        "methods": 26,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 623926024714846213,
@@ -370,7 +379,8 @@
         "cd": null,
         "methods": 8,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 689532690860474374,
@@ -386,7 +396,8 @@
         "pb": 219.855,
         "pw": 1.316,
         "cd": null,
-        "methods": 5
+        "methods": 5,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 138022532338024448,
@@ -399,7 +410,8 @@
         "cd": null,
         "methods": 6,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 413759409634672642,
@@ -412,7 +424,8 @@
         "cd": null,
         "methods": 20,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 692319558425509938,
@@ -425,7 +438,8 @@
         "cd": null,
         "methods": 0,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 348038728087764992,
@@ -486,7 +500,9 @@
         "cd": null,
         "methods": 20,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 453146166591488003,
@@ -502,7 +518,9 @@
         "cd": null,
         "methods": 6,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 284764580675190784,
@@ -543,7 +561,7 @@
         "methods": 63,
         "pill": null,
         "pillPopTime": "2021-10-19T19:48:47.346062",
-        "dailyDate": "2022-08-16",
+        "dailyDate": "2022-08-16T00:00:00",
         "dailyStreak": 1
     },
     {
@@ -584,7 +602,9 @@
         "cd": null,
         "methods": 4,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 241985516914999296,
@@ -596,7 +616,9 @@
         "cd": null,
         "methods": 4,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 345901480319909898,
@@ -608,7 +630,9 @@
         "cd": null,
         "methods": 4,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 786672717533020170,
@@ -620,7 +644,9 @@
         "cd": null,
         "methods": 5,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 319840737359298560,
@@ -632,7 +658,9 @@
         "cd": null,
         "methods": 4,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 652902606963736589,
@@ -646,7 +674,9 @@
         "cd": null,
         "methods": 17,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 302142965009088514,
@@ -663,7 +693,9 @@
         "cd": null,
         "methods": 1,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 358149204180205572,
@@ -677,7 +709,9 @@
         "cd": null,
         "methods": 1,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 663892628902772760,
@@ -691,7 +725,9 @@
         "cd": null,
         "methods": 1,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 835166714659995729,
@@ -703,7 +739,9 @@
         "cd": null,
         "methods": 0,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 478185658859651103,
@@ -715,7 +753,9 @@
         "cd": null,
         "methods": 0,
         "pill": null,
-        "pillPopTime": 0
+        "pillPopTime": 0,
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 618079591965392896,
@@ -728,7 +768,8 @@
         "methods": 0,
         "pill": null,
         "pillPopTime": 0,
-        "dailyStreak": 0
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 437296986593427458,
@@ -741,7 +782,8 @@
         "methods": 0,
         "pill": null,
         "pillPopTime": 0,
-        "dailyStreak": 0
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 352515892950859776,
@@ -754,7 +796,8 @@
         "methods": 0,
         "pill": null,
         "pillPopTime": 0,
-        "dailyStreak": 0
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 948639577546063932,
@@ -767,7 +810,8 @@
         "methods": 0,
         "pill": null,
         "pillPopTime": 0,
-        "dailyStreak": 0
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 451460196410327051,
@@ -879,7 +923,8 @@
         "methods": 0,
         "pill": null,
         "pillPopTime": 0,
-        "dailyStreak": 0
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     },
     {
         "id": 555111438750973974,
@@ -911,6 +956,7 @@
         "methods": 4,
         "pill": null,
         "pillPopTime": 0,
-        "dailyStreak": 0
+        "dailyStreak": 0,
+        "dailyDate": "2022-08-19"
     }
 ]

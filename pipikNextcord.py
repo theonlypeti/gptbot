@@ -69,11 +69,9 @@ already_checked = []
 # TODO properly integrate matstat stuff
 # TODO make emojis for pills
 # TODO make a better help command
-# TODO redo the leaderboards because i am storing a pair of (user, score) in a list lol, actually not even a user, but only their name
 # TODO make pipikbot users a dict of id:user instead of a list of users, also redo the getUserFromDC func then
 # TODO make an actual lobby extension
 # TODO make pills buttons edit message not reply
-# TODO move pipipkcog into a separate file
 
 intents = discord.Intents.all() #TODO remember what do i use members intent for?!?!! update: members is used when checking if guild is premium for example
 intents.presences = False
@@ -178,7 +176,7 @@ async def time(ctx,
             embedVar.add_field(name="optional message:", value="Brb {}; Meeting starts at {} be there!")
             await ctx.send(embed=embedVar)
             return
-        if arg and arg == "raw":
+        if arg and arg == "raw": #TODO consider https://docs.nextcord.dev/en/latest/api.html#nextcord.utils.format_dt
             timestr = "`<t:" + str(int(timestr.timestamp())) + ":R>`"
         elif arg and arg == "raw+full":
             timestr = "`<t:" + str(int(timestr.timestamp())) + ":F>`"

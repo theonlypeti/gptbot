@@ -1,4 +1,6 @@
 import os
+from typing import Union, Optional
+
 import nextcord as discord
 from nextcord.ext import commands
 import asyncio
@@ -70,7 +72,7 @@ class LobbyCog(commands.Cog):
     class SpinButton(discord.ui.View):
         def __init__(self,cog):
             self.cog = cog
-            super().__init__()
+            super().__init__(timeout=None)
 
         @discord.ui.button(label="Test your luck?",emoji=spinTokenIcon)
         async def callback(self,button,interaction):
@@ -541,7 +543,7 @@ class LobbyCog(commands.Cog):
         def __init__(self,lobby,cog):
             self.lobby = lobby
             self.cog = cog
-            super().__init__(timeout=600)
+            super().__init__(timeout=None)
 
         @discord.ui.button(label="Add Bot",style=discord.ButtonStyle.grey,emoji=emoji.emojize(":robot:"))
         async def addbotbutton(self,button,inter):
@@ -587,7 +589,7 @@ class LobbyCog(commands.Cog):
             await lobbymessage.edit(embed=newLobby.show(),view=viewObj)
         
     class Lobby(object):
-        def __init__(self,ctx,messageid,cog,private=False):
+        def __init__(self, ctx, messageid, cog, private=False):
             self.cog = cog
             self.players = []
             self.private = private
@@ -598,7 +600,7 @@ class LobbyCog(commands.Cog):
             self.ongoing = False
             self.managemsg = None
             self.messageid = messageid
-            self.lobbyleader = ctx.user
+            self.lobbyleader = ctx.user #TODO have better names below
             self.bot_names = ["Bot Šaňo","Bot Matilda","Bot Kazimír","Bot Blahomíra","Bot Ladislav","Bot Stanislav","Bot Stanislava","Bot Euridika","Bot Edmund","Bot Vladimir","Bot Vlastimil","Bot Svätopluk"]
             self.bot_icons = [":computer:",":desktop_computer:",":space_invader:",":robot:"]
             shuffle(self.bot_names) #zoznam mien z ktorych si BOTi random vyberaju
@@ -627,35 +629,35 @@ class LobbyCog(commands.Cog):
             viewObj.children[0].disabled = bool(self.private)
             if not self.ongoing:
                 if all(readys) and len(readys)>1 and uniqueIcons:
-                    viewObj.children[-1].disabled=False
+                    viewObj.children[-1].disabled = False
                     cloveceLogger.debug("all players ready to go")
                     await self.messageid.edit(embed=self.show(), view=viewObj) #KEEP THIS HERE!!! NOT DUPLICATE
                     return True
                 else:
-                    viewObj.children[-1].disabled=True
+                    viewObj.children[-1].disabled = True
                     cloveceLogger.debug("not all players ready to go")
             else:
                 for child in viewObj.children:
-                    child.disabled=True
+                    child.disabled = True
             await self.messageid.edit(embed=self.show(), view=viewObj)
             return False
 
-        async def start(self,ctx):
-            #if await self.readyCheck():
+        async def start(self,ctx) -> None:
+            #if await self.readyCheck(): #hold on why is it like this #looks like this is working as intended
             if True:
                 if not self.ongoing:
                     self.ongoing = True
-                    await self.readyCheck()
-                    game = CloveceCog(self)
-                    for player in self.players:
-                        game.playerList.append(Player(player.name,isCPU=True if type(player)==self.cog.Bot else False,diffculty="Normal" if type(player)==self.cog.User else player.diffculty ,ikonky=player.icon,houseIcon=game.houseIcon,profile=player))
-                    await game.cloveceStart(ctx)
+                    await self.readyCheck() #this is needed to update the view
+                    game = CloveceCog(self) #create game
+                    for player in self.players: #add players to game
+                        game.playerList.append(Player(player.name, isCPU=True if type(player) == self.cog.Bot else False, diffculty="Normal" if type(player) == self.cog.User else player.diffculty ,ikonky=player.icon,houseIcon=game.houseIcon,profile=player))
+                    await game.cloveceStart(ctx) #start game
                     self.cog.savePlayers()
                 else:  #TODO should not be achievable as the start button should be disabled when game is ongoing
                     await ctx.send(embed=discord.Embed(title="A game is already running.",color=discord.Color.red()),ephemeral=True)
                     cloveceLogger.warning("ongoing game")
         
-        async def addPlayer(self,player,ctx):
+        async def addPlayer(self,player,ctx) -> None:
             if len(self.players) < 4:
                 if not self.ongoing:
                     if not isinstance(player,self.cog.Bot):
@@ -674,7 +676,7 @@ class LobbyCog(commands.Cog):
             else:
                 await ctx.send(embed=discord.Embed(title="Lobby is already full!",color=discord.Color.red()),ephemeral=True)
 
-        async def removePlayer(self,ctx,player):
+        async def removePlayer(self,ctx,player) -> None:
             if not self.ongoing:
                 if player in self.players:
                     self.players.remove(player)
@@ -701,17 +703,17 @@ class LobbyCog(commands.Cog):
                 await self.managemsg.delete()
             except Exception:
                 try:
-                    await self.managemsg.edit(view=None,embed=None,content="disbanded",delete_after=5.0)
+                    await self.managemsg.edit(embed=discord.Embed(title="Lobby disbanded."), view=None, delete_after=5.0)
                 except Exception:
                     pass
             try:
-                await self.messageid.edit(embed=discord.Embed(title="Lobby disbanded.",description="Make a new one with /clovece play"),view=None,delete_after=30.0)
+                await self.messageid.edit(embed=discord.Embed(title="Lobby disbanded.", description="Make a new one with /clovece play"), view=None, delete_after=30.0)
             except AttributeError: #disbanding after a game cannot edit message as it doesnt exist anymore
                 pass
             self.cog.lobbies.remove(self)
-            del(self)
+            del self
 
-    async def findLobby(self,lobbyid):
+    async def findLobby(self, lobbyid) -> Optional[Lobby]:
         if not lobbyid:
             return None
         else:
@@ -737,16 +739,17 @@ class LobbyCog(commands.Cog):
         user = self.getUserFromDC(ctx.user)
         lobby = await self.findLobby(user.inLobby)
         if lobby:
+            await ctx.send(embed=discord.Embed(title=f"Left {lobby.code}.", color=ctx.user.color),ephemeral=True)
             await lobby.removePlayer(ctx.channel,user)
         else:
             await ctx.send(embed=discord.Embed(title="You are not currently in a lobby.",color=ctx.user.color),ephemeral=True)
             
-    def getUserFromDC(self,dcUser):
-        if isinstance(dcUser,int):
+    def getUserFromDC(self, dcUser):
+        if isinstance(dcUser, int):
             lookingfor = dcUser
-        elif isinstance(dcUser,self.User):
+        elif isinstance(dcUser, self.User):
             lookingfor = dcUser.userid
-        elif isinstance(dcUser,discord.member.Member):
+        elif isinstance(dcUser, discord.member.Member):
             lookingfor = dcUser.id
         else:
             raise NotImplementedError(type(dcUser))
@@ -775,7 +778,7 @@ class LobbyCog(commands.Cog):
             json.dump(tempusers,file,indent=4)
         cloveceLogger.info("saved")
 
-    class Bot(Lobby):
+    class Bot:
         def __init__(self,lobby,diff):
             self.name = lobby.bot_names.pop()
             self.icon = lobby.bot_icons.pop()
@@ -853,7 +856,7 @@ class LobbyCog(commands.Cog):
                 self.addItem("premSpinToken",1)
                 if ctx and cog:
                     viewObj = cog.SpinButton(cog)
-                    await ctx.channel.send(embed=discord.Embed(title=f"You collected {spinShardIcon} 10 token shards!",description=f"They have been combined into a {premSpinTokenIcon} **Premium Spin Token for you!**",color=ctx.user.color),view=viewObj)
+                    await ctx.channel.send(embed=discord.Embed(title=f"You collected {spinShardIcon} 10 token shards!",description=f"They have been combined into a {premSpinTokenIcon} **Premium Spin Token** for you!",color=ctx.user.color),view=viewObj)
 
         class SpinTypeSelect(discord.ui.Select):
             def __init__(self,user,cog):
