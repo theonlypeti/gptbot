@@ -324,7 +324,7 @@ class PillowCog(commands.Cog):
     @discord.slash_command(name="imageditor",description="Image editor in development")
     async def imageeditorcommand(self,interaction: discord.Interaction, img: discord.Attachment = discord.SlashOption(name="image",description="The image to edit.",required=True)):
         await interaction.response.defer()
-        await self.makeEditor(interaction,img)
+        await self.makeEditor(interaction, img)
 
     async def makeEditor(self, interaction: discord.Interaction, img: discord.Attachment):
         filetype = img.content_type.split("/")[1]

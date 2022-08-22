@@ -901,7 +901,7 @@ class RPGCog(commands.Cog):
         async def showeqpbut(self,button,interaction: discord.Interaction):
             await interaction.edit(embed=self.player.showEqp(),view=self.player.EquipButtons(self.player,self,interaction.message.embeds[0]))
 
-        @discord.ui.button(style=discord.ButtonStyle.grey,emoji=emoji.emojize(":star:",language="alias"),disabled=False)
+        @discord.ui.button(style=discord.ButtonStyle.grey,emoji=emoji.emojize(":star:",language="alias"),disabled=False) #TODO show text and buttons depending if actually levelled up or not
         async def showlvlupbut(self,button,interaction):
             embedVar = discord.Embed(title="You have levelled up!",description=f"You have reached level **{self.player.lvl}**! You are now able to upgrade one of your attributes.",color=interaction.user.color)
             embedVar.add_field(name=f"Strength {self.player.strength} {emoji.emojize(':right_arrow:')} {self.player.strength+1}",value="Strength increases your **maximum health**, **health regeneration** and **weapon attack power**")
