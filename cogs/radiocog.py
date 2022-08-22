@@ -106,7 +106,7 @@ class RadioCog(commands.Cog):
         async def callback(self,inter):
             station = self.values[0]
             embedVar = discord.Embed(title="You are now listening to",description=radio_icons_station[station])
-            viewObj = discord.ui.View()
+            viewObj = discord.ui.View(timeout=None)
             viewObj.add_item(self.DisconnectButton())
 
             emoji = self.cog.client.get_emoji(station.split(":")[2][:-4]) #try without an api call
@@ -141,7 +141,7 @@ class RadioCog(commands.Cog):
             async def callback(self,ctx):
                 server = ctx.guild.voice_client
                 await server.disconnect(force=True)
-                self.disabled= True
+                self.disabled = True
                 await ctx.response.edit_message(view=self.view)
 
     @discord.slash_command(name="radio",description="Hop in a voice channel and tune into a radio from the 90's from the videogame GTA San Andreas.",dm_permission=False)
@@ -164,7 +164,7 @@ class RadioCog(commands.Cog):
         #radiocog.radios.remove(self)
 
 class Radio(object):
-    def __init__(self,vclient,station,cog):
+    def __init__(self, vclient, station, cog):
         self.cog = cog
         self.played = []
         self.vclient = vclient
@@ -190,8 +190,8 @@ class Radio(object):
         radioLogger.debug(song)
         if song not in self.played:
             self.played.append(song)
-            if len(self.played)>self.noRepeats:
-                del(self.played[0])
+            if len(self.played) > self.noRepeats:
+                del self.played[0]
             self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(song[0])),
                      after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=song[1][0]),
                                                   after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(song[2])),
@@ -213,7 +213,7 @@ class Radio(object):
 
     def djcall(self):
         radioLogger.debug("call")
-        if len(self.station.call)<1:
+        if len(self.station.call) < 1:
             self.playSong()
         else:
             self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(self.station.call)),
@@ -223,14 +223,19 @@ class Radio(object):
 
     def djstory(self):
         radioLogger.debug("story")
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(self.station.story)),
-                          after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=maindir+"\\silence.ogg"),
-                                                  after=lambda a: self.playSong()))
-        radioLogger.debug("story end")
+        if len(self.station.stationAnnounce) < 1:
+            radioLogger.debug("nvm talk")
+            self.djtalk()
+            radioLogger.debug("nvmtalk over")
+        else:
+            self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(self.station.story)),
+                              after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=maindir+"\\silence.ogg"),
+                                                      after=lambda a: self.playSong()))
+            radioLogger.debug("story end")
 
     def announceStation(self):
         radioLogger.debug("gonna announce")
-        if len(self.station.stationAnnounce)<1:
+        if len(self.station.stationAnnounce) < 1:
             radioLogger.debug("nvm talk")
             self.djtalk()
             radioLogger.debug("nvmtalk over")

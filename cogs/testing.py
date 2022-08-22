@@ -1,10 +1,25 @@
+import asyncio
+import io
 import os
 import random
+from io import BytesIO
+from typing import Union
+
+import PIL
 import nextcord as discord
+from PIL import Image, ImageOps
 from nextcord.ext import commands
+
+
+class Selection:
+    def __init__(self,img: Image,boundary: tuple):
+        copy = img.copy()
+        self.image = copy.crop(boundary)
+        self.boundary = boundary
 
 class Testing(commands.Cog):
     def __init__(self,client,baselogger):
+        self.selection = None
         self.client = client
 
     class testvw(discord.ui.View):
@@ -55,6 +70,81 @@ class Testing(commands.Cog):
         with ctx.channel.typing():
             await ctx.send(files=[discord.File(random.choice(sample))])
 
+    @discord.slash_command(name="testselections", description="Image editor in development")
+    async def testimageeditorcommand(self, interaction: discord.Interaction,
+                                 img: discord.Attachment = discord.SlashOption(name="image",
+                                                                               description="The image to edit.",
+                                                                               required=True)):
+        await interaction.response.defer()
+        filetype = img.content_type.split("/")[1]
+        image = await img.read()
+        img = Image.open(BytesIO(image))
+        img = img.convert("RGB")  # .point(lambda x: 255 - x)
+        selection = Selection(img,(0,0,img.size[0]/2,img.size[1]/2))   #left top right bottom
+        selection.image = ImageOps.invert(selection.image)
+        img.paste(selection.image,box=selection.boundary)
+        with io.BytesIO() as image_binary:
+            img.save(image_binary, filetype)
+            image_binary.seek(0)
+            await interaction.send(file=discord.File(fp=image_binary, filename=f'image.{filetype}'))
+
+    async def showimg(self,
+                    interface: Union[discord.Interaction, discord.Message],
+                    img: PIL.Image,
+                    filetype: str,
+                    view: discord.ui.View = None,
+                    txt:str = None) -> discord.Message:
+
+        with io.BytesIO() as image_binary:
+            if img:
+                img.save(image_binary, filetype)
+                image_binary.seek(0)
+
+            if isinstance(interface, discord.Interaction):
+                msg = await interface.send(txt,file=discord.File(fp=image_binary, filename=f'image.{filetype}'),view=view)
+
+            elif isinstance(interface, discord.Message):
+                if img:
+                    msg = await interface.edit(file=discord.File(fp=image_binary, filename=f'image.{filetype}'),view=view,content=txt)
+                else:
+                    msg = await interface.edit(view=view,content=txt)
+
+            else:
+                raise NotImplementedError("interface must be either discord.Interaction or discord.Message")
+        return msg
+
+    class TestDeleteButton(discord.ui.View):
+        def __init__(self, cog, img=None):
+            self.message = None
+            self.img = img
+            self.cog = cog
+            super().__init__(timeout=None)
+
+        @discord.ui.button(label="Delete me")
+        async def deletebuttontwo(self, button, interaction):
+            print(interaction.message, "\n", self.message)
+            print(interaction.message.id, self.message.id,interaction.message == self.message)
+
+            await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=None,txt="Removing view via inter.message with a file present")  # this one will not remove the view
+            await asyncio.sleep(4)
+            await self.cog.showimg(interaction.message, img=None, filetype="png", view=None,txt="Removing view via inter.message with file not included")  # this one will remove the view
+            await asyncio.sleep(4)
+            await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=self,txt="lets try again")
+            await asyncio.sleep(2)
+            await self.cog.showimg(self.message, img=self.img, filetype="png", view=None,txt="Removing view via a saved var:WebhookMessage with a file present")  # this one will remove the view
+            await asyncio.sleep(4)
+            await self.cog.showimg(self.message, img=self.img, filetype="png", view=self, txt="lets try again")
+            await asyncio.sleep(2)
+            await self.cog.showimg(self.message, img=None, filetype="png", view=None,txt="Removing view via a saved var:WebhookMessage without a file")  # this one will remove the view
+
+    @discord.slash_command(name="testeditview", description="bug maybe")
+    async def testimageeditorcommand(self, interaction: discord.Interaction,img: discord.Attachment):
+        await interaction.response.defer()
+        image = await img.read()
+        img = Image.open(BytesIO(image))
+        view = self.TestDeleteButton(self, img)
+        msg = await self.showimg(interaction, img, "png", view,txt="Hi")
+        view.message = msg
 
 def setup(client,baselogger):
     client.add_cog(Testing(client,baselogger))
