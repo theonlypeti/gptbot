@@ -1,4 +1,6 @@
 import logging
+import random
+
 from nextcord.ext import commands
 import nextcord as discord
 import os
@@ -50,16 +52,18 @@ class ZSSKCog(commands.Cog):
         return TimeTable(time,cities,delay,None)
 
     @discord.slash_command(name="zssk",description="Call the announcer lady to tell you about a train´s schedule",dm_permission=False)
-    async def zssk(self,ctx,
+    async def zssk(self,ctx: discord.Interaction,
                    fromcity:str = discord.SlashOption(name="from",description="City",required=True),
                    tocity:str = discord.SlashOption(name="to",description="City",required=True),
                    time:str = discord.SlashOption(name="time",description="hh:mm",required=False),
                    date:str = discord.SlashOption(name="date",description="dd.mm.yyyy",required=False)):
+        await ctx.response.defer()
         try:
             channel = ctx.user.voice.channel
             try:
                 vclient = await channel.connect()
-            except Exception:
+            except Exception as e:
+                self.zsskLogger.error(f"{e}")
                 vclient = ctx.guild.voice_client
             self.vclient = vclient
             await ctx.send("Working on it...")
@@ -72,10 +76,19 @@ class ZSSKCog(commands.Cog):
             self.tt = self.getTimeTable(link)
             self.znelka()
 
-##    @discord.slash_command(name="leave",description="Disconnect the bot from voice",guild_ids=[860527626100015154])
-##    async def leave(self,ctx):
-##        server = ctx.guild.voice_client
-##        await server.disconnect(force=True)
+    @zssk.on_autocomplete("tocity")
+    @zssk.on_autocomplete("fromcity")
+    async def stanica_autocomplete(self,interaction, city: str):
+        if not city:
+            # send the full autocomplete list
+            randomstanice = list(soundfiles.keys())
+            random.shuffle(randomstanice)
+            await interaction.response.send_autocomplete(randomstanice[:25])
+            return
+        # send a list of nearest matches from the list of cities
+        get_near_city = [i for i in soundfiles.keys() if i.casefold().startswith(city.casefold())]
+        get_near_city = get_near_city[:25]
+        await interaction.response.send_autocomplete(get_near_city)
             
     def znelka(self): #TODO make these relative paths
         os.chdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\ZNELKY")
@@ -140,8 +153,8 @@ class ZSSKCog(commands.Cog):
 
 
     def znelkaOut(self):
-        path = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\ZNELKY"
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=path + "\\END.WAV"))
+        mypath = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\ZNELKY"
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=mypath + "\\END.WAV"))
 
 def setup(client,baselogger):
     client.add_cog(ZSSKCog(client,baselogger))
