@@ -49,7 +49,7 @@
             ],
             [
                 0,
-                1
+                2
             ]
         ],
         "pill": null,
@@ -58,8 +58,8 @@
         "pw": 0.013,
         "cd": "2022-08-21T00:04:33.430277",
         "methods": 127,
-        "dailyStreak": 1,
-        "dailyDate": "2022-08-21"
+        "dailyStreak": 2,
+        "dailyDate": "2022-08-22"
     },
     {
         "id": 307985197926973452,
@@ -159,7 +159,7 @@
         "pw": 0.323,
         "cd": null,
         "methods": 63,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 756092460265898054,
@@ -182,7 +182,7 @@
         "pw": 0.697,
         "cd": null,
         "methods": 7,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 735473733753634827,
@@ -271,7 +271,7 @@
         "pw": 0.23,
         "cd": null,
         "methods": 8,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 752791254768681020,
@@ -301,7 +301,7 @@
         "pw": 0.06,
         "cd": null,
         "methods": 39,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 677496112860626975,
@@ -326,7 +326,7 @@
         "pw": 0.156,
         "cd": null,
         "methods": 26,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 623926024714846213,
@@ -380,7 +380,7 @@
         "methods": 8,
         "pill": null,
         "pillPopTime": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 689532690860474374,
@@ -397,7 +397,7 @@
         "pw": 1.316,
         "cd": null,
         "methods": 5,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 138022532338024448,
@@ -411,7 +411,7 @@
         "methods": 6,
         "pill": null,
         "pillPopTime": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 413759409634672642,
@@ -425,7 +425,7 @@
         "methods": 20,
         "pill": null,
         "pillPopTime": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 692319558425509938,
@@ -439,7 +439,7 @@
         "methods": 0,
         "pill": null,
         "pillPopTime": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 348038728087764992,
@@ -502,7 +502,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 453146166591488003,
@@ -520,7 +520,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 284764580675190784,
@@ -604,7 +604,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 241985516914999296,
@@ -618,7 +618,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 345901480319909898,
@@ -632,7 +632,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 786672717533020170,
@@ -646,7 +646,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 319840737359298560,
@@ -660,7 +660,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 652902606963736589,
@@ -676,7 +676,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 302142965009088514,
@@ -695,7 +695,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 358149204180205572,
@@ -711,7 +711,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 663892628902772760,
@@ -727,7 +727,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 835166714659995729,
@@ -741,7 +741,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 478185658859651103,
@@ -755,7 +755,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 618079591965392896,
@@ -769,7 +769,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 437296986593427458,
@@ -783,7 +783,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 352515892950859776,
@@ -797,7 +797,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 948639577546063932,
@@ -811,7 +811,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 451460196410327051,
@@ -924,7 +924,7 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     },
     {
         "id": 555111438750973974,
@@ -957,6 +957,6 @@
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
-        "dailyDate": "2022-08-19"
+        "dailyDate": "2022-08-19T00:00:00"
     }
 ]

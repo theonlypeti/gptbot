@@ -1,4 +1,6 @@
 import logging
+import random
+
 from nextcord.ext import commands
 import nextcord as discord
 import os
@@ -47,9 +49,9 @@ class ZSSKCog(commands.Cog):
         cities = [child.select("strong.name")[0].contents[0] for child in reversed(a)]
         time = soup.find("span",attrs={"class":"departure"}).contents[-1].strip()
         
-        return TimeTable(time,cities,delay,None)
+        return TimeTable(time, cities, delay, None)
 
-    @discord.slash_command(name="zssk",description="Call the announcer lady to tell you about a train´s schedule",dm_permission=False)
+    @discord.slash_command(name="zssk",description="Call the announcer lady to tell you about a train's schedule", dm_permission=False)
     async def zssk(self,ctx,
                    fromcity:str = discord.SlashOption(name="from",description="City",required=True),
                    tocity:str = discord.SlashOption(name="to",description="City",required=True),
@@ -62,7 +64,7 @@ class ZSSKCog(commands.Cog):
             except Exception:
                 vclient = ctx.guild.voice_client
             self.vclient = vclient
-            await ctx.send("Working on it...")
+            await ctx.send("Working on it...", delete_after=10)
         except AttributeError:
         #if isinstance(channel,type(None)) or channel is None:
             await ctx.send(embed=discord.Embed(title="Command caller not in a voice channel."))
@@ -97,11 +99,14 @@ class ZSSKCog(commands.Cog):
         if len(cities) > 0:
             chosencity = cities.pop()
             try:
+                self.zsskLogger.debug(f"{chosencity}")
                 chosencity = soundfiles[chosencity]
             except KeyError:
                 self.zsskLogger.error(f"not found {chosencity}")
+                self.city(cities)
             except IOError:
                 self.zsskLogger.error(f"no file found {chosencity}")
+                self.city(cities)
             else:
                 self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=chosencity+".WAV"),
                           after=lambda a: self.city(cities))
@@ -133,15 +138,17 @@ class ZSSKCog(commands.Cog):
                                                           after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA\\MSMZ.WAV"),
                                                                                            after=lambda a:self.znelkaOut())))
         else:
+            nastupiste = random.choice(("01","02","03"))
+            kolaj = random.choice(os.listdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\K1"))
             self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA\\PRIDE.WAV"),
-                              after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\N1\\01.WAV"),
-                                            after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\K1\\0101.WAV"),
+                              after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=f"D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\N1\\{nastupiste}.WAV"),
+                                            after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=f"D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\K1\\{kolaj}"),
                                                           after=lambda a:self.znelkaOut())))
 
 
     def znelkaOut(self):
-        path = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\ZNELKY"
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=path + "\\END.WAV"))
+        mypath = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\ZNELKY"
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=mypath + "\\END.WAV"))
 
 def setup(client,baselogger):
     client.add_cog(ZSSKCog(client,baselogger))
