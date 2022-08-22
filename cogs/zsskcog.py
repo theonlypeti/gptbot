@@ -77,18 +77,18 @@ class ZSSKCog(commands.Cog):
             self.znelka()
 
     @zssk.on_autocomplete("tocity")
-    @zssk.on_autocomplete("fromcity")
     async def stanica_autocomplete(self,interaction, city: str):
-        if not city:
-            # send the full autocomplete list
-            randomstanice = list(soundfiles.keys())
-            random.shuffle(randomstanice)
-            await interaction.response.send_autocomplete(randomstanice[:25])
-            return
-        # send a list of nearest matches from the list of cities
-        get_near_city = [i for i in soundfiles.keys() if i.casefold().startswith(city.casefold())]
-        get_near_city = get_near_city[:25]
-        await interaction.response.send_autocomplete(get_near_city)
+        if city:
+            get_near_city = [i for i in soundfiles.keys() if i.casefold().startswith(city.casefold())]
+            get_near_city = get_near_city[:25]
+            await interaction.response.send_autocomplete(get_near_city)
+
+    @zssk.on_autocomplete("fromcity") #not sure if i can use one func for both autocomplete decorators so i just split them
+    async def stanica_autocomplete2(self,interaction, city: str):
+        if city:
+            get_near_city = [i for i in soundfiles.keys() if i.casefold().startswith(city.casefold())]
+            get_near_city = get_near_city[:25]
+            await interaction.response.send_autocomplete(get_near_city)
             
     def znelka(self): #TODO make these relative paths
         os.chdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\ZNELKY")
