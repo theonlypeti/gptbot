@@ -568,7 +568,7 @@ class LobbyCog(commands.Cog):
     async def makeLobby(self,ctx,private=discord.SlashOption(name="private",description="Do you wish to create a public lobby or a private one",required=False,default="Public",choices=("Public","Private"))):
         user = self.getUserFromDC(ctx.user)
         if user.inLobby:
-            await ctx.send(embed=discord.Embed(title="You are already in a lobby. Try /clovece leave",color=discord.Color.red()),ephemeral=True)
+            await ctx.send(embed=discord.Embed(title="You are already in a lobby. Try </clovece leave:1011376225190686860>",color=discord.Color.red()),ephemeral=True)
             return
         else:
             lobbymessage = await ctx.channel.send(embed=discord.Embed(title="Generating lobby..."))
@@ -613,7 +613,7 @@ class LobbyCog(commands.Cog):
             name = self.lobbyleader.display_name
             EmbedVar = discord.Embed(
                 title=name+"'s "+("Public" if not self.private else "Private")+" Lobby ("+str(len(self.players))+"/4)",
-                description=("Game already running." if self.ongoing else f"use **/join {self.code}** or click the join icon") if not self.private else "ask the lobby leader for the code, \nthen type /join *CODE* ,don't worry noone will see that.\n Make sure everyone has a unqiue icon!") #extra space deliberate, otherwise looks stupid
+                description=("Game already running." if self.ongoing else f"use **</clovece join:1011376225190686860> {self.code}** or click the join icon") if not self.private else "ask the lobby leader for the code, \nthen use </clovece join:1011376225190686860> *CODE*, don't worry noone will see that.\n Make sure everyone has a unqiue icon!") #extra space deliberate, otherwise looks stupid
             EmbedVar.set_footer(text="{} join, {} leave, {} customize self, {} ready".format(emoji.emojize(":inbox_tray:"),emoji.emojize(":outbox_tray:"),emoji.emojize(":artist_palette:"),emoji.emojize(":check_mark_button:")))
             for i,player in enumerate(self.players,start=1):
                 EmbedVar.add_field(name=f"{i}. {player}",value="Ready?"+(emoji.emojize(":cross_mark:"),emoji.emojize(":check_mark_button:"))[bool(player.ready)],inline=False)
@@ -665,7 +665,7 @@ class LobbyCog(commands.Cog):
                             player.inLobby = self.code
                             await ctx.send(embed=discord.Embed(title="Joined", color=discord.Color.green()),ephemeral=True)
                         else:
-                            await ctx.send(embed=discord.Embed(title="You are already in a lobby. Try /clovece leave",color=discord.Color.red()),ephemeral=True)
+                            await ctx.send(embed=discord.Embed(title="You are already in a lobby. Try </clovece leave:1011376225190686860>",color=discord.Color.red()),ephemeral=True)
                             cloveceLogger.debug("already in lobby")
                             return
                     #await self.messageid.edit(embed=self.show()) #redundant: gets updated in readyCheck again too so
@@ -707,7 +707,7 @@ class LobbyCog(commands.Cog):
                 except Exception:
                     pass
             try:
-                await self.messageid.edit(embed=discord.Embed(title="Lobby disbanded.", description="Make a new one with /clovece play"), view=None, delete_after=30.0)
+                await self.messageid.edit(embed=discord.Embed(title="Lobby disbanded.", description="Make a new one with </clovece play:1011376225190686860>"), view=None, delete_after=30.0)
             except AttributeError: #disbanding after a game cannot edit message as it doesnt exist anymore
                 pass
             self.cog.lobbies.remove(self)
@@ -872,7 +872,7 @@ class LobbyCog(commands.Cog):
 
             async def callback(self,interaction):
                 if self.cog.getUserFromDC(interaction.user) != self.user:
-                    await interaction.send(embed=discord.Embed(title="This is not your inventory! Use /clovece spin",color=discord.Colour.red()),ephemeral=True)
+                    await interaction.send(embed=discord.Embed(title="This is not your inventory! Use </clovece spin:1011376225190686860>",color=discord.Colour.red()),ephemeral=True)
                     return
                 chosen = self.values[0]
                 if chosen == "-1":
@@ -889,7 +889,7 @@ class LobbyCog(commands.Cog):
                             break
                     err = self.user.addEmoji("defaults",key,got)
                     if not err:
-                        await interaction.edit(embed=discord.Embed(title=f"You recieved  {got} !",description="You can now use this emoji as an icon in a clovece game. Try it in /clovece play",color=interaction.user.color),view=None)
+                        await interaction.edit(embed=discord.Embed(title=f"You recieved  {got} !",description="You can now use this emoji as an icon in a clovece game. Try it in </clovece play:1011376225190686860>",color=interaction.user.color),view=None)
                         self.user.stats["Default icons owned"] += 1
                     elif err:
                         amount = randint(1,3)
@@ -911,7 +911,7 @@ class LobbyCog(commands.Cog):
 
                 async def callback(self,interaction):
                     if self.cog.getUserFromDC(interaction.user) != self.user:
-                        await interaction.send(embed=discord.Embed(title="This is not your inventory! Use /clovece spin",color=discord.Colour.red()),ephemeral=True)
+                        await interaction.send(embed=discord.Embed(title="This is not your inventory! Use </clovece spin:1011376225190686860>",color=discord.Colour.red()),ephemeral=True)
                         return
                     if self.values[0] == "0":
                         await interaction.edit(content="Cancelled",view=None,embed=None,delete_after=1.0)
@@ -924,7 +924,7 @@ class LobbyCog(commands.Cog):
                         err = self.user.addEmoji("defaults",cat,got)
                         cloveceLogger.info(f"{err},emoji adding outcome")
                         if not err:
-                            await interaction.edit(embed=discord.Embed(title=f"You recieved {got}",description="You can now use this emoji as an icon in a clovece game. Try it in /clovece play",color=interaction.user.color),view=None)
+                            await interaction.edit(embed=discord.Embed(title=f"You recieved {got}",description="You can now use this emoji as an icon in a clovece game. Try it in </clovece play:1011376225190686860>",color=interaction.user.color),view=None)
                             self.user.stats["Default icons owned"] += 1
                         elif err:
                             amount = randint(1,3)
