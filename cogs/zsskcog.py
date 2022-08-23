@@ -13,7 +13,7 @@ root = os.getcwd()
 maindir = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\R3"
 os.chdir(maindir)
 
-with open("vonatdb.json","r") as file:
+with open("vonatdb.json", "r") as file:
     soundfiles= json.load(file)
 os.chdir(root)
 

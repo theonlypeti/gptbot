@@ -1,1 +1,1 @@
-{"prefix": "&", "temperature": 16.46, "weatherUpdTime": "2022-08-22T17:08:51.139923", "sunrise": "2022-08-22T03:55:27+00:00"}
+{"prefix": "&", "temperature": 15.58, "weatherUpdTime": "2022-08-23T01:05:04.185393", "sunrise": "2022-08-23T03:56:50+00:00"}

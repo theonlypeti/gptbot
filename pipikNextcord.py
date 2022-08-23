@@ -94,6 +94,32 @@ client.remove_command('help')
 
 #-------------------------------------------------#
 
+def getCommandId(command):
+    every = client.get_application_commands()
+    for i in every:
+        if i.name == command:
+            ids = {}
+            for guild,value in i.command_ids.items():
+                if guild is not None:
+                    ids.update({client.get_guild(guild).name:value})
+                else:
+                    ids.update({"Global": value})
+            return {command: ids}
+    else:
+        val = getCommandId(command.split(" ")[0])
+        return val
+
+
+def mentionCommand(command, guild: int = None) -> str:
+    ids = getCommandId(command)
+    iddict = list(ids.values())[0]
+    if guild is not None:
+        guildname = client.get_guild(guild).name
+        if guildname in iddict:
+            return f"`</{command}:{iddict[guildname]}>`"
+    return f"`</{command}:{iddict['Global']}>`"
+
+
 @client.message_command(name="En-/Decrypt")
 async def caesar(interaction, text):
     if text.type == discord.MessageType.chat_input_command and text.embeds[0].title == "Message":

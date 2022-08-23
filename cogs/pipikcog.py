@@ -302,7 +302,7 @@ class PipikBot(commands.Cog):
             else:
                 user.items.append([pill, amount])
                 newAmount = amount
-            embedVar = discord.Embed(title="You´ve got pills!", description="try /pills for inventory", color=colorEm)
+            embedVar = discord.Embed(title="You´ve got pills!", description="try </pills:1011375968528646184> for inventory", color=colorEm)
             embedVar.add_field(name="Pill:", value=pills[pill]["name"], inline=False)
             embedVar.add_field(name="Amount:", value=amount)
             embedVar.add_field(name="In inventory:", value=newAmount)
@@ -418,7 +418,7 @@ class PipikBot(commands.Cog):
             try:
                 ldb = self.leaderboards[str(ctx.guild_id)]
             except KeyError:
-                await ctx.send(embed=discord.Embed(title="Leaderboard empty",description="Use the /pp command to measure your pp first"))
+                await ctx.send(embed=discord.Embed(title="Leaderboard empty",description="Use the </pp:1011376052725092352> command to measure your pp first"))
                 return
         elif server == "Between servers":
             ldb = sorted([(self.client.get_guild(int(id)).name, round(sum(map(lambda user: user[1], users)), 3)) for id, users in self.leaderboards.items()], key=lambda x: x[1], reverse=True)[:5]
@@ -439,7 +439,7 @@ class PipikBot(commands.Cog):
             try:
                 ldb = self.loserboards[str(ctx.guild_id)]
             except KeyError:
-                await ctx.send(embed=discord.Embed(title="Loserboard empty",description="Use the /pp command to measure your pp first"))
+                await ctx.send(embed=discord.Embed(title="Loserboard empty",description="Use the </pp:1011376052725092352> command to measure your pp first"))
                 return
         elif server == "Between servers":
             ldb = sorted([(self.client.get_guild(int(id)).name, round(sum(map(lambda user: user[1], users)), 5)) for id, users in self.loserboards.items()], key=lambda x: x[1], reverse=False)[:5]
@@ -514,30 +514,40 @@ class PipikBot(commands.Cog):
 
     @discord.slash_command(name="tips", description="Read some tips on how to increase your pp size")
     async def tips(self, ctx):
-        await ctx.send("""```diff
-    Disclaimer: EVERYTHING IS RANDOM, NOTHING GUARANTEES BIGGER PPS, ONLY BETTER CHANCES FOR A BIG PP!
+        text = """```ansi
+    [41m[37mDisclaimer: EVERYTHING IS RANDOM, NOTHING GUARANTEES BIGGER PPS, ONLY BETTER CHANCES FOR A BIG PP![0m
 
-    A lot of things can influence your pp's size.
+    [34mA lot of things can influence your pp's size.
     For your convenience i'll share some tips and tricks
     for you here:
-    --------------------------------------------------
-    +I´ve heaRd your pp looks Mightier in other people´s hands But not in yours, so try asking others to hold it for you. 
+    [0m--------------------------------------------------
+    
+    [32mI´ve heaRd your pp looks Mightier in other people´s hands But not in yours, so try asking others to hold it for you.
 
-    +The bot likes compliments, try some sweet words on it.
+    [32mThe bot likes compliments, try some sweet words on it.
 
-    -The bot however dislikes insults.
+    [31mThe bot however dislikes insults.
 
-    +Full moon is the best time to get a big pp.
+    [32mFull moon is the best time to get a big pp.
 
-    -Lower temperatures may cause your pp to shrink, consider measuring it when it´s warmer outside.
+    [31mLower temperatures may cause your pp to shrink, consider measuring it when it´s warmer outside.
 
-    +Morning woods are a normal healthy occurrence each morning, try to use them to your advantage.
+    [32mMorning woods are a normal healthy occurrence each morning, try to use them to your advantage.
 
-    +If you overslept this wakeup routine, don't worry, you can try to excite your pp with the fap command, but be wary of your endurance, relapsing causes you to go into a recharge state when your pp becomes more shy than usual.
+    [32mIf you overslept this wakeup routine, don't worry, you can try to excite your pp with the [35mfap [32mcommand
+    But be wary of your endurance, relapsing causes you to go into a recharge state when your pp becomes more shy than usual.
 
-    If nothing else helps, you can turn to pills for help. But beware as overusing them might bring unforeseen side effects, like impotency.
-    You can get free pills each day with the /daily command
-    ```""")
+    [34mIf nothing else helps, you can turn to pills for help. But beware as overusing them might bring unforeseen side effects, like impotency.
+    You can get free pills each day with the [35mdaily [34mcommand
+    ```"""
+        if ctx.user.is_on_mobile():
+            text = text.replace("[34m", "")
+            text = text.replace("[32m", "")
+            text = text.replace("[33m", "")
+            text = text.replace("[35m", "")
+            text = text.replace("[41m", "")
+            text = text.replace("[0m", "")
+        await ctx.send(text)
         
     class PillCraftDropdown(discord.ui.Select):
         def __init__(self, user, cog):
@@ -565,7 +575,7 @@ class PipikBot(commands.Cog):
                         del (self.user.items[which])
 
             else:
-                await interaction.send("This is not your prompt, use /pills to use your pills.", ephemeral=True)
+                await interaction.send("This is not your prompt, use </pills:1011375968528646184> to use your pills.", ephemeral=True)
 
     class PillsButtonsConsume(discord.ui.Button):
         def __init__(self, user: PipikUser, cog):
@@ -576,7 +586,7 @@ class PipikBot(commands.Cog):
 
         async def callback(self, interaction):
             if interaction.user.id != self.user.id:
-                await interaction.send("This is not your inventory, use /item to see your pills.",ephemeral=True)
+                await interaction.send("This is not your inventory, use </pills:1011375968528646184> to see your pills.",ephemeral=True)
                 return
             self.style = discord.ButtonStyle.green
             for child in self.view.children:
@@ -595,7 +605,7 @@ class PipikBot(commands.Cog):
 
         async def callback(self, interaction: discord.Interaction):
             if interaction.user.id != self.user.id:
-                await interaction.send("This is not your inventory, use /pills to see your pills.", ephemeral=True)
+                await interaction.send("This is not your inventory, use </pills:1011375968528646184> to see your pills.", ephemeral=True)
                 return
             self.style = discord.ButtonStyle.green
             for child in self.view.children:
@@ -625,7 +635,7 @@ class PipikBot(commands.Cog):
                     await self.user.takePill(int(self.values[0]),self.cog)
 
             else:
-                await interaction.send("This is not your prompt, use /pills to use your pills.",ephemeral=True)
+                await interaction.send("This is not your prompt, use </pills:1011375968528646184> to use your pills.",ephemeral=True)
 
     @discord.slash_command(description="See, manage and use your pill inventory.")
     async def pills(self, ctx):
@@ -635,7 +645,7 @@ class PipikBot(commands.Cog):
         text += "Pills".center(25) + "\nCrafting takes 10 pills and crafts a better quality one\nBetter pills equals bigger pps\nExcessive use might result in impotency!\n{:-^25}\n".format("-")
         text += "\n".join(["{:<15} ({:<2} min)| amount: {}".format(pills[i[0]]["name"],(pills[i[0]]["effectDur"].seconds) // 60, i[1]) for i in list(user.items)])
         if len(user.items) == 0:
-            text += "You have no pills. Use /daily to get some!"
+            text += "You have no pills. Use </daily:1011375879689076767> to get some!"
         text += "\n```"
 
         if user.pill in range(0, len(pills)):
@@ -669,7 +679,7 @@ class PipikBot(commands.Cog):
 
         async def callback(self, interaction):
             if interaction.user.id != self.user.id:
-                await interaction.send("This is not your button, use your own by typing /fap",ephemeral=True)
+                await interaction.send("This is not your button, use your own by using </fap:1011375969388478576>",ephemeral=True)
                 return
             if random.randint(0, 10 + (self.user.fap * 2)) < 10:
                 self.user.fap += 1
@@ -738,7 +748,7 @@ class PipikBot(commands.Cog):
             text += "\n".join((emoji.emojize(":check_mark_button:") if achi.achiid in user.achi else emoji.emojize(":locked:")) + " " + achi.icon + " " + "{:23}".format(achi.name) + (("= " + achi.desc) if achi.achiid in user.achi else "= ???") for achi in self.achievements.values())
         else:
             text += "\n".join((emoji.emojize(":check_mark_button:") if achi.achiid in user.achi else emoji.emojize(":locked:")) + " " + achi.icon + " " + "{:23}".format(achi.name) for achi in self.achievements.values())
-            text += "\n\nfor more info, try /achi"
+            text += "\n\nfor more info, try </achi:1011376051491971082>"
         text += "\n" + "{:-^25}".format("-")
         await ctx.send("```\n" + text + "\n```") #lord forgive me for what ive done
 
