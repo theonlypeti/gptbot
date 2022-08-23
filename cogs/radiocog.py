@@ -1,22 +1,13 @@
 from nextcord.ext import commands
 import nextcord as discord
 import os
-from random import choice,choices
+from random import choice, choices
 import inspect
 import emoji
-import logging
 
 root = "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pipik"
 path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe"
-
 maindir = "D:\\Users\\Peti.B\\Music\\San Andreas Radio Constructor\\San Andreas Radio Constructor"
-
-#token = "NjE4MDc5NTkxOTY1MzkyODk2.XW0d6g.en-_s9f-WKw_sNkQRPEALtET_W0" #bogi
-#token = "NzkwNTc3NTQxNDYyODg0Mzky.X-Cotg.-KulmbH3_gC0N-w71hcgNvk9o-8" #game
-#intents = discord.Intents.default()
-#intents.members = True
-#client = commands.Bot(command_prefix="&",intents=intents)
-#radio_icons = ("<:BounceFM:887050057889763338>","<:CSR1039:887050693783986197>","<:KDST:887050050843312200>","<:KJAHWest:887050702122270770>","<:KRose:887050074151067680>","<:MasterSounds:887050699433717850>","<:PlaybackFMLogo:887050040697298964>","<:RadioLosSantos:887050073500958781>","<:RadioX:887050037283147857>","<:SFUR:887050065816989736>")
 
 radio_icons_station = {"<:BounceFM:957469538599985223>":"Bounce FM","<:CSR1039:957469539518545960> ":"CSR 103.9","<:KDST:957469532816048159> ":"K-DST","<:KJAHWest:957469552168558732>":"K-Jah West","<:KRose:957469547760345109>":"K-Rose","<:MasterSounds:957469544681725972>":"Master Sounds 98.3","<:PlaybackFMLogo:957469525211766855>":"Playback FM","<:RadioLosSantos:957469549270294568>":"Radio Los Santos","<:RadioX:957469523387232256>":"Radio X","<:SFUR:957469545428299836>":"SF-UR"}
 station_emojis = {v:k for k,v in radio_icons_station.items()}    
@@ -40,20 +31,13 @@ class RadioCog(commands.Cog):
         self.client = client
         radioLogger = baselogger.getChild("radioLogger")
         self.stations = []
-##        print(887050057889763338 in client.emojis)
-##        print(client.get_emoji(887050057889763338))
-##        print(list(client.get_emoji(int(k[-19:-1])) for k in radio_icons_station.keys()),"aaa")
-##        self.radiomojis = {client.get_emoji(emoji):name for emoji,name in [(int(k[-19:-1]),v) for k,v in radio_icons_station.items()]}
-##        print(self.radiomojis)
-##        self.stationmojis = {v:k for k,v in self.radiomojis.items()}
-##        print(self.stationmojis)
         
         for station in os.listdir(maindir)[2:-3]:
             self.stations.append(self.Station(station,emoji=station_emojis[station],desc=station_descs[station])) #TODO dont do this, initialize them only when called by join
         self.ads = os.listdir(maindir+"\\!Commercials")
 
     class Station(object):
-        def __init__(self,folder,emoji="",desc=""):
+        def __init__(self, folder, emoji="", desc=""):
             self.name = folder
             self.emoji = emoji
             self.desc = desc
@@ -62,7 +46,7 @@ class RadioCog(commands.Cog):
             self.call = []
             self.story = []
             self.stationAnnounce = []
-            songlist=[]
+            songlist = []
 
             files = os.listdir(maindir+"\\"+self.name)
             for file in files:
@@ -80,7 +64,7 @@ class RadioCog(commands.Cog):
                     songlist.append(file)
 
             self.songs = []
-            self.songs.append([songlist[0],[songlist[0]],[],[]])
+            self.songs.append([songlist[0], [songlist[0]], [], []])
             for song in songlist:
                 until = self.songs[-1][0].find("(")
                 #print(until)
