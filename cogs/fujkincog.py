@@ -1,4 +1,6 @@
-from nextcord.ext import commands,tasks
+from os import getenv
+
+from nextcord.ext import commands, tasks
 import pyowm
 
 class FujkinCog(commands.Cog):
@@ -9,7 +11,7 @@ class FujkinCog(commands.Cog):
 
     @tasks.loop(minutes=30)
     async def fujkin(self):
-        wind = round(pyowm.OWM("385bfdf19d55e8f1d667cad1fad28568").weather_manager().weather_at_place("Dunajská Streda,sk").weather.wind()["speed"] * 3.6, 2)
+        wind = round(pyowm.OWM(getenv("OWM_TOKEN")).weather_manager().weather_at_place("Dunajská Streda,sk").weather.wind()["speed"] * 3.6, 2)
         if wind > 30:
             if not self.does_it_fujkin: #ne spameljen annyit
                 self.does_it_fujkin = True
@@ -24,5 +26,5 @@ class FujkinCog(commands.Cog):
         await self.client.wait_until_ready()
         self.channels = (self.client.get_guild(601381789096738863).get_channel(607897146750140457),) #rageon
 
-def setup(client,baselogger): #bot shit
+def setup(client, baselogger): #bot shit
     client.add_cog(FujkinCog(client))

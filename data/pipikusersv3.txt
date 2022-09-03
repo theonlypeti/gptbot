@@ -49,7 +49,7 @@
             ],
             [
                 0,
-                2
+                4
             ]
         ],
         "pill": null,
@@ -58,8 +58,8 @@
         "pw": 0.013,
         "cd": "2022-08-21T00:04:33.430277",
         "methods": 127,
-        "dailyStreak": 2,
-        "dailyDate": "2022-08-22"
+        "dailyStreak": 1,
+        "dailyDate": "2022-08-25T00:00:00"
     },
     {
         "id": 307985197926973452,
@@ -707,7 +707,7 @@
         "pb": 223.863,
         "pw": 1.714,
         "cd": null,
-        "methods": 1,
+        "methods": 5,
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,

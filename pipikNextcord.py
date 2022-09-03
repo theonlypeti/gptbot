@@ -2,9 +2,7 @@ import sys
 import nextcord as discord
 import random
 from nextcord.ext import commands
-import asyncio
 from datetime import datetime, timedelta
-import json
 from utils.antimakkcen import antimakkcen
 import emoji
 import os
@@ -12,11 +10,12 @@ import argparse
 import time as time_module
 import logging
 from dotenv import load_dotenv
+import coloredlogs
 
 start = time_module.perf_counter()
 
 load_dotenv(r"./credentials/main.env")
-parser = argparse.ArgumentParser(prog="PipikBot V3.2",description='A fancy discord bot.',epilog="Written by theonlypeti.")
+parser = argparse.ArgumentParser(prog="PipikBot V3.5",description='A fancy discord bot.',epilog="Written by theonlypeti.")
 parser.add_argument("--minimal",action="store_true",help="Disable most of the extensions.")
 parser.add_argument("--debug",action="store_true",help="Enable debug mode.")
 parser.add_argument("--no_gifsaver",action="store_true",help="Disable gif saver module.")
@@ -29,21 +28,39 @@ parser.add_argument("--no_fujkin",action="store_true",help="Disable fujkin modul
 parser.add_argument("--no_rpg",action="store_true",help="Disable rpg module.")
 parser.add_argument("--no_clovece",action="store_true",help="Disable clovece module.")
 parser.add_argument("--no_topic",action="store_true",help="Disable topic module.")
-parser.add_argument("--no_currency",action="store_true",help="Disable currency exchange module.")
+parser.add_argument("--no_converter",action="store_true",help="Disable converter module.")
 parser.add_argument("--no_testing",action="store_true",help="Disable testing module.")
 parser.add_argument("--no_pipik",action="store_true",help="Disable pipikbot module.")
+parser.add_argument("--no_emotes",action="store_true",help="Disable emotes module.")
+parser.add_argument("--no_color",action="store_true",help="Disable ColorRole module.")
+parser.add_argument("--no_pillow",action="store_true",help="Disable image editor module.")
 args = parser.parse_args()
 
 pipikLogger = logging.getLogger("Base")
-ch = logging.StreamHandler()
-#ch = logging.FileHandler("pipikLog.txt")
+
+#FORMAT = "[{asctime}][{filename}][{lineno:4}][{funcName}][{levelname}] {message}"
+#formatter = logging.Formatter(FORMAT, style="{")  #this is for default logger
+
+fmt = "[ %(asctime)s %(filename)s %(lineno)d %(funcName)s %(levelname)s ] %(message)s"
+coloredlogs.DEFAULT_FIELD_STYLES = {'asctime': {'color': 'green'}, 'lineno': {'color': 'magenta'}, 'levelname': {'bold': True, 'color': 'black'}, 'filename': {'color': 'blue'},'funcname': {'color': 'cyan'}}
+coloredlogs.DEFAULT_LEVEL_STYLES = {'critical': {'bold': True, 'color': 'red'}, 'debug': {'bold': True, 'color': 'black'}, 'error': {'color': 'red'}, 'info': {'color': 'green'}, 'notice': {'color': 'magenta'}, 'spam': {'color': 'green', 'faint': True}, 'success': {'bold': True, 'color': 'green'}, 'verbose': {'color': 'blue'}, 'warning': {'color': 'yellow'}}
+
+#std = logging.StreamHandler()
+#std.setFormatter(formatter)
+#fl = logging.FileHandler("pipikLog.txt")
+#fl.setFormatter(formatter)
 if args.debug:
     pipikLogger.setLevel(logging.DEBUG)
-    ch.setLevel(logging.DEBUG)
+    #std.setLevel(logging.DEBUG)
+    #fl.setLevel(logging.INFO)
+    coloredlogs.install(level='DEBUG', logger=pipikLogger,fmt=fmt)
 else:
     pipikLogger.setLevel(logging.INFO)
-    ch.setLevel(logging.INFO)
-pipikLogger.addHandler(ch)
+    #std.setLevel(logging.INFO)
+    #fl.setLevel(logging.INFO)
+    coloredlogs.install(level='INFO', logger=pipikLogger,fmt=fmt)
+#pipikLogger.addHandler(std)
+#pipikLogger.addHandler(fl)
 
 if not args.minimal and not args.no_maths:
     import MyScripts.matstatMn
@@ -66,12 +83,15 @@ already_checked = []
 # TODO orjson
 # TODO add modal to pill taking and crafting asking how many to use
 # TODO continue the gifsaver add a normal command without reply
-# TODO properly integrate matstat stuff
+# TODO properly integrate matstat stuff, maybe put all subcommands into slashotpion with autocomplete
 # TODO make emojis for pills
 # TODO make a better help command
 # TODO make pipikbot users a dict of id:user instead of a list of users, also redo the getUserFromDC func then
 # TODO make an actual lobby extension
 # TODO make pills buttons edit message not reply
+# TODO In math when returning the latex, invert the black text in pillow? that takes time tho to upload
+# TODO merge caesar, clownize, t9 ize into one context command
+# TODO maybe make some mafia type game but rebrand it to some discord admins and mods vs spammers and use right click user commands
 
 intents = discord.Intents.all() #TODO remember what do i use members intent for?!?!! update: members is used when checking if guild is premium for example
 intents.presences = False
@@ -94,31 +114,27 @@ client.remove_command('help')
 
 #-------------------------------------------------#
 
-def getCommandId(command):
-    every = client.get_application_commands()
-    for i in every:
-        if i.name == command:
-            ids = {}
-            for guild,value in i.command_ids.items():
-                if guild is not None:
-                    ids.update({client.get_guild(guild).name:value})
-                else:
-                    ids.update({"Global": value})
-            return {command: ids}
-    else:
-        val = getCommandId(command.split(" ")[0])
-        return val
+def getCommandId(command) -> dict:
+    # every = client.get_application_commands()
+    # for i in every:
+    #     if i.name == command:
+    #         ids = {}
+    #         for guild, value in i.command_ids.items():
+    #             if guild is not None:
+    #                 ids.update({client.get_guild(guild).name: value})
+    #             else:
+    #                 ids.update({"Global": value})
+    #         return {command: ids}
 
+    return {command: {client.get_guild(i[0][0]) or "Global": i[0][1] for i in (tuple(comm.command_ids.items()) for comm in (comm for comm in client.get_application_commands() if comm.name == command))}}
 
 def mentionCommand(command, guild: int = None) -> str:
-    ids = getCommandId(command)
+    ids = getCommandId(command.split(" ")[0])
     iddict = list(ids.values())[0]
     if guild is not None:
-        guildname = client.get_guild(guild).name
-        if guildname in iddict:
-            return f"`</{command}:{iddict[guildname]}>`"
+        if guild in iddict:
+            return f"`</{command}:{iddict[guild]}>`"
     return f"`</{command}:{iddict['Global']}>`"
-
 
 @client.message_command(name="En-/Decrypt")
 async def caesar(interaction, text):
@@ -234,28 +250,6 @@ async def randomcase(interaction, message):
     assert message.content
     await interaction.send("".join(random.choice([betu.casefold(), betu.upper()]) for betu in message.content) + " <:pepeclown:803763139006693416>")
 
-class ReactSelect(discord.ui.Select):
-    def __init__(self, message):
-        self.optionen = []
-        self.message = message
-        for k in ["same", "mood", "true", "kekw", "kekno", "kekfu", "kekwait", "kekcry", "kekdoubt", "tiny","peepoheart", "tired", "jerrypanik", "hny", "minor_inconvenience", "doggo", "funkyjam", "business","business2", "tavozz", "concern", "amusing", "ofuk","ohgod"]:  # populating the select component with options
-            self.optionen.append(discord.SelectOption(label=k,value=discord_emotes[k],emoji=discord_emotes[k]))
-        super().__init__(placeholder="Select an emote", options=self.optionen)
-
-    async def callback(self, interaction):
-        def check(reaction, user):
-            return not user.bot
-
-        await self.message.add_reaction(self.values[0])
-        reaction, user = await client.wait_for('reaction_add', timeout=6.0, check=check)
-        await self.message.remove_reaction(self.values[0], client.user)
-
-@client.message_command(name="Add reaction")
-async def react(interaction, message):
-    viewObj = discord.ui.View()
-    viewObj.add_item(ReactSelect(message))
-    await interaction.send("Dont forget to click the react yourself too! Also spamming emotes might trip up the anti-spam filter.",ephemeral=True, view=viewObj)
-
 @client.command()
 async def initiatespeh(ctx):
     global spehmode
@@ -263,7 +257,7 @@ async def initiatespeh(ctx):
     print("speh initiated")
 
 @client.slash_command(name="run", description="For running python code")
-async def run(ctx, command):
+async def run(ctx: discord.Interaction, command):
     if "@" in command and ctx.user.id != 617840759466360842:
         await ctx.send("oi oi oi we pinging or what?")
         return
@@ -274,8 +268,9 @@ async def run(ctx, command):
         await ctx.send("Lol no sorry not risking anyone else doing stuff with MY reddit account xDDD")
         return
     try:
-        async with ctx.channel.typing():
-            a = eval(command)
+        #async with ctx.channel.typing():
+        await ctx.response.defer()
+        a = eval(command)
         await ctx.send(a)
     except Exception as a:
         await ctx.send(a)
@@ -284,106 +279,10 @@ discord_emotes = {}
 
 @client.event
 async def on_ready():
-    game = discord.Game(f"{linecount} lines of code; V3.0! use /help")
+    game = discord.Game(f"{linecount} lines of code; V3.5! use /help")
     await client.change_presence(status=discord.Status.online, activity=game)
-    print(f"Signed in {datetime.now()}")
-    pipikLogger.debug(f"{time_module.perf_counter() - start} Bootup time")
-    readEmotes()
-
-def saveEmotes():
-    with open(root+"/data/pipikemotes.txt", "w") as file:
-        json.dump(discord_emotes, file, indent=4)
-    pipikLogger.info("saved emotes")
-
-def readEmotes():
-    global discord_emotes
-    with open(root+"/data/pipikemotes.txt", "r") as file:
-        discord_emotes = json.load(file)
-    pipikLogger.info("loaded emotes")
-
-@client.command()
-async def registerEmote(ctx, *attr):
-    for emoji in attr:
-        discord_emotes.update({emoji.split(":")[-2]: emoji})
-    saveEmotes()
-
-@client.command()
-async def registerAnimatedEmotes(ctx, howmany):
-    howmany = int(howmany)
-    for emoji in reversed(ctx.message.guild.emojis):
-        if emoji.animated and howmany:
-            howmany -= 1
-            discord_emotes.update({emoji.name: f"<a:{emoji.name}:{emoji.id}>"})
-    saveEmotes()
-
-@client.command()
-async def reloadEmotes(ctx):
-    readEmotes()
-
-async def getMsgFromLink(link):
-    link = link.split('/')
-    #server_id = int(link[4])
-    channel_id = int(link[5])
-    msg_id = int(link[6])
-    #server = client.get_guild(server_id)
-    channel = client.get_channel(channel_id)
-    message = await channel.fetch_message(msg_id)
-    return message
-
-@client.slash_command(name="emote", description="For using special emotes")
-async def emote(ctx,
-                emote=discord.SlashOption(name="emoji",description="An emoji name, leave blank if you want to list them all out.",required=False, default=None),
-                msg:str =discord.SlashOption(name="message_link",description="Use 'copy message link' to specify a message to react to.",required=False),
-                text:str = discord.SlashOption(name="text",description="The text message to send along with any emotes, use {emotename} as placeholder.",required=False, default=None)):
-    def check(reaction, user):
-        return not user.bot and (str(reaction.emoji) in list(discord_emotes.values()))
-
-    pipikLogger.debug(f"{ctx.user}, {emote}, {datetime.now()}")
-    if msg and emote:
-        mess = await getMsgFromLink(msg)
-        await mess.add_reaction(discord_emotes[emote])
-        await ctx.send("Now go react on the message", ephemeral=True)
-        try:
-            reaction, user = await client.wait_for('reaction_add', timeout=6.0, check=check)
-        except asyncio.TimeoutError:
-            pipikLogger.debug("emote timed out")
-        finally:
-            await mess.remove_reaction(discord_emotes[emote], client.user)
-    elif text:
-        try:
-            text = text.replace("{", "{discord_emotes['")
-            text = text.replace("}", "']}")
-            text = eval(f'f"{text}"')
-            await ctx.send(f"{text}")
-        except Exception as e:
-            pipikLogger.warning(e)
-            await ctx.send(e,ephemeral=True)
-
-    elif not emote:
-        emotestr = ";".join([f"{v} {k}" for k, v in discord_emotes.items()])
-        splitat = emotestr[4096::-1].index(";") #hehe this is a funny way to do it
-        print(splitat)
-        embedVar = discord.Embed(title="Emotes", description=emotestr[:4096-splitat], color=ctx.user.color)
-        for i in range(4096-splitat, len(emotestr), 1024):
-            embedVar.add_field(name=i, value=emotestr[i:min(i + 1024, len(emotestr))])
-        embedVar.set_footer(text=f"{len(emotestr)} / 6000 chars in one message")
-        await ctx.send(embed=embedVar, ephemeral=True)
-        return
-    else:
-        await ctx.send(discord_emotes[emote])
-
-@emote.on_autocomplete("emote")
-async def emote_autocomplete(interaction, emote: str):
-    if not emote:
-        # send the full autocomplete list
-        randomemotes = list(discord_emotes.keys())
-        random.shuffle(randomemotes)
-        await interaction.response.send_autocomplete(randomemotes[:25])
-        return
-    # send a list of nearest matches from the list of emotes
-    get_near_emote = [i for i in discord_emotes.keys() if i.casefold().startswith(emote.casefold())]
-    get_near_emote = get_near_emote[:25]
-    await interaction.response.send_autocomplete(get_near_emote)
+    print(f"Signed in at {datetime.now()}")
+    pipikLogger.info(f"{time_module.perf_counter() - start} Bootup time")
 
 @client.event
 async def on_message(ctx):
@@ -406,7 +305,6 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                 await boci.timeout(timedelta(minutes=3), reason="Saját magára rakta a keket")
                 uzenet = "Imagine saját vicceiden nevetni. " + random.choice("<:cringe:644026740242645023> <:OhNoCringe:945225281172553760> <:cassiecringe:859589366870573106> <:SCCRINGE:664519482416300053> <:Catastrophe_CringeBro:645327316540456998> <:AntonCringe:690691883500044409> <a:cringesmiley:774412323662069770> <a:cringepepepet:773106637774913586> <:notcringebutwtf:600071034229751848> <:flushcringe:644026697880043570> <:pepe_cringe:774411918081261578>".split(" "))
                 await reaction.message.reply(uzenet)
-
 
     if reaction.emoji == emoji.emojize(":thumbs_down:"):
         if reaction.message.author.id == 569937005463601152:
@@ -479,16 +377,21 @@ cogs.remove("wordlecog.py") if args.no_wordle or args.minimal else None
 cogs.remove("rpgcog.py") if args.no_rpg or args.minimal else None
 cogs.remove("cloveckocog.py") if args.no_clovece or args.minimal else None
 cogs.remove("topiccog.py") if args.no_topic or args.minimal else None
-cogs.remove("currencyCog.py") if args.no_currency or args.minimal else None
+cogs.remove("converterCog.py") if args.no_converter or args.minimal else None
 cogs.remove("testing.py") if args.no_testing else None
 cogs.remove("pipikcog.py") if args.no_pipik or args.minimal else None
+cogs.remove("emotecog.py") if args.no_emotes or args.minimal else None
+cogs.remove("ColorRoleCog.py") if args.no_color or args.minimal else None
+cogs.remove("pillowcog.py") if args.no_pillow or args.minimal else None
+#TODO make this more dynamically generated?
+#print(args.__getattribute__("debug"))
 
 for n, file in enumerate(cogs, start=1):
     if file.endswith(".py"):
         with open("./cogs/"+file, "r", encoding="UTF-8") as f:
             linecount += len(f.readlines())
         client.load_extension("cogs." + file[:-3],extras={"baselogger":pipikLogger})
-        sys.stdout.write(f"\rLoading... {round((n / len(cogs)) * 100,2)}% [{((int((n/len(cogs))*10)*'=')+'>').ljust(11, ' ')}]")
+        sys.stdout.write(f"\rLoading... {round((n / len(cogs)) * 100,2)}% [{((int((n/len(cogs))*10)*'=')+'>').ljust(11, ' ')}]")  #TODO do format instead of round
         sys.stdout.flush()
 sys.stdout.write("\rAll cogs loaded.                    \n")
 sys.stdout.flush()

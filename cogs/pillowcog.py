@@ -8,6 +8,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageFilter, ImageOps
 THUMBNAIL_SIZE = (720, 480)
 
 #TODO add quality and speed options
+#TODO check when right click, if bot has permission to that channel
+#TODO highlighter
+#TODO use layers, use dropdowns to select them and shit
+#TODO make custom emojis
 
 class PillowCog(commands.Cog):
     def __init__(self,client, baselogger): #TODO add some debug loggings?
@@ -19,6 +23,16 @@ class PillowCog(commands.Cog):
             self.original = copy
             self.boundary = boundary
             self.image = copy.crop(self.boundary)
+
+        def rotateBoundary(self): #rotating around selection center point
+            w = self.image.width
+            h = self.image.height
+            oldpos = self.boundary
+            newpos = (oldpos[0] + w / 2 - h / 2,
+                      oldpos[1] + h / 2 - w / 2,
+                      oldpos[2] - w / 2 + h / 2,
+                      oldpos[3] - h / 2 + w / 2)
+            self.boundary = tuple(map(int, newpos))
 
     class EditorView(discord.ui.View):
         def __init__(self, cog, message: discord.Message, image: Image, filetype: str):
@@ -45,21 +59,18 @@ class PillowCog(commands.Cog):
 
         @discord.ui.button(label="Rotate/Flip", style=discord.ButtonStyle.gray, emoji=emoji.emojize(':right_arrow_curving_left:'))
         async def rotatebutton(self, button, interaction):
-            print(self.selection)
             viewObj = self.cog.TransformView(self)
             await self.message.edit(view=viewObj)
 
         @discord.ui.button(label="Corrections", style=discord.ButtonStyle.gray,emoji=emoji.emojize(':level_slider:'),disabled=False)
         async def slidersbutton(self, button, interaction: discord.Interaction):
             await interaction.response.defer()
-            print(self.selection)
             viewObj = self.cog.CorrectionsView(self)
             await self.message.edit(view=viewObj) # contrast, saturation, brightness, hue?, gamma?
 
         @discord.ui.button(label="Crop", style=discord.ButtonStyle.gray, emoji=emoji.emojize(':scissors:'))
         async def cropbutton(self, button, interaction):
             await interaction.response.defer()
-            print(self.selection)
             if self.selection is not None:
                 self.img = self.selection.image
                 self.selection = None
@@ -130,6 +141,7 @@ class PillowCog(commands.Cog):
 
             if self.returnview.selection:
                 self.returnview.img.paste(toedit, self.returnview.selection.boundary)
+                self.returnview.selection.image = toedit
             else:
                 self.returnview.img = toedit
 
@@ -224,75 +236,65 @@ class PillowCog(commands.Cog):
 
         @discord.ui.button(label="Left", style=discord.ButtonStyle.gray, emoji=emoji.emojize(":arrow_right_hook:", language="alias"))
         async def rotateleft(self, button, interaction: discord.Interaction):
+            await interaction.response.defer()
             if self.selection:
-                drawctx = ImageDraw.Draw(self.img)
-                drawctx.rectangle(self.selection.boundary,fill=(0, 0, 0))
-
-                #rotating around selection center point
-                oldpos = self.selection.boundary
-                w = self.selection.image.width
-                h = self.selection.image.height
-                newpos = (oldpos[0] + w/2 - h/2,
-                          oldpos[1] + h/2 - w/2,
-                          oldpos[2] - w/2 + h/2,
-                          oldpos[3] - h/2 + w/2)
-                newpos = tuple(map(int, newpos))
-                self.returnView.selection.boundary = newpos
-
+                self.img = self.returnView.img.copy()
+                drawctx = ImageDraw.Draw(self.returnView.img)
+                #drawctx.rectangle(self.selection.boundary,fill=(0, 0, 0))
+                self.selection.rotateBoundary()
                 self.selection.image = self.selection.image.transpose(method=Image.Transpose.ROTATE_90)
-                self.returnView.img.paste(self.selection.image, box=newpos)
+                self.returnView.img.paste(self.selection.image, box=self.selection.boundary)
             else:
-                self.returnView.img = self.returnView.img.transpose(method=Image.Transpose.ROTATE_90)
-            th = self.cog.makeThumbnail(self.returnView)
+                self.img = self.returnView.img.transpose(method=Image.Transpose.ROTATE_90)
+            th = self.cog.makeThumbnail(self)
             await self.cog.show(interaction.message, th, self.filetype, view=self)
 
         @discord.ui.button(label="Right", style=discord.ButtonStyle.gray, emoji=emoji.emojize(":leftwards_arrow_with_hook:", language="alias"))
         async def rotateright(self, button, interaction: discord.Interaction):
+            await interaction.response.defer()
             if self.selection:
+                self.img = self.returnView.img.copy()
                 drawctx = ImageDraw.Draw(self.img)
-                drawctx.rectangle(self.selection.boundary,fill=(0, 0, 0))
-
-                #rotating around selection center point
-                oldpos = self.selection.boundary
-                w = self.selection.image.width
-                h = self.selection.image.height
-                newpos = (oldpos[0] + w/2 - h/2,
-                          oldpos[1] + h/2 - w/2,
-                          oldpos[2] - w/2 + h/2,
-                          oldpos[3] - h/2 + w/2)
-                newpos = tuple(map(int,newpos))
-                self.returnView.selection.boundary = newpos
-
+                #drawctx.rectangle(self.selection.boundary,fill=(0, 0, 0))
+                self.selection.rotateBoundary()
                 self.selection.image = self.selection.image.transpose(method=Image.Transpose.ROTATE_270)
-                self.returnView.img.paste(self.selection.image, box=newpos)
+                self.img.paste(self.selection.image, box=self.selection.boundary)
             else:
-                self.returnView.img = self.returnView.img.transpose(method=Image.Transpose.ROTATE_270)
-            th = self.cog.makeThumbnail(self.returnView)
+                self.img = self.img.transpose(method=Image.Transpose.ROTATE_270)
+            th = self.cog.makeThumbnail(self)
             await self.cog.show(interaction.message, th, self.filetype, view=self)
 
         @discord.ui.button(label="Flip Horizont", style=discord.ButtonStyle.gray, emoji=emoji.emojize(":left_right_arrow:", language="alias"))
         async def horizontalflip(self, button, interaction: discord.Interaction):
+            await interaction.response.defer()
             if self.selection:
                 self.selection.image = self.selection.image.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
                 self.returnView.img.paste(self.selection.image, box=self.selection.boundary)
             else:
-                self.returnView.img = self.returnView.img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
-            th = self.cog.makeThumbnail(self.returnView)
-            await self.cog.show(interaction.message, th, self.filetype, view=self) #TODO only do work on self.img, so i can do self.cog.returnMenu(this) and add a cancel button that discards self.img, while confirm overwrites returnView.img
+                self.img = self.img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
+            th = self.cog.makeThumbnail(self)
+            await self.cog.show(interaction.message, th, self.filetype, view=self)
 
         @discord.ui.button(label="Flip Vertical", style=discord.ButtonStyle.gray, emoji=emoji.emojize(":arrow_up_down:", language="alias"))
         async def verticalflip(self, button, interaction: discord.Interaction):
+            await interaction.response.defer()
             if self.selection:
                 self.selection.image = self.selection.image.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
                 self.returnView.img.paste(self.selection.image,box=self.selection.boundary)
             else:
-                self.returnView.img = self.returnView.img.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
-            th = self.cog.makeThumbnail(self.returnView)
+                self.img = self.img.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
+            th = self.cog.makeThumbnail(self)
             await self.cog.show(interaction.message, th, self.filetype, view=self)
 
-        @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"))
+        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, emoji=emoji.emojize(":cross_mark:"),row=1)
+        async def cancelflipbutton(self, button, interaction):
+            await interaction.response.defer()
+            await self.cog.returnMenu(self.returnView)
+
+        @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"),row=1)
         async def finalizeflipbutton(self, button, interaction):
             await interaction.response.defer()
+            self.returnView.img = self.img
             await self.message.edit(view=self.returnView) #no need to make a new thumbnail
 
     class SelectionView(discord.ui.View):
@@ -311,9 +313,9 @@ class PillowCog(commands.Cog):
 
             #divisor lines every 100pxs
             for w in range(0,copy.width,100):
-                drawctx.line(((w, 0), (w, copy.height)), fill=(255, 255, 255), width=2 if copy.width > 400 else 1)
+                drawctx.line(((w, 0), (w, copy.height)), fill=(255, 120, 255), width=2 if copy.width > 400 else 1)
             for h in range(0,copy.height,100):
-                drawctx.line(((0, h), (copy.width, h)), fill=(255, 255, 255), width=1)
+                drawctx.line(((0, h), (copy.width, h)), fill=(255, 120, 255), width=1)
 
             #boundary lines
             if self.boundaries:
@@ -335,7 +337,13 @@ class PillowCog(commands.Cog):
         async def expandboundariesbutton(self, button, interaction: discord.Interaction):
             await interaction.response.send_modal(self.cog.SelectionExpandModal(self.boundaries, self))
 
-        @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"))
+        @discord.ui.button(label="Deselect", style=discord.ButtonStyle.red, emoji=emoji.emojize(":white_square_button:"))
+        async def deselbutton(self, button, interaction):
+            self.boundaries = None
+            thumbnail = self.drawBoundaries()
+            await self.returnView.cog.show(interaction.message, thumbnail, self.returnView.filetype, self)
+
+        @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"),row=1)
         async def finalizeselectingbutton(self, button, interaction):
             if self.boundaries:
                 try:
@@ -350,14 +358,7 @@ class PillowCog(commands.Cog):
 
             await self.cog.returnMenu(self.returnView)
 
-        @discord.ui.button(label="Deselect", style=discord.ButtonStyle.red, emoji=emoji.emojize(":white_square_button:"))
-        async def deselbutton(self, button, interaction):
-            self.boundaries = None
-            thumbnail = self.drawBoundaries()
-            await self.returnView.cog.show(interaction.message, thumbnail, self.returnView.filetype, self)
-
-
-        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, emoji=emoji.emojize(":cross_mark:"))
+        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, emoji=emoji.emojize(":cross_mark:"),row=1)
         async def canceleditbutton(self, button, interaction):
             await self.cog.returnMenu(self.returnView)
 
@@ -474,7 +475,7 @@ class PillowCog(commands.Cog):
 
             mult = ((100 - (len(max(top, bottom, key=len))*2))/100)
             textsize = (img.width//10) * max(mult, 0.5)
-            textsize = int(max(textsize, 10))
+            textsize = int(max(textsize, 50)) #todo devize an algorithm to determine optimal size
             fnt = ImageFont.truetype('impact.ttf', size=textsize) #TODO font select maybe? who knows maybe when modal dropdowns are available
             #fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeMono.ttf", 40)
 

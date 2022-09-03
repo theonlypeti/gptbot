@@ -27,10 +27,10 @@ class SympyCog(commands.Cog):
             self.symbol = discord.ui.TextInput(label="Integrate for ∫x d[_]",required=True,default_value="x")
             self.add_item(self.symbol)
 
-            self.lower = discord.ui.TextInput(label="Lower bound (use -oo or -inf for -∞)", default_value="0",required=True)
+            self.lower = discord.ui.TextInput(label="Lower bound (use -oo or -inf for -∞)", default_value="0", required=True)
             self.add_item(self.lower)
 
-            self.upper = discord.ui.TextInput(label="Upper bound (use oo or inf for ∞)", default_value="x",required=True)
+            self.upper = discord.ui.TextInput(label="Upper bound (use oo or inf for ∞)", default_value="x", required=True)
             self.add_item(self.upper)
 
         async def callback(self, ctx):
@@ -47,9 +47,9 @@ class SympyCog(commands.Cog):
                 upper = self.upper.value
             try:
                 print(expression,type(expression))
-                result = integrate(expression,(symbol,lower,upper))
-                embedVar = discord.Embed(title=f'Result of ∫{escape_markdown(expression)} d{symbol} from {lower} to {upper}', description=escape_markdown(str(result)),color=ctx.user.color)
-                latexed = latex(result).replace(" ","%20")
+                result = integrate(expression, (symbol, lower, upper))
+                embedVar = discord.Embed(title=f'Result of ∫{escape_markdown(expression)} d{symbol} from {lower} to {upper}', description=escape_markdown(str(result)), color=ctx.user.color)
+                latexed = latex(result).replace(" ", "%20")
                 embedVar.set_image(url=f'https://latex.codecogs.com/png.image?{latexed}')
                 await ctx.send(embed=embedVar)
             except Exception as e:
@@ -59,13 +59,13 @@ class SympyCog(commands.Cog):
     class DiffModal(discord.ui.Modal):
         def __init__(self):
             super().__init__(title="Derivation calculator")
-            self.expression = discord.ui.TextInput(label="Expression [_]'",required=True)
+            self.expression = discord.ui.TextInput(label="Expression [_]'", required=True)
             self.add_item(self.expression)
 
-            self.symbol = discord.ui.TextInput(label="Derivate for",required=True,default_value="x")
+            self.symbol = discord.ui.TextInput(label="Derivate for", required=True, default_value="x")
             self.add_item(self.symbol)
 
-            self.nth = discord.ui.TextInput(label="Nth derivative", default_value="1",required=False)
+            self.nth = discord.ui.TextInput(label="Nth derivative", default_value="1", required=False)
             self.add_item(self.nth)
 
         async def callback(self, ctx):

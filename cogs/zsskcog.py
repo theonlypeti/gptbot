@@ -1,6 +1,4 @@
-import logging
 import random
-
 from nextcord.ext import commands
 import nextcord as discord
 import os
@@ -18,22 +16,25 @@ with open("vonatdb.json", "r") as file:
 os.chdir(root)
 
 class TimeTable(object):
-    def __init__(self,time,cities,meska,vlaktype):
+    def __init__(self, time, cities, meska, vlaktype):
         self.time = time
         self.cities = cities
         self.delay = meska
         self.vlaktype = vlaktype
 
 class ZSSKCog(commands.Cog):
-    def __init__(self,client,baselogger):
+    def __init__(self, client, baselogger):
         self.client=client
         self.tt = None
         self.zsskLogger = baselogger.getChild("ZsskLogger")
 
-    def getTimeTable(self,link):
+    def getTimeTable(self, link):
         stranka = requests.get(link).content #TODO make into aiohttp
         soup = html(stranka, 'html.parser')
-        a = soup.find_all(attrs={"title":"Zobraziť detail spoja"})[0] #TODO dont find all pls
+        try:
+            a = soup.find_all(attrs={"title":"Zobraziť detail spoja"})[0] #TODO dont find all pls
+        except Exception as e:
+            return None
         link=a.get("href")
         stranka = requests.get(link).content
         delay = soup.find("a",attrs={"class":"delay-bubble"})        
@@ -74,6 +75,8 @@ class ZSSKCog(commands.Cog):
         else:
             link = f"https://cp.hnonline.sk/vlakbus/spojenie/vysledky/?"+(f"date={date}&" if date else "") + (f"time={time}&" if time else "") +f"f={fromcity}&fc=1&t={tocity}&tc=1&af=true&trt=150,151,152,153"
             self.tt = self.getTimeTable(link)
+            if self.tt is None:
+                await ctx.send("Not found.",delete_after=5)
             self.znelka()
 
     @zssk.on_autocomplete("tocity")
@@ -97,7 +100,8 @@ class ZSSKCog(commands.Cog):
 
     def traintype(self):
         os.chdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\V1")
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="NFVOS.WAV"),
+        sound = random.choice(os.listdir())
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=sound), #NFVOS
                           after=lambda a: self.smerom())
 
     def smerom(self):
@@ -131,15 +135,17 @@ class ZSSKCog(commands.Cog):
                                                   after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C3\\"+str(int(tt.time.split(":")[1]))+".WAV"),
                                                                                             after=lambda a: self.meskanie(tt))))
 
-    def meskanie(self,tt):
+    def meskanie(self, tt):
         if tt.delay:
-            delay = int(tt.delay)
-            delay = round(delay//5)*5
-            if delay == 0:
-                delay = 5
-            
             try:
-                delay = str(round(delay // 10) * 10) or 5
+                delay = int(tt.delay)
+                delay = round(delay//5)*5
+                if delay == 0:
+                    delay = 5
+            except Exception:
+                delay = 5
+            try:
+                delay = str((round(delay // 10) * 10) or 5)
                 file = open("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+str(delay)+".WAV","r")
             except OSError:
                 file = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+str(delay)+".WAV"
