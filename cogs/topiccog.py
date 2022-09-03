@@ -1,4 +1,3 @@
-import logging
 import os
 import random
 from nextcord.ext import commands
@@ -26,7 +25,7 @@ root = os.getcwd()
 
 class TopicCog(commands.Cog):
     def __init__(self,client,baselogger):
-        global reddithandler,topicLogger
+        global reddithandler, topicLogger
         self.client = client
         topicLogger = baselogger.getChild('topicLogger')
         reddithandler = self.RedditHandler(self)
@@ -394,7 +393,7 @@ class TopicCog(commands.Cog):
 
         def prettyprint(self, post, *attr):
             embedVar = discord.Embed(title=post.title if len(post.title) <= 256 else "\u200b",description=post.title if len(post.title) > 256 else (post.selftext[:min(self.max_comment_length, len(post.selftext))] + ("... " if len(post.selftext) > self.max_comment_length else "")) if (post.selftext and len(post.selftext) <= 1000) else "\u200b",color=attr[0].color if attr else discord.Colour.random())
-            embedVar.set_footer(text=f"id: {post.id}" + " |{} | </topic:1011376055413649558> to change topic".format(subemoji[post.subreddit.display_name]) + (" | Low score. Might be stupid?!" if post.score < 100 else " | " + str(post.score) + " points."))
+            embedVar.set_footer(text=f"id: {post.id}" + " |{} | /topic to change topic".format(subemoji[post.subreddit.display_name]) + (" | Low score. Might be stupid?!" if post.score < 100 else " | " + str(post.score) + " points."))
             return embedVar
 
         def comments(self, post,color=None):  # please dont judge me its so fucked up

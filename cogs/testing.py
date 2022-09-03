@@ -1,15 +1,11 @@
 import asyncio
-import io
 import os
 import random
 from io import BytesIO
 from typing import Union
-
-import PIL
 import nextcord as discord
 from PIL import Image, ImageOps
 from nextcord.ext import commands
-
 
 class Selection:
     def __init__(self,img: Image,boundary: tuple):
@@ -56,7 +52,7 @@ class Testing(commands.Cog):
         viewObj = self.testvw()
         viewObj.msg = await ctx.send(view=viewObj)
 
-    @discord.slash_command(name="modaltesting", description="testing")
+    @discord.slash_command(name="modaltesting", description="testing", guild_ids=(860527626100015154,))
     async def modaltesting(self, ctx):
         await ctx.response.send_modal(self.TextInputModal())
 
@@ -65,10 +61,9 @@ class Testing(commands.Cog):
         await ctx.response.defer()
         if ctx.user.id != 617840759466360842:
             return
-        os.chdir(r"D:\Users\Peti.B\Pictures\microsoft\Windows\ft")
-        sample = [file for file in os.listdir() if file.endswith(".jpg") or file.endswith(".png")]
-        with ctx.channel.typing():
-            await ctx.send(files=[discord.File(random.choice(sample))])
+        os.chdir(r"D:\Users\Peti.B\Pictures\microsoft\Windows\shop")
+        sample = [file for file in os.listdir() if not file.endswith(".mp4")]
+        await ctx.send(files=[discord.File(random.choice(sample))])
 
     @discord.slash_command(name="testselections", description="Image editor in development")
     async def testimageeditorcommand(self, interaction: discord.Interaction,
@@ -83,19 +78,19 @@ class Testing(commands.Cog):
         selection = Selection(img,(0,0,img.size[0]/2,img.size[1]/2))   #left top right bottom
         selection.image = ImageOps.invert(selection.image)
         img.paste(selection.image,box=selection.boundary)
-        with io.BytesIO() as image_binary:
+        with BytesIO() as image_binary:
             img.save(image_binary, filetype)
             image_binary.seek(0)
             await interaction.send(file=discord.File(fp=image_binary, filename=f'image.{filetype}'))
 
     async def showimg(self,
                     interface: Union[discord.Interaction, discord.Message],
-                    img: PIL.Image,
+                    img: Image,
                     filetype: str,
                     view: discord.ui.View = None,
                     txt:str = None) -> discord.Message:
 
-        with io.BytesIO() as image_binary:
+        with BytesIO() as image_binary:
             if img:
                 img.save(image_binary, filetype)
                 image_binary.seek(0)
@@ -121,7 +116,7 @@ class Testing(commands.Cog):
             super().__init__(timeout=None)
 
         @discord.ui.button(label="Delete me")
-        async def deletebuttontwo(self, button, interaction):
+        async def removeeview(self, button, interaction):
             print(interaction.message, "\n", self.message)
             print(interaction.message.id, self.message.id,interaction.message == self.message)
 

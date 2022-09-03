@@ -578,7 +578,7 @@ class LobbyCog(commands.Cog):
             self.lobbies.append(newLobby)
             user.inLobby = newLobby.code
 
-            await ctx.send(embed=discord.Embed(title=f"You are now the lobby leader of {newLobby.code}",
+            await ctx.send(embed=discord.Embed(title=f"You are now the lobby leader of ||{newLobby.code}||",
                 description="You can add bots with the **Add bot** button\n\nYou can remove players/bots from the lobby with the **Kick player** button\n\nIf the channel is spammed over, you can resend the lobby message with the **Resend lobbymsg** button\n\nWhen everybody is ready, a start game ({}) button will appear under the lobby message.".format(emoji.emojize(":right_arrow:"))),ephemeral=True,view=self.MngmntView(newLobby,self))
             newLobby.managemsg = await ctx.original_message()
             
@@ -593,16 +593,16 @@ class LobbyCog(commands.Cog):
             self.cog = cog
             self.players = []
             self.private = private
-            while (code := "".join([chr(randint(65,90)) for _ in range(4)])) in [lobby.code for lobby in self.cog.lobbies]:
+            while (code := "".join([chr(randint(65, 90)) for _ in range(4)])) in [lobby.code for lobby in self.cog.lobbies]:
                 cloveceLogger.info(f"generating lobbycode {code}")
                 continue
             self.code = code
             self.ongoing = False
             self.managemsg = None
             self.messageid = messageid
-            self.lobbyleader = ctx.user #TODO have better names below
-            self.bot_names = ["Bot Šaňo","Bot Matilda","Bot Kazimír","Bot Blahomíra","Bot Ladislav","Bot Stanislav","Bot Stanislava","Bot Euridika","Bot Edmund","Bot Vladimir","Bot Vlastimil","Bot Svätopluk"]
-            self.bot_icons = [":computer:",":desktop_computer:",":space_invader:",":robot:"]
+            self.lobbyleader = ctx.user
+            self.bot_names = ['Bot Abraham', 'Bot Albert', 'Bot Alfred', 'Bot Archibald', 'Bot Arthur', 'Bot Benedict', 'Bot Charles', 'Bot Edward', 'Bot Eric', 'Bot Ernest', 'Bot Frank', 'Bot Frederick', 'Bot George', 'Bot Henry', 'Bot Jack', 'Bot Oliver', 'Bot Reginald', 'Bot Stanley', 'Bot Ted', 'Bot Winston']
+            self.bot_icons = [":computer:", ":desktop_computer:", ":space_invader:", ":robot:"]
             shuffle(self.bot_names) #zoznam mien z ktorych si BOTi random vyberaju
             shuffle(self.bot_icons)
 
@@ -725,24 +725,24 @@ class LobbyCog(commands.Cog):
                 return None
         return lobby
 
-    @clovece.subcommand(name="join",description="Join an existing človeče lobby.")
-    async def joinlobby(self,ctx,lobbyid=discord.SlashOption(name="lobbyid",description="A lobby´s identification e.g. ABCD",required=True)):
+    @clovece.subcommand(name="join", description="Join an existing človeče lobby.")
+    async def joinlobby(self, ctx, lobbyid=discord.SlashOption(name="lobbyid", description="A lobby´s identification e.g. ABCD", required=True)):
         user = self.getUserFromDC(ctx.user)
         lobby = await self.findLobby(lobbyid)
         if lobby:
-            await lobby.addPlayer(user,ctx)
+            await lobby.addPlayer(user, ctx)
         else:
-            await ctx.send(embed=discord.Embed(title="Lobby \"**{}**\" not found".format(lobbyid),color=ctx.user.color),ephemeral=True)
+            await ctx.send(embed=discord.Embed(title="Lobby \"**{}**\" not found".format(lobbyid),color=ctx.user.color), ephemeral=True)
 
-    @clovece.subcommand(name="leave",description="Leave the človeče lobby you are currently in.")
-    async def leavelobby(self,ctx):
+    @clovece.subcommand(name="leave", description="Leave the človeče lobby you are currently in.")
+    async def leavelobby(self, ctx):
         user = self.getUserFromDC(ctx.user)
         lobby = await self.findLobby(user.inLobby)
         if lobby:
-            await ctx.send(embed=discord.Embed(title=f"Left {lobby.code}.", color=ctx.user.color),ephemeral=True)
-            await lobby.removePlayer(ctx.channel,user)
+            await ctx.send(embed=discord.Embed(title=f"Left {lobby.code}.", color=ctx.user.color), ephemeral=True)
+            await lobby.removePlayer(ctx.channel, user)
         else:
-            await ctx.send(embed=discord.Embed(title="You are not currently in a lobby.",color=ctx.user.color),ephemeral=True)
+            await ctx.send(embed=discord.Embed(title="You are not currently in a lobby.",color=ctx.user.color), ephemeral=True)
             
     def getUserFromDC(self, dcUser):
         if isinstance(dcUser, int):

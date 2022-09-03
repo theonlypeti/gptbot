@@ -10,12 +10,12 @@ class AsFunc:
         self.label = label
         self.placeholder = placeholder
 
-permut = AsFunc(title="Permutácie", label="Permutacie", placeholder="(1,2)(3,4)o(5,6)o(7,8,9)",func=solver)
-zobraz = AsFunc(title="Zobrazenie", label="Zobrazenie", placeholder="(a,b,c,d)o(b,c,d,a)",func=solver2)
-rady = AsFunc(title="Rády", label="Permutácia s rádom", placeholder="(1,2,3)^3",func=solver3)
+permut = AsFunc(title="Permutácie", label="Permutacie", placeholder="(1,2)(3,4)o(5,6)o(7,8,9)", func=solver)
+zobraz = AsFunc(title="Zobrazenie", label="Zobrazenie", placeholder="(a,b,c,d)o(b,c,d,a)", func=solver2)
+rady = AsFunc(title="Rády", label="Permutácia s rádom", placeholder="(1,2,3)^3", func=solver3)
 
 class AsCog(commands.Cog):
-    def __init__(self,client,baselogger):
+    def __init__(self, client, baselogger):
         pass
         #global aslogger
         #self.client = client
@@ -36,10 +36,10 @@ class AsCog(commands.Cog):
                 embedVar.add_field(name="Výsledok", value=self.func(vstup))
             except Exception as e:
                 embedVar.add_field(name="Chyba", value=e)
-            embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}",icon_url=interaction.user.avatar.url)
+            embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}", icon_url=interaction.user.avatar.url)
             await interaction.send(embed=embedVar)
 
-    @discord.slash_command(name="as", description="Kalkulačky pre predmet Algebraické štruktúry",guild_ids=(601381789096738863, 860527626100015154, 800196118570205216))
+    @discord.slash_command(name="as", description="Kalkulačky pre predmet Algebraické štruktúry", guild_ids=(601381789096738863, 860527626100015154, 800196118570205216))
     async def asbase(self, interaction):
         pass
 
@@ -58,5 +58,5 @@ class AsCog(commands.Cog):
         modal = self.AsModal(rady)
         await interaction.response.send_modal(modal)
 
-def setup(client,baselogger):
-    client.add_cog(AsCog(client,baselogger))
+def setup(client, baselogger):
+    client.add_cog(AsCog(client, baselogger))
