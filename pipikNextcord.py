@@ -15,25 +15,16 @@ import coloredlogs
 start = time_module.perf_counter()
 
 load_dotenv(r"./credentials/main.env")
+
 parser = argparse.ArgumentParser(prog="PipikBot V3.5",description='A fancy discord bot.',epilog="Written by theonlypeti.")
-parser.add_argument("--minimal",action="store_true",help="Disable most of the extensions.")
-parser.add_argument("--debug",action="store_true",help="Enable debug mode.")
-parser.add_argument("--no_gifsaver",action="store_true",help="Disable gif saver module.")
-parser.add_argument("--no_ais",action="store_true",help="Disable ais témy module.")
-parser.add_argument("--no_radio",action="store_true",help="Disable radio module.")
-parser.add_argument("--no_wordle",action="store_true",help="Disable wordle module.")
-parser.add_argument("--no_zssk",action="store_true",help="Disable zssk module.")
-parser.add_argument("--no_maths",action="store_true",help="Disable maths module.")
-parser.add_argument("--no_fujkin",action="store_true",help="Disable fujkin module.")
-parser.add_argument("--no_rpg",action="store_true",help="Disable rpg module.")
-parser.add_argument("--no_clovece",action="store_true",help="Disable clovece module.")
-parser.add_argument("--no_topic",action="store_true",help="Disable topic module.")
-parser.add_argument("--no_converter",action="store_true",help="Disable converter module.")
-parser.add_argument("--no_testing",action="store_true",help="Disable testing module.")
-parser.add_argument("--no_pipik",action="store_true",help="Disable pipikbot module.")
-parser.add_argument("--no_emotes",action="store_true",help="Disable emotes module.")
-parser.add_argument("--no_color",action="store_true",help="Disable ColorRole module.")
-parser.add_argument("--no_pillow",action="store_true",help="Disable image editor module.")
+
+for cog in os.listdir("./cogs"):
+    if cog.endswith("cog.py"):
+        parser.add_argument(f"--no_{cog.removesuffix('cog.py')}", action="store_true", help=f"Disable {cog} extension.")
+
+parser.add_argument("--minimal", action="store_true", help="Disable most of the extensions.")
+parser.add_argument("--debug", action="store_true", help="Enable debug mode.")
+parser.add_argument("--no_testing", action="store_true", help="Disable testing module.")
 args = parser.parse_args()
 
 pipikLogger = logging.getLogger("Base")
@@ -62,7 +53,7 @@ else:
 #pipikLogger.addHandler(std)
 #pipikLogger.addHandler(fl)
 
-if not args.minimal and not args.no_maths:
+if not args.minimal and not args.no_sympy:
     import MyScripts.matstatMn
     prikazy = list(filter(lambda a: not a.startswith("_"), dir(MyScripts.matstatMn)))
     [prikazy.remove(i) for i in ("lru_cache", "graf", "plt", "prod", "kocka", "minca", "napoveda")]
@@ -132,8 +123,8 @@ def mentionCommand(command, guild: int = None) -> str:
     ids = getCommandId(command.split(" ")[0])
     iddict = list(ids.values())[0]
     if guild is not None:
-        if guild in iddict:
-            return f"`</{command}:{iddict[guild]}>`"
+        if int(guild) in iddict:
+            return f"`</{command}:{iddict[int(guild)]}>`"
     return f"`</{command}:{iddict['Global']}>`"
 
 @client.message_command(name="En-/Decrypt")
@@ -197,7 +188,7 @@ async def pfp(interaction: discord.Interaction):
 @client.slash_command(name="time", description="/time help for more info")
 async def time(ctx,
                time:str =discord.SlashOption(name="time", description="Y.m.d H:M or H:M or relative (minutes=30 etc...)"),
-               arg:str = discord.SlashOption(name="format", description="raw = copypasteable, full = not relative", required=False,choices=["raw", "full", "raw+full"]),
+               arg:str = discord.SlashOption(name="format", description="raw = copypasteable, full = not relative", required=False,choices=["raw", "full", "raw+full"],default=""),
                message:str =discord.SlashOption(name="message",description="Your message to insert the timestamp into, use {} as a placeholder",required=False)):
     try:
         if "." in time and ":" in time:  # if date and time is given
@@ -218,19 +209,13 @@ async def time(ctx,
             embedVar.add_field(name="optional message:", value="Brb {}; Meeting starts at {} be there!")
             await ctx.send(embed=embedVar)
             return
-        if arg and arg == "raw": #TODO consider https://docs.nextcord.dev/en/latest/api.html#nextcord.utils.format_dt
-            timestr = "`<t:" + str(int(timestr.timestamp())) + ":R>`"
-        elif arg and arg == "raw+full":
-            timestr = "`<t:" + str(int(timestr.timestamp())) + ":F>`"
-        elif arg and arg == "full":
-            timestr = "<t:" + str(int(timestr.timestamp())) + ":F>"
-        else:
-            timestr = ("<t:" + str(int(timestr.timestamp())) + ":R>")
-
-        await ctx.send(
-            message.format(timestr) if message and "{}" in message else f"{message} {timestr}" if message else timestr)
+        style = 'F' if "full" in arg else 'R'
+        israw = "raw" in arg
+        mention = f"{'`' if israw else ''}{discord.utils.format_dt(timestr,style=style)}{'`' if israw else ''}"
+        await ctx.send(message.format(mention) if message and "{}" in message else f"{message} {mention}" if message else mention)
     except Exception as e:
-        await ctx.send(e)
+        raise e
+        #await ctx.send(e)
 
 #@client.slash_command(name="muv", description="semi", guild_ids=[860527626100015154, 601381789096738863])
 #async def movebogi(ctx, chanel: discord.abc.GuildChannel):
@@ -243,7 +228,7 @@ async def time(ctx,
 
 @client.message_command(name="Unemojize")
 async def unemojize(interaction, message):
-    await interaction.response.send_message(f"`{emoji.demojize(message.content)}`",ephemeral=True)
+    await interaction.response.send_message(f"`{emoji.demojize(message.content)}`", ephemeral=True)
 
 @client.message_command(name="Spongebob mocking")  # pelda jobbklikk uzenetre commandra
 async def randomcase(interaction, message):
@@ -352,7 +337,7 @@ async def rename(ctx, name):
 #-------------------------------------------------#
 
 os.chdir(root)
-if not args.minimal and not args.no_maths:
+if not args.minimal and not args.no_sympy:
     utils = os.listdir(r"./utils")
     files = utils + [r"../pipikNextcord.py"]
     linecount = 197  # matstatMn is added manually cuz i have a million commented lines after if __name__ == __main__
@@ -364,36 +349,24 @@ for file in files:
         with open(root+r"/utils/"+file, "r", encoding="UTF-8") as f:
             linecount += len(f.readlines())
 
-cogs = os.listdir("./cogs")
-cogs.remove("sympycog.py") if args.no_maths or args.minimal else None
-cogs.remove("pscog.py") if args.no_maths or args.minimal else None
-cogs.remove("ascog.py") if args.no_maths or args.minimal else None
-cogs.remove("zsskcog.py") if args.no_zssk or args.minimal else None
-cogs.remove("radiocog.py") if args.no_radio or args.minimal else None
-cogs.remove("gifsavercog.py") if args.no_gifsaver or args.minimal else None
-cogs.remove("aiscog.py") if args.no_ais or args.minimal else None
-cogs.remove("fujkincog.py") if args.no_fujkin or args.minimal else None
-cogs.remove("wordlecog.py") if args.no_wordle or args.minimal else None
-cogs.remove("rpgcog.py") if args.no_rpg or args.minimal else None
-cogs.remove("cloveckocog.py") if args.no_clovece or args.minimal else None
-cogs.remove("topiccog.py") if args.no_topic or args.minimal else None
-cogs.remove("converterCog.py") if args.no_converter or args.minimal else None
+allcogs = [cog for cog in os.listdir("./cogs") if cog.endswith(".py")]
+if args.minimal:
+    cogs = ["testing.py"]
+else:
+    cogs = allcogs[:]
+    for cog in reversed(cogs):
+        if cog.endswith("cog.py"):
+            if args.__getattribute__(f"no_{cog.removesuffix('cog.py')}") or args.minimal:
+                cogs.remove(cog)
 cogs.remove("testing.py") if args.no_testing else None
-cogs.remove("pipikcog.py") if args.no_pipik or args.minimal else None
-cogs.remove("emotecog.py") if args.no_emotes or args.minimal else None
-cogs.remove("ColorRoleCog.py") if args.no_color or args.minimal else None
-cogs.remove("pillowcog.py") if args.no_pillow or args.minimal else None
-#TODO make this more dynamically generated?
-#print(args.__getattribute__("debug"))
 
-for n, file in enumerate(cogs, start=1):
-    if file.endswith(".py"):
-        with open("./cogs/"+file, "r", encoding="UTF-8") as f:
-            linecount += len(f.readlines())
-        client.load_extension("cogs." + file[:-3],extras={"baselogger":pipikLogger})
-        sys.stdout.write(f"\rLoading... {round((n / len(cogs)) * 100,2)}% [{((int((n/len(cogs))*10)*'=')+'>').ljust(11, ' ')}]")  #TODO do format instead of round
-        sys.stdout.flush()
-sys.stdout.write("\rAll cogs loaded.                    \n")
+for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know how many cogs to load and so dont know how to format loading bar
+    with open("./cogs/"+file, "r", encoding="UTF-8") as f:
+        linecount += len(f.readlines())
+    client.load_extension("cogs." + file[:-3],extras={"baselogger":pipikLogger})
+    sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.2f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
+    sys.stdout.flush()
+sys.stdout.write(f"\r{len(cogs)}/{len(allcogs)} cogs loaded.                    \n")
 sys.stdout.flush()
 os.chdir(root)
 

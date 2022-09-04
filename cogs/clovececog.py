@@ -1206,7 +1206,7 @@ class CloveceCog(object):
         self.infomsg = await channel.send("Get ready!")
         await self.gameLoop()
 
-class Player(CloveceCog): #TODO shouldnt inherit but im afraid to touch it
+class Player(object):
     """ulozi meno hraca, či je clovek alebo hrá zaň pocitac, či je este v hre, ak je pocitac aku obtiaznost ma
     a contains policka domcekov a zoznam panacikov"""
     def __init__(self,name,isCPU,diffculty=None,isActive=True,ikonky="?",houseIcon="?",profile=None):

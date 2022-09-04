@@ -128,23 +128,24 @@ class RadioCog(commands.Cog):
                 self.disabled = True
                 await ctx.response.edit_message(view=self.view)
 
-    @discord.slash_command(name="radio",description="Hop in a voice channel and tune into a radio from the 90's from the videogame GTA San Andreas.",dm_permission=False)
-    async def radio(self,ctx):
+    @discord.slash_command(name="radio", description="Hop in a voice channel and tune into a radio from the 90's from the videogame GTA San Andreas.", dm_permission=False)
+    async def radio(self, ctx: discord.Interaction):
         try:
             vchannel = ctx.user.voice.channel
         except AttributeError:
         #if isinstance(channel,type(None)) or channel is None:
-            await ctx.send(embed=discord.Embed(title="Command caller not in a voice channel.",color=discord.Colour.red()))
+            await ctx.send(embed=discord.Embed(title="Command caller not in a voice channel.", color=discord.Colour.red()))
             return
         viewObj = discord.ui.View()
-        viewObj.add_item(self.StationDropdown(vchannel,self))
-        await ctx.send(embed=discord.Embed(title="Choose a station"),view=viewObj)
+        viewObj.add_item(self.StationDropdown(vchannel, self))
+        await ctx.send(embed=discord.Embed(title="Choose a station"), view=viewObj)
 
-    @discord.slash_command(name="leave",description="Kicks the bot if playing in a voice channel.")
-    async def leave(self,ctx):
+    @discord.slash_command(name="leave", description="Kicks the bot if playing in a voice channel.")
+    async def leave(self, ctx: discord.Interaction):
         server = ctx.guild.voice_client
         await server.disconnect(force=True)
         os.chdir(root)
+        await ctx.send("Left voice channel.", delete_after=2.0)
         #radiocog.radios.remove(self)
 
 class Radio(object):

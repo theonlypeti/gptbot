@@ -7,6 +7,8 @@ import nextcord as discord
 from PIL import Image, ImageOps
 from nextcord.ext import commands
 
+TESTSERVER = (860527626100015154,)
+
 class Selection:
     def __init__(self,img: Image,boundary: tuple):
         copy = img.copy()
@@ -14,7 +16,7 @@ class Selection:
         self.boundary = boundary
 
 class Testing(commands.Cog):
-    def __init__(self,client,baselogger):
+    def __init__(self,client, baselogger):
         self.selection = None
         self.client = client
 
@@ -47,16 +49,29 @@ class Testing(commands.Cog):
             await interaction.response.defer()
             await interaction.response.send_modal(self)
 
-    @discord.slash_command(name="testing",description="testing")
-    async def testing(self,ctx):
+    @discord.slash_command(name="scrape", description="testing", guild_ids=TESTSERVER)
+    async def scrape(self, ctx: discord.Interaction):
+        await ctx.response.defer()
+        channel: discord.TextChannel = ctx.channel
+        counter = 0
+        async for message in channel.history(limit=220):
+            if message.content.startswith("https://discord.com/channels"):
+                print(message.content)
+                counter += 1
+        #await channel.purge(limit=220,check= lambda a: a.content.startswith("https://discord.com/channels") and a.created_at().month >= 4,bulk=True)
+        await ctx.send("done")
+        print(counter)
+
+    @discord.slash_command(name="testingvw",description="testing")
+    async def testing(self, ctx):
         viewObj = self.testvw()
         viewObj.msg = await ctx.send(view=viewObj)
 
-    @discord.slash_command(name="modaltesting", description="testing", guild_ids=(860527626100015154,))
+    @discord.slash_command(name="modaltesting", description="testing", guild_ids=TESTSERVER)
     async def modaltesting(self, ctx):
         await ctx.response.send_modal(self.TextInputModal())
 
-    @discord.slash_command(name="pick",description="pick",guild_ids=(860527626100015154,))
+    @discord.slash_command(name="pick",description="pick",guild_ids=TESTSERVER)
     async def fut(self,ctx):
         await ctx.response.defer()
         if ctx.user.id != 617840759466360842:
