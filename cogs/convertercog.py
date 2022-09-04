@@ -1,7 +1,10 @@
 import asyncio
 import json
+from datetime import datetime
+
+import emoji
 import nextcord as discord
-from nextcord.ext import commands
+from nextcord.ext import commands, tasks
 import aiohttp
 import platform
 
@@ -9,10 +12,12 @@ class ConverterCog(commands.Cog):
     def __init__(self, client, baselogger):
         self.client = client
         self.converterLogger = baselogger.getChild('converterLogger')
-        if platform.system() == "Windows":
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        asyncio.run(self.getCurrList()) #not preferred but works. Could use nextcord.ext.tasks and make a loop running once but ehh
+        #if platform.system() == "Windows":
+        #    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        #asyncio.run(self.getCurrList()) #not preferred,  RuntimeError: There is no current event loop in thread 'MainThread'. in other cogs
+        self.getCurrList.start()
 
+    @tasks.loop(count=1) #ok workaround
     async def getCurrList(self):
         async with aiohttp.ClientSession() as session:
             async with session.get('https://raw.githubusercontent.com/fawazahmed0/currency-api/1/latest/currencies.json') as req:
@@ -24,7 +29,7 @@ class ConverterCog(commands.Cog):
     async def convert(self, interaction: discord.Interaction,
                       fromcurr: str = discord.SlashOption(name="from", description="Convert from"),
                       to: str = discord.SlashOption(description="Convert to"),
-                      amount: float = discord.SlashOption(required=False,default=1)):
+                      amount: float = discord.SlashOption(required=False, default=1)):
         await interaction.response.defer()
         async with aiohttp.ClientSession() as session:
             async with session.get(f'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/{fromcurr}/{to}.json') as req:
@@ -33,9 +38,12 @@ class ConverterCog(commands.Cog):
         self.converterLogger.debug(rate)
         converted = float(rate) * amount
 
-        embedVar = discord.Embed(description=f"{amount} {self.currencylist[fromcurr]} = {converted} {self.currencylist[to]}", color=interaction.user.color)
-        if amount != 1.0:
-            embedVar.add_field(name="Current rate:",value=f"1 {fromcurr} = {rate} {to}")
+        embedVar = discord.Embed(description=f"{amount} {self.currencylist[fromcurr]} = {converted} {self.currencylist[to]}", color=interaction.user.color,timestamp=datetime.now())
+        embedVar.set_footer(text=f"{interaction.user}", icon_url=interaction.user.avatar.url)
+        if fromcurr == to:
+            embedVar.add_field(name="What",value=emoji.emojize(':face_with_raised_eyebrow:'))
+        elif amount != 1.0:
+            embedVar.add_field(name="Current rate:", value=f"1 {fromcurr} = {rate} {to}")
         await interaction.send(embed=embedVar)
 
     @convert.on_autocomplete("fromcurr")

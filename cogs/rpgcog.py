@@ -11,12 +11,7 @@ from copy import deepcopy as new #maybe useful for equipping items
 from funcy import print_durations
 
 def chance(percent: Union[int, float]) ->bool:
-    return choices((True,False),weights=(percent,100-percent))[0]
-
-def limitto(x,low,high):
-    x = min(x,high)
-    x = max(x,low)
-    return x
+    return choices((True, False), weights=(percent, 100-percent))[0]
 
 def mapvalues(x, in_min, in_max, out_min, out_max) -> float:
     return float((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
@@ -691,8 +686,8 @@ class RPGGame:
 
         #@print_durations
         def discoverMap(self,sight_range):
-            for row in self.discovered_mask[limitto(self.position[0]-sight_range,0,self.terkep.mapsize):limitto(self.position[0]+sight_range+1,0,self.terkep.mapsize)]:
-                for col in range(limitto(self.position[1]-sight_range,0,self.terkep.mapsize),limitto(self.position[1]+sight_range+1,0,self.terkep.mapsize)):
+            for row in self.discovered_mask[np.clip(self.position[0]-sight_range,0,self.terkep.mapsize):np.clip(self.position[0]+sight_range+1,0,self.terkep.mapsize)]:
+                for col in range(np.clip(self.position[1]-sight_range,0,self.terkep.mapsize),np.clip(self.position[1]+sight_range+1,0,self.terkep.mapsize)):
                     row[col] = True
 
         #@print_durations
@@ -774,8 +769,8 @@ class RPGGame:
                     self.grid[player.position[0]][player.position[1]].isPlayer = player.walkicon
 
             msg = ""
-            xbegin = limitto(as_player.position[0]-size//2,0,self.mapsize-size)
-            ybegin = limitto(as_player.position[1]-size//2,0,self.mapsize-size)
+            xbegin = np.clip(as_player.position[0]-size//2,0,self.mapsize-size)
+            ybegin = np.clip(as_player.position[1]-size//2,0,self.mapsize-size)
             for row,maskrow in zip(self.grid[xbegin:xbegin+size],as_player.discovered_mask[xbegin:xbegin+size]):
                 for i,maskcol in zip(row[ybegin:ybegin+size],maskrow[ybegin:ybegin+size]):
                     msg+=emoji.emojize(str(i)) if maskcol else emoji.emojize(":black_large_square:")
