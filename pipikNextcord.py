@@ -11,6 +11,7 @@ import time as time_module
 import logging
 from dotenv import load_dotenv
 import coloredlogs
+from utils.mentionCommand import mentionCommand
 
 start = time_module.perf_counter()
 
@@ -105,35 +106,13 @@ client.remove_command('help')
 
 #-------------------------------------------------#
 
-def getCommandId(command) -> dict:
-    # every = client.get_application_commands()
-    # for i in every:
-    #     if i.name == command:
-    #         ids = {}
-    #         for guild, value in i.command_ids.items():
-    #             if guild is not None:
-    #                 ids.update({client.get_guild(guild).name: value})
-    #             else:
-    #                 ids.update({"Global": value})
-    #         return {command: ids}
-
-    return {command: {client.get_guild(i[0][0]) or "Global": i[0][1] for i in (tuple(comm.command_ids.items()) for comm in (comm for comm in client.get_application_commands() if comm.name == command))}}
-
-def mentionCommand(command, guild: int = None) -> str:
-    ids = getCommandId(command.split(" ")[0])
-    iddict = list(ids.values())[0]
-    if guild is not None:
-        if int(guild) in iddict:
-            return f"`</{command}:{iddict[int(guild)]}>`"
-    return f"`</{command}:{iddict['Global']}>`"
-
-@client.message_command(name="En-/Decrypt")
-async def caesar(interaction, text):
-    if text.type == discord.MessageType.chat_input_command and text.embeds[0].title == "Message":
-        text = text.embeds[0].description
-    else:
-        text = text.content
-    await interaction.send("".join([chr(((ord(letter) - 97 + 13) % 26) + 97) if letter.isalpha() and letter.islower() else chr(((ord(letter) - 65 + 13) % 26) + 65) if letter.isalpha() and letter.isupper() else letter for letter in text]))
+# @client.message_command(name="En-/Decrypt")
+# async def caesar(interaction, text):
+#     if text.type == discord.MessageType.chat_input_command and text.embeds[0].title == "Message":
+#         text = text.embeds[0].description
+#     else:
+#         text = text.content
+#     await interaction.send("".join([chr(((ord(letter) - 97 + 13) % 26) + 97) if letter.isalpha() and letter.islower() else chr(((ord(letter) - 65 + 13) % 26) + 65) if letter.isalpha() and letter.isupper() else letter for letter in text]))
 
 class CaesarModal(discord.ui.Modal):
     def __init__(self, title):
@@ -174,7 +153,7 @@ async def bf_modal(ctx):
     await ctx.response.send_modal(modal)
 
 #@commands.has_permissions(manage_server=True)
-@client.slash_command(name="pfp", description="chooses a random emote for the servers profile pic.",guild_ids=[860527626100015154,552498097528242197],dm_permission=False)
+@client.slash_command(name="pfp", description="chooses a random emote for the servers profile pic.",guild_ids=[860527626100015154, 552498097528242197], dm_permission=False)
 async def pfp(interaction: discord.Interaction):
     os.chdir("D:\\Users\\Peti.B\\Pictures\\microsoft\\emotes")
     emotes = [emote for emote in os.listdir() if not emote.endswith(".gif") or interaction.guild.premium_tier]
@@ -214,8 +193,7 @@ async def time(ctx,
         mention = f"{'`' if israw else ''}{discord.utils.format_dt(timestr,style=style)}{'`' if israw else ''}"
         await ctx.send(message.format(mention) if message and "{}" in message else f"{message} {mention}" if message else mention)
     except Exception as e:
-        raise e
-        #await ctx.send(e)
+        await ctx.send(e)
 
 #@client.slash_command(name="muv", description="semi", guild_ids=[860527626100015154, 601381789096738863])
 #async def movebogi(ctx, chanel: discord.abc.GuildChannel):
@@ -280,37 +258,59 @@ async def on_message(ctx):
 
 @client.event
 async def on_reaction_add(reaction: discord.Reaction, user):
+    if reaction.message.author.bot:
+        return
+
+    good_responses = ("Azta de vicces valaki <:hapi:889603218273878118> 👌",
+                      f"Gratulálunk, ez vicces volt, {reaction.message.author.display_name}. {emoji.emojize(':clap:')} {emoji.emojize(':partying_face:')}",
+                      "Damn, you got the whole squad laughing <:hapi:889603218273878118>",
+                      "Hát ez odabaszott xd",
+                      "xddd",
+                      "Kiégtem",
+                      "Bruh miafasz xd",
+                      "Hát ilyet még nem baszott a világ <:kekcry:956217725880000603> <:hapi:889603218273878118>",
+                      "<:kekcry:956217725880000603> <:kekcry:956217725880000603> <:kekcry:956217725880000603> Még jó hogy anyu alszik",
+                      "Azért ennyire ne <:kekcry:956217725880000603>",
+                      "Jolvan nembirom xdddd",
+                      "Hát ez a földhöz baszott <:kekcry:956217725880000603>",
+                      "Sikítok xddd",
+                      "Ez sok nekem <:kekcry:956217725880000603>",
+                      "Sípolok xdd",
+                      "Beszarok gec <:kekcry:956217725880000603> <:kekcry:956217725880000603>"
+                      )
     global already_checked
 
-    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>"):
+    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>", "<:hapi:889603218273878118>"):
         if reaction.message.author.id == 569937005463601152:
             if user.id == 569937005463601152:
-                boci: discord.Member = reaction.message.author
+                kapja: discord.Member = reaction.message.author
                 already_checked.append(reaction.message.id)
-                await boci.timeout(timedelta(minutes=3), reason="Saját magára rakta a keket")
-                uzenet = "Imagine saját vicceiden nevetni. " + random.choice("<:cringe:644026740242645023> <:OhNoCringe:945225281172553760> <:cassiecringe:859589366870573106> <:SCCRINGE:664519482416300053> <:Catastrophe_CringeBro:645327316540456998> <:AntonCringe:690691883500044409> <a:cringesmiley:774412323662069770> <a:cringepepepet:773106637774913586> <:notcringebutwtf:600071034229751848> <:flushcringe:644026697880043570> <:pepe_cringe:774411918081261578>".split(" "))
+                await kapja.timeout(timedelta(minutes=3), reason="Saját magára rakta a keket")
+                uzenet = "Imagine saját vicceiden nevetni. <:bonkdoge:950439465904644128> <a:catblushy:913875026606948393>"
                 await reaction.message.reply(uzenet)
 
     if reaction.emoji == emoji.emojize(":thumbs_down:"):
-        if reaction.message.author.id == 569937005463601152:
-            boci = reaction.message.author
+        #if reaction.message.author.id == 569937005463601152:
+        if True:
+            kapja = reaction.message.author
             if reaction.count >= 3:
                 if reaction.message.id not in already_checked:
                     already_checked.append(reaction.message.id)
-                    await boci.timeout(timedelta(minutes=2), reason="Nem volt vicces")
-                    uzenet = "Nem volt vicces, Boti. " + random.choice("<:cringe:644026740242645023> <:OhNoCringe:945225281172553760> <:cassiecringe:859589366870573106> <:SCCRINGE:664519482416300053> <:Catastrophe_CringeBro:645327316540456998> <:AntonCringe:690691883500044409> <a:cringesmiley:774412323662069770> <a:cringepepepet:773106637774913586> <:notcringebutwtf:600071034229751848> <:flushcringe:644026697880043570> <:pepe_cringe:774411918081261578>".split(" "))
+                    await kapja.timeout(timedelta(minutes=2), reason="Nem volt vicces")
+                    uzenet = f"Nem volt vicces, {reaction.message.author.display_name} <:nothapi:1007757789629796422>."
                     await reaction.message.reply(uzenet)
 
-    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>"):
-        if reaction.message.author.id == 569937005463601152:
+    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>",  "<:hapi:889603218273878118>"):
+        #if reaction.message.author.id == 569937005463601152:
+        if True:
             if reaction.count >= 3:
                 if reaction.message.id not in already_checked:
                     already_checked.append(reaction.message.id)
-                    uzenet = f"Gratulálunk, ez vicces volt, Boti. {emoji.emojize(':clap:')} {emoji.emojize(':partying_face:')}"
+                    uzenet = random.choice(good_responses)
                     await reaction.message.reply(uzenet)
 
     if spehmode:
-        print("react at:", str(datetime.now()),(emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:",user, "on message:", reaction.message.content)
+        print("react at:", str(datetime.now()), (emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:",user, "on message:", reaction.message.content)
 
 @client.command(aliases=("angy", "angry"))
 async def upset(ctx):
@@ -363,7 +363,7 @@ cogs.remove("testing.py") if args.no_testing else None
 for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know how many cogs to load and so dont know how to format loading bar
     with open("./cogs/"+file, "r", encoding="UTF-8") as f:
         linecount += len(f.readlines())
-    client.load_extension("cogs." + file[:-3],extras={"baselogger":pipikLogger})
+    client.load_extension("cogs." + file[:-3], extras={"baselogger":pipikLogger})
     sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.2f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
     sys.stdout.flush()
 sys.stdout.write(f"\r{len(cogs)}/{len(allcogs)} cogs loaded.                    \n")

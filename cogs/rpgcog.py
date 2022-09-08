@@ -140,7 +140,7 @@ class RPGGame:
     #------------------------------------------
 
     class Enemy(object):
-        def __init__(self,name,hp,atk,exp,gold,loot):
+        def __init__(self, name, hp, atk, exp, gold, loot):
             self.display_name = name
             self.hp = hp
             self.atk = atk
@@ -156,7 +156,7 @@ class RPGGame:
         def showStats(self):
             return str(self.hp) + " hp, " + str(self.atk) + " atk"
 
-        def attack(self,players):
+        def attack(self, players):
             player = random.choice(players)
             player.hp -= self.atk
             return f"{self.display_name} attacks {player.display_name} for {self.atk} damage!"
@@ -167,7 +167,7 @@ class RPGGame:
                 if effect.hasattr("hpeffect"):
                     self.hp += effect.hpeffect["flat"]
                     self.hp += self.hp * effect.hpeffect["multiplier"]
-                    if effect.hpeffect["set"]!= None:
+                    if effect.hpeffect["set"] != None:
                         self.hp = effect.hpeffect["set"]
 
                 if effect.hasattr("atkeffect"):

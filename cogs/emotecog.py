@@ -3,8 +3,12 @@ import json
 import os
 import random
 from datetime import datetime
+from typing import Optional, Literal
+
+import emoji
 import nextcord as discord
 from nextcord.ext import commands
+from utils.antimakkcen import antimakkcen
 from utils.getMsgFromLink import getMsgFromLink
 
 root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pipik"
@@ -14,6 +18,7 @@ class EmoteCog(commands.Cog):
         self.discord_emotes = dict()
         self.client = client
         self.emotelogger = baselogger.getChild("EmoteLogger")
+        self.readEmotes()
 
     def saveEmotes(self):
         with open(root + "/data/pipikemotes.txt", "w") as file:
@@ -98,7 +103,7 @@ class EmoteCog(commands.Cog):
                 await mess.remove_reaction(self.discord_emotes[emote], self.client.user)
         elif text:
             try:
-                text = text.replace("{", "{discord_emotes['")
+                text = text.replace("{", "{self.discord_emotes['")
                 text = text.replace("}", "']}")
                 text = eval(f'f"{text}"')
                 await ctx.send(f"{text}")
@@ -108,13 +113,14 @@ class EmoteCog(commands.Cog):
 
         elif not emote:
             emotestr = ";".join([f"{v} {k}" for k, v in self.discord_emotes.items()])
-            splitat = emotestr[4096::-1].index(";")  # hehe this is a funny way to do it
-            print(splitat)
-            embedVar = discord.Embed(title="Emotes", description=emotestr[:4096 - splitat], color=ctx.user.color)
-            for i in range(4096 - splitat, len(emotestr), 1024):
-                embedVar.add_field(name=i, value=emotestr[i:min(i + 1024, len(emotestr))])
-            embedVar.set_footer(text=f"{len(emotestr)} / 6000 chars in one message")
-            await ctx.send(embed=embedVar, ephemeral=True)
+            if emotestr:
+                splitat = emotestr[4096::-1].index(";")  # hehe this is a funny way to do it
+                embedVar = discord.Embed(title="Emotes", description=emotestr[:4096 - splitat], color=ctx.user.color)
+                if len(emotestr) > 4096:
+                    for i in range(4096 - splitat, len(emotestr), 1024):
+                        embedVar.add_field(name=i, value=emotestr[i:min(i + 1024, len(emotestr))])
+                embedVar.set_footer(text=f"{len(emotestr)} / 6000 chars in one message")
+                await ctx.send(embed=embedVar, ephemeral=True)
             return
         else:
             await ctx.send(self.discord_emotes[emote])
@@ -131,6 +137,70 @@ class EmoteCog(commands.Cog):
         get_near_emote = [i for i in self.discord_emotes.keys() if i.casefold().startswith(emote.casefold())]
         get_near_emote = get_near_emote[:25]
         await interaction.response.send_autocomplete(get_near_emote)
+
+    class FancyLinkModal(discord.ui.Modal):
+        def __init__(self, mode):
+            super().__init__(title="Custom link")
+            self.mode = mode
+            self.link = discord.ui.TextInput(label="Link", placeholder="https://example.com")
+            self.displaytext = discord.ui.TextInput(label="Link display text", placeholder="Click me")
+            self.hovertext = discord.ui.TextInput(label="Link hover text", placeholder="opens in new page", required=False)
+            self.context = discord.ui.TextInput(label="Surrounding text (use {} as link placeholder)", placeholder="Please head to {} link", required=False, style=discord.TextInputStyle.paragraph)
+
+            for item in (self.link, self.displaytext, self.hovertext, self.context):
+                self.add_item(item)
+
+        async def callback(self, interaction: discord.Interaction):
+            if self.hovertext.value:
+                custom = f"[__{self.displaytext.value}__]({self.link.value}\n" + '"{}"'.format(self.hovertext.value) + ")"
+            else:
+                custom = f"[__{self.displaytext.value}__]({self.link.value})"
+            await interaction.send(self.context.value.format(custom) if "{}" in self.context.value else self.context.value + custom if self.context.value else custom)
+
+    @discord.slash_command(name="makelink", guild_ids=(860527626100015154,))
+    async def makelink(self, interaction: discord.Interaction, mode: Literal["Simple", "Complex"]):
+        if mode == "Simple":
+            await interaction.response.send_modal(self.FancyLinkModal(mode=mode))
+        else:
+            await interaction.send("WIP lol")
+
+    class AddReactLettersModal(discord.ui.Modal):
+        def __init__(self, message):
+            self.message = message
+            super().__init__(title="Type a word to spell out with reacts.")
+            self.word = discord.ui.TextInput(label="Word")
+            self.add_item(self.word)
+
+        async def callback(self, interaction):
+            word = ""
+            for letter in self.word.value.upper():
+                if letter == "A" and chr(127397 + ord("A")) in word:
+                    word += chr(127344)
+                elif letter == "B" and chr(127397 + ord("B")) in word:
+                    word += chr(127345)
+                if letter == "I" and chr(127397 + ord("I")) in word:
+                    word += chr(8505)
+                if letter == "M" and chr(127397 + ord("M")) in word:
+                    word += chr(9410)
+                elif letter == "O" and chr(127397 + ord("O")) in word:
+                    word += chr(127358)
+                else:
+                    word += chr(127397 + ord(letter.upper()))
+            word = list(dict.fromkeys(antimakkcen(word)))
+            if len(word) != len(self.word.value):
+                await interaction.send("Word has duplicate letter, can't react properly", ephemeral=True)
+            else:
+                await interaction.send("On it...", ephemeral=True)
+
+            for letter in word:
+                await self.message.add_reaction(letter)
+
+    @discord.message_command(name="Word react")
+    async def reacts(self, interaction: discord.Interaction, message: discord.Message):
+        await interaction.response.send_modal(self.AddReactLettersModal(message))
+
+
+
 
 def setup(client, baselogger):
     client.add_cog(EmoteCog(client, baselogger))

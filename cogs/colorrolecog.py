@@ -30,7 +30,7 @@ class ColorRoleCog(commands.Cog):
         pass
 
     class HexModal(discord.ui.Modal):
-        def __init__(self,cog):
+        def __init__(self, cog):
             self.cog = cog
             super().__init__(title="Pick your color")
             self.hextext = discord.ui.TextInput(label="#", style=discord.TextInputStyle.short, placeholder="aabbcc", min_length=6, max_length=6)
@@ -38,7 +38,6 @@ class ColorRoleCog(commands.Cog):
 
         async def callback(self, ctx):
             dccolor = discord.Color.from_rgb(*[int(self.hextext.value[i:i + 2], 16) for i in range(0, 5, 2)])
-            # await resetcustomcolor(ctx)
             await self.cog.setcustomcolor(ctx, dccolor)
             await ctx.send(embed=discord.Embed(title="Color changed", color=dccolor), ephemeral=True)
 
@@ -94,15 +93,19 @@ class ColorRoleCog(commands.Cog):
         async def interaction_check(self, interaction: discord.Interaction) -> bool:
             return interaction.user == self.user
 
-    async def setcustomcolor(self, interaction, dccolor):
+    async def setcustomcolor(self, interaction: discord.Interaction, dccolor) -> bool:
         highest_role = interaction.user.roles[-1]
         if highest_role.name.startswith("* "):
             await highest_role.edit(color=dccolor)
         else:
+            if len(interaction.guild.roles) > 249:
+                await interaction.send(embed=discord.Embed(title="This server's role limit has been reached.", color=discord.Color.red()), delete_after=60)
+                return False
             highest_index = interaction.guild.roles.index(highest_role)
             newRole = await interaction.guild.create_role(name=f"* {interaction.user.name}'s color", color=dccolor)
             newRole = await newRole.edit(position=highest_index + 1)
             await interaction.user.add_roles(newRole)
+            return True
 
     async def resetcustomcolor(self, interaction: discord.Interaction):
         oldRole = [role for role in interaction.user.roles if role.name.startswith("* ")]
@@ -112,8 +115,8 @@ class ColorRoleCog(commands.Cog):
 
     @mycolor.subcommand(name="reset", description="Removes your pfp role color")
     async def mycolorreset(self, interaction: discord.Interaction):
-        await self.resetcustomcolor(interaction)
-        await interaction.send("Done", ephemeral=True)
+        if await self.resetcustomcolor(interaction):
+            await interaction.send("Done", ephemeral=True)
 
     @mycolor.subcommand(name="rgb", description="Pick a color from RGB values")
     async def mycolorrgb(self, interaction):
@@ -163,13 +166,13 @@ class ColorRoleCog(commands.Cog):
             color = interaction.user.color
         hexcode = f"{hex(color.r)[2:].zfill(2)}{hex(color.g)[2:].zfill(2)}{hex(color.b)[2:].zfill(2)}".upper()
         embedVar = discord.Embed(title="Color", color=color)
-        embedVar.add_field(name="#", value=hexcode,inline=False)
+        embedVar.add_field(name="#", value=hexcode, inline=False)
         colors = (emoji.emojize(i) for i in [":red_square:", ":green_square:", ":blue_square:"])
-        for key,val in zip(colors,color.to_rgb()):
+        for key, val in zip(colors, color.to_rgb()):
             embedVar.add_field(name=f"{key}", value=f"{val}", inline=True)
         embedVar.fields[1].inline = False
         embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}", icon_url=interaction.user.avatar.url)
         await interaction.send(embed=embedVar)
 
-def setup(client,baselogger): #TODO maybe add some logging messages
+def setup(client, baselogger): #TODO maybe add some logging messages
     client.add_cog(ColorRoleCog(client))
