@@ -113,7 +113,7 @@ class PillowCog(commands.Cog):
             options = [discord.SelectOption(label="Deepfry"), discord.SelectOption(label="Blur"), discord.SelectOption(label="Invert"), discord.SelectOption(label="Cancel")]
             super().__init__(options=options)
 
-        def deepfry(self,img):
+        def deepfry(self, img):
             img = ImageEnhance.Contrast(img).enhance(2)
             img = ImageEnhance.Sharpness(img).enhance(2)
             img = ImageEnhance.Color(img).enhance(5)
@@ -158,9 +158,9 @@ class PillowCog(commands.Cog):
             self.corrections: dict = corrections or {"brightness": 100, "contrast": 100, "sharpness": 100, "saturation": 100}
             super().__init__()
 
-        def applyCorrections(self,img: Image) -> Image:
+        def applyCorrections(self, img: Image) -> Image:
             copy = img
-            for corr,value in self.corrections.items():
+            for corr, value in self.corrections.items():
                 if value != 100:
                     if corr == "brightness":
                         copy = ImageEnhance.Brightness(copy).enhance(value/100)
@@ -172,7 +172,7 @@ class PillowCog(commands.Cog):
                         copy = ImageEnhance.Color(copy).enhance(value/100)
             return copy
 
-        @discord.ui.button(label="Edit corrections", style=discord.ButtonStyle.gray,emoji=emoji.emojize(":level_slider:", language="alias"))
+        @discord.ui.button(label="Edit corrections", style=discord.ButtonStyle.gray, emoji=emoji.emojize(":level_slider:", language="alias"))
         async def editcorrectionsbutton(self, button, interaction: discord.Interaction):
             await interaction.response.send_modal(self.cog.CorrectionsModal(self, self.corrections))
 
@@ -327,7 +327,7 @@ class PillowCog(commands.Cog):
 
         @discord.ui.button(label="Edit boundaries", style=discord.ButtonStyle.gray, emoji=emoji.emojize(":white_square_button:",language="alias"))
         async def editboundariesbutton(self, button, interaction: discord.Interaction):
-            await interaction.response.send_modal(self.cog.SelectionMakeModal(self.boundaries,self))
+            await interaction.response.send_modal(self.cog.SelectionMakeModal(self.boundaries, self))
 
         @discord.ui.button(label="Move boundaries", style=discord.ButtonStyle.gray,emoji=emoji.emojize(":left_right_arrow:", language="alias")) #TODO maybe make an emoji for this a 4 way arrow
         async def moveboundariesbutton(self, button, interaction: discord.Interaction):
@@ -343,7 +343,7 @@ class PillowCog(commands.Cog):
             thumbnail = self.drawBoundaries()
             await self.returnView.cog.show(interaction.message, thumbnail, self.returnView.filetype, self)
 
-        @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"),row=1)
+        @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"), row=1)
         async def finalizeselectingbutton(self, button, interaction):
             if self.boundaries:
                 try:
@@ -358,34 +358,34 @@ class PillowCog(commands.Cog):
 
             await self.cog.returnMenu(self.returnView)
 
-        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, emoji=emoji.emojize(":cross_mark:"),row=1)
+        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, emoji=emoji.emojize(":cross_mark:"), row=1)
         async def canceleditbutton(self, button, interaction):
             await self.cog.returnMenu(self.returnView)
 
     class SelectionMoveModal(discord.ui.Modal):
-        def __init__(self,boundaries: Tuple[int,int,int,int], view):
+        def __init__(self,boundaries: Tuple[int, int, int, int], view):
             super().__init__(title="Move crop boundaries")
             self.boundaries = boundaries
             self.returnView = view
 
-            self.leftcrop = discord.ui.TextInput(label="top left corner | [X] pixels from left",default_value = str(boundaries[0]))
-            self.topcrop = discord.ui.TextInput(label="top left corner | [Y] pixels from top",default_value = str(boundaries[1]))
+            self.leftcrop = discord.ui.TextInput(label="top left corner | [X] pixels from left", default_value=str(boundaries[0]))
+            self.topcrop = discord.ui.TextInput(label="top left corner | [Y] pixels from top", default_value=str(boundaries[1]))
             self.add_item(self.leftcrop)
             self.add_item(self.topcrop)
 
-        async def callback(self,interaction: discord.Interaction):
+        async def callback(self, interaction: discord.Interaction):
             await interaction.response.defer()
             wmax = self.returnView.img.width
             hmax = self.returnView.img.height
             if self.boundaries is None:
-                self.boundaries = (0,0,self.returnView.img.width,self.returnView.img.height)
-            boundary_width=int(self.boundaries[2])-int(self.boundaries[0])
-            boundary_height=int(self.boundaries[3])-int(self.boundaries[1])
+                self.boundaries = (0, 0, self.returnView.img.width, self.returnView.img.height)
+            boundary_width = int(self.boundaries[2])-int(self.boundaries[0])
+            boundary_height = int(self.boundaries[3])-int(self.boundaries[1])
             try:
-                boundaries = (max(0,int(self.leftcrop.value)), #left
-                              max(0,int(self.topcrop.value)), #top
-                              min(wmax,int(self.leftcrop.value)+boundary_width), #right
-                              min(hmax,int(self.topcrop.value)+boundary_height)) #bottom
+                boundaries = (max(0, int(self.leftcrop.value)), #left
+                              max(0, int(self.topcrop.value)), #top
+                              min(wmax, int(self.leftcrop.value)+boundary_width), #right
+                              min(hmax, int(self.topcrop.value)+boundary_height)) #bottom
             except ValueError:
                 await interaction.send("Input numbers only!",ephemeral=True)
                 return
@@ -394,7 +394,7 @@ class PillowCog(commands.Cog):
             await self.returnView.cog.show(interaction.message, thumbnail, self.returnView.filetype, self.returnView)
 
     class SelectionExpandModal(discord.ui.Modal):
-        def __init__(self,boundaries: Tuple[int,int,int,int], view):
+        def __init__(self, boundaries: Tuple[int, int, int, int], view):
             super().__init__(title="Expand/Shrink crop boundaries")
             self.boundaries = boundaries
             self.returnView = view
@@ -402,7 +402,7 @@ class PillowCog(commands.Cog):
             self.factor = discord.ui.TextInput(label="Expand (+) / Shrink (-)",default_value="0")
             self.add_item(self.factor)
 
-        async def callback(self,interaction: discord.Interaction):
+        async def callback(self, interaction: discord.Interaction):
             factor = int(self.factor.value)
             wmax = self.returnView.img.width
             hmax = self.returnView.img.height
@@ -410,10 +410,10 @@ class PillowCog(commands.Cog):
             if self.boundaries is None:
                 self.boundaries = (0, 0, self.returnView.img.width, self.returnView.img.height)
             try:
-                boundaries = (max(0,int(self.boundaries[0]) - factor),
-                              max(0,int(self.boundaries[1]) - factor),
-                              min(wmax,int(self.boundaries[2]) + factor),
-                              min(hmax,int(self.boundaries[3]) + factor))
+                boundaries = (max(0, int(self.boundaries[0]) - factor),
+                              max(0, int(self.boundaries[1]) - factor),
+                              min(wmax, int(self.boundaries[2]) + factor),
+                              min(hmax, int(self.boundaries[3]) + factor))
             except ValueError:
                 await interaction.send("Input numbers only!",ephemeral=True)
                 return
@@ -422,14 +422,14 @@ class PillowCog(commands.Cog):
             await self.returnView.cog.show(interaction.message, thumbnail, self.returnView.filetype, self.returnView)
 
     class SelectionMakeModal(discord.ui.Modal):
-        def __init__(self, boundaries: Tuple[int,int,int,int], view):
+        def __init__(self, boundaries: Tuple[int, int, int, int], view):
             super().__init__(title="Set selection boundaries")
             self.returnView = view
             boundaries = boundaries or (0, 0, self.returnView.img.width, self.returnView.img.height)
-            self.topcrop = discord.ui.TextInput(label="top boundary",default_value = str(boundaries[1]))
-            self.bottomcrop = discord.ui.TextInput(label="bottom boundary",default_value = str(boundaries[3]))
-            self.leftcrop = discord.ui.TextInput(label="left boundary",default_value = str(boundaries[0]))
-            self.rightcrop = discord.ui.TextInput(label="right boundary",default_value = str(boundaries[2]))
+            self.topcrop = discord.ui.TextInput(label="top boundary", default_value=str(boundaries[1]))
+            self.bottomcrop = discord.ui.TextInput(label="bottom boundary", default_value=str(boundaries[3]))
+            self.leftcrop = discord.ui.TextInput(label="left boundary", default_value=str(boundaries[0]))
+            self.rightcrop = discord.ui.TextInput(label="right boundary", default_value=str(boundaries[2]))
             self.add_item(self.topcrop)
             self.add_item(self.bottomcrop)
             self.add_item(self.leftcrop)
@@ -475,18 +475,17 @@ class PillowCog(commands.Cog):
 
             mult = ((100 - (len(max(top, bottom, key=len))*2))/100)
             textsize = (img.width//10) * max(mult, 0.5)
-            textsize = int(max(textsize, 50)) #todo devize an algorithm to determine optimal size
+            textsize = int(max(textsize, 20)) #todo devize an algorithm to determine optimal size
             fnt = ImageFont.truetype('impact.ttf', size=textsize) #TODO font select maybe? who knows maybe when modal dropdowns are available
             #fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeMono.ttf", 40)
 
-
-            textconfig = {"font":fnt,"stroke_fill":(0,0,0),"stroke_width":img.width//100,"fill":(255,255,255),"anchor":"mm"}
+            textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width":img.width//100, "fill": (255, 255, 255), "anchor": "mm"}
             d.multiline_text((img.width/2, textsize), top, **textconfig)
             d.multiline_text((img.width/2, img.height-textsize), bottom, **textconfig)
             #d.multiline_text((self.img.size[0] / 2, self.img.size[1] - (self.img.size[1] // 10)), bottom, **textconfig)
 
             if self.returnView.selection:
-                self.returnView.img.paste(self.returnView.selection.image,self.returnView.selection.boundary)
+                self.returnView.img.paste(self.returnView.selection.image, self.returnView.selection.boundary)
 
             await self.returnView.cog.returnMenu(self.returnView)
 
@@ -507,7 +506,7 @@ class PillowCog(commands.Cog):
         await self.makeEditor(interaction, img)
 
     @discord.slash_command(name="imageditor",description="Image editor in development")
-    async def imageeditorcommand(self,interaction: discord.Interaction, img: discord.Attachment = discord.SlashOption(name="image",description="The image to edit.",required=True)):
+    async def imageeditorcommand(self, interaction: discord.Interaction, img: discord.Attachment = discord.SlashOption(name="image", description="The image to edit.", required=True)):
         await interaction.response.defer()
         await self.makeEditor(interaction, img)
 

@@ -68,8 +68,13 @@ class AisCog(commands.Cog):
                     else:
                         diff = set(oldNames).difference(newNames)
                         diffTemy = [oldDict[name] for name in diff]
-
-                    text = "\n".join(tema.find_all("td")[0].text + " = " + tema.find_all("td")[2].text for tema in diffTemy)
+                    try:
+                        text = "\n".join(tema.find_all("td")[0].text + " = " + tema.find_all("td")[2].text for tema in sorted(diffTemy, key=lambda a:int(a.find_all("td")[0].text)))
+                    except Exception as e:
+                        self.aisLogger.error(e)
+                        text = "\n".join(tema.find_all("td")[0].text + " = " + tema.find_all("td")[2].text for tema in diffTemy)
+                    else:
+                        self.aisLogger.info("success") #TODO test and remove
                     if len(text) > 2000:
                         text = text[:1997] + "..."
                     embedVar = discord.Embed(title="Počet tém bakalárskych prác sa zmenil!",description=text,color=(discord.Color.red(), discord.Color.green())[len(self.temy) < len(c)])
@@ -90,7 +95,7 @@ class AisCog(commands.Cog):
                         await channel.send(embed=embedVar, view=viewObj)
         self.temy = c
 
-    @printer.before_loop
+    @printer.before_loop #i could comment this out but then it would look not pretty how my bootup time shot up by 5s haha
     async def before_printer(self):
         self.aisLogger.debug('getting temy')
         await self.client.wait_until_ready()
@@ -151,7 +156,7 @@ class AisCog(commands.Cog):
             super().__init__(timeout=None)
 
         async def interaction_check(self, interaction: discord.Interaction) -> bool:
-            return interaction.user == self.original_user #TODO test this
+            return interaction.user == self.original_user
 
         @discord.ui.button(emoji=emoji.emojize(':wastebasket:', language="alias"), label="Vymaž aj rolu",style=discord.ButtonStyle.danger)
         async def deleterole(self, button, interaction: discord.Interaction):

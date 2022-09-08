@@ -1,12 +1,9 @@
-import asyncio
 import json
 from datetime import datetime
-
 import emoji
 import nextcord as discord
 from nextcord.ext import commands, tasks
 import aiohttp
-import platform
 
 class ConverterCog(commands.Cog):
     def __init__(self, client, baselogger):
@@ -35,10 +32,10 @@ class ConverterCog(commands.Cog):
             async with session.get(f'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/{fromcurr}/{to}.json') as req:
                 rate = await req.json()
         rate = rate.get(to)
-        self.converterLogger.debug(rate)
+        self.converterLogger.debug(f"{interaction.user} {fromcurr} {to} {rate}")
         converted = float(rate) * amount
 
-        embedVar = discord.Embed(description=f"{amount} {self.currencylist[fromcurr]} = {converted} {self.currencylist[to]}", color=interaction.user.color,timestamp=datetime.now())
+        embedVar = discord.Embed(description=f"{amount} {self.currencylist[fromcurr]} = {converted} {self.currencylist[to]}", color=interaction.user.color, timestamp=datetime.now())
         embedVar.set_footer(text=f"{interaction.user}", icon_url=interaction.user.avatar.url)
         if fromcurr == to:
             embedVar.add_field(name="What",value=emoji.emojize(':face_with_raised_eyebrow:'))

@@ -27,7 +27,7 @@ class GifCog(commands.Cog):
             json.dump(self.db,file,indent=4)
 
     class GifSaveFolderSelect(discord.ui.Select): 
-        def __init__(self,folders,gif,cog):
+        def __init__(self, folders, gif, cog):
             self.folders = folders
             self.cog = cog
             self.gif = gif
@@ -133,17 +133,17 @@ class GifCog(commands.Cog):
                 await self.msg.reply(embed=embedVar)
                 #await ctx.send(content=f"{ctx.user.display_name} says\n {self.folder[self.values[0]]}")
 
-    @discord.message_command(name="Reply with saved GIF",guild_ids=[860527626100015154,601381789096738863,800196118570205216])
-    async def replygif(self,ctx,msg):
-        try:
-            self.db[str(ctx.user.id)]
-        except KeyError:
-            #self.db[str(ctx.user.id)] = {} #do not make it here cuz next time they will try to reply with gif, it will find their key but with no folders
-            await ctx.send("No saved gifs found.",ephemeral=True)
-            return
-        viewObj = discord.ui.View()
-        viewObj.add_item(self.GifLoadFolderSelect(ctx,msg,self.db[str(ctx.user.id)]))
-        await ctx.send(view=viewObj,ephemeral=True)
+    # @discord.message_command(name="Reply with saved GIF",guild_ids=[860527626100015154,601381789096738863,800196118570205216])
+    # async def replygif(self,ctx,msg):
+    #     try:
+    #         self.db[str(ctx.user.id)]
+    #     except KeyError:
+    #         #self.db[str(ctx.user.id)] = {} #do not make it here cuz next time they will try to reply with gif, it will find their key but with no folders
+    #         await ctx.send("No saved gifs found.",ephemeral=True)
+    #         return
+    #     viewObj = discord.ui.View()
+    #     viewObj.add_item(self.GifLoadFolderSelect(ctx,msg,self.db[str(ctx.user.id)]))
+    #     await ctx.send(view=viewObj,ephemeral=True)
 
 def setup(client,baselogger):
-    client.add_cog(GifCog(client,baselogger))
+    client.add_cog(GifCog(client, baselogger))

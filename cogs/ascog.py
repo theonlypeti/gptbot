@@ -17,9 +17,6 @@ rady = AsFunc(title="Rády", label="Permutácia s rádom", placeholder="(1,2,3)^
 class AsCog(commands.Cog):
     def __init__(self, client, baselogger):
         pass
-        #global aslogger
-        #self.client = client
-        #aslogger = baselogger.getChild("AsLogger")
 
     class AsModal(discord.ui.Modal):
         def __init__(self,func: AsFunc):

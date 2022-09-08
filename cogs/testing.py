@@ -2,7 +2,7 @@ import asyncio
 import os
 import random
 from io import BytesIO
-from typing import Union
+from typing import Union, Optional
 import nextcord as discord
 from PIL import Image, ImageOps
 from nextcord.ext import commands
@@ -90,9 +90,9 @@ class Testing(commands.Cog):
         image = await img.read()
         img = Image.open(BytesIO(image))
         img = img.convert("RGB")  # .point(lambda x: 255 - x)
-        selection = Selection(img,(0,0,img.size[0]/2,img.size[1]/2))   #left top right bottom
+        selection = Selection(img, (0, 0, img.size[0]/2, img.size[1]/2))   #left top right bottom
         selection.image = ImageOps.invert(selection.image)
-        img.paste(selection.image,box=selection.boundary)
+        img.paste(selection.image, box=selection.boundary)
         with BytesIO() as image_binary:
             img.save(image_binary, filetype)
             image_binary.seek(0)

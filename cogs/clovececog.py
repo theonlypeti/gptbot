@@ -1022,7 +1022,7 @@ class CloveceCog(object):
             nums = {1:"one",2:"two",3:"three",4:"four"}
             icon = emoji.emojize(":{}:".format(nums[self.num]),language="alias")
 
-            super().__init__(emoji=icon,disabled=disabled)
+            super().__init__(emoji=icon, disabled=disabled)
     
         async def callback(self,interaction):
             if interaction.user.id != self.player.player.userid:

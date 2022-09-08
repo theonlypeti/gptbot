@@ -48,7 +48,8 @@
                     ":socks:",
                     ":100:",
                     ":woman_gesturing_ok:",
-                    ":nail_care:"
+                    ":nail_care:",
+                    ":bowling:"
                 ],
                 "pipikachis": [
                     ":sunrise_over_mountains:",
@@ -115,13 +116,13 @@
             "Second places": 4,
             "Third places": 0,
             "Dice thrown": 848,
-            "Spins": 56,
-            "Default icons owned": 58,
+            "Spins": 57,
+            "Default icons owned": 59,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":radioactive:",
         "ready": false,
-        "dailyDate": "2022-08-25",
+        "dailyDate": "2022-09-08",
         "inLobby": null
     },
     {
