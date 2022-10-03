@@ -144,7 +144,7 @@ class TopicCog(commands.Cog):
         if embedVar == None:
             await self.sendNoTopic(channel, sub)
         else:
-            viewObj = self.TopicNextButtons(self,sub=sub)
+            viewObj = self.TopicNextButtons(self, sub=sub)
             viewObj.children[2].disabled = (sub == "AskWomen")
             await channel.send(embed=embedVar, view=viewObj)
 

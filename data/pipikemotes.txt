@@ -121,5 +121,6 @@
     "nothapi": "<:nothapi:1007757789629796422>",
     "ptoo": "<:ptoo:957957282354835497>",
     "adam": "<:adam:605761460718665801>",
-    "doggoblush": "<:doggoblush:962465828178100264>"
+    "doggoblush": "<:doggoblush:962465828178100264>",
+    "pepeflushed": "<:pepeflushed:957957282849755146>"
 }
