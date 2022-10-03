@@ -1,12 +1,12 @@
 from datetime import datetime
 import nextcord as discord
 from nextcord.ext import commands
-from utils.ps import Adress,broadcasty
+from utils.ps import Adress, broadcasty
 
-#TODO broadcast calc does not always come up with unique adresses, also include the mask too
+#TODO broadcast calc does not always come up with unique adresses #ok but when #low priority
 
 class PsCog(commands.Cog):
-    def __init__(self,client,baselogger):
+    def __init__(self, client, baselogger):
         global pslogger
         self.client = client
         pslogger = baselogger.getChild("PsLogger")
@@ -24,14 +24,14 @@ class PsCog(commands.Cog):
             except ValueError as e:
                 pslogger.error(e)
                 return interaction.send(f"Oopsie {e}")
-            embedVar = discord.Embed(title="Broadcast kalkulačka", description=f"pre adresu {ip}", color=interaction.user.color,timestamp=datetime.now())
-            broadcaststr,idstr = "",""
+            embedVar = discord.Embed(title="Broadcast kalkulačka", description=f"pre adresu {ip}", color=interaction.user.color, timestamp=datetime.now())
+            broadcaststr, idstr = "", ""
             for ip in gener:
                 broadcaststr += f"{ip.broadcast}/{ip.mask}\n"
                 idstr += f"{ip.ids}/{ip.mask}\n"
             embedVar.add_field(name="Možné broadcast adresy:", value=broadcaststr)
             embedVar.add_field(name="Možné ID adresy:", value=idstr)
-            embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}",icon_url=interaction.user.avatar.url)
+            embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}", icon_url=interaction.user.avatar.url)
             await interaction.send(embed=embedVar)
 
     class IpCalcModal(discord.ui.Modal):
@@ -78,7 +78,7 @@ class PsCog(commands.Cog):
                 pslogger.error(e)
                 await interaction.send(f"Oops {e.args[0]}")
                 return
-            embedVar = discord.Embed(title="Subnetwork calc",color=interaction.user.color,timestamp=datetime.now())
+            embedVar = discord.Embed(title="Subnetwork calc", color=interaction.user.color, timestamp=datetime.now())
             embedVar.add_field(name="IP", value=calc.ip, inline=True)
             embedVar.add_field(name="Maska", value=f"/{calc.mask}", inline=True)
             embedVar.add_field(name="Bitová maska", value=calc.binary_mask, inline=True)
@@ -88,7 +88,7 @@ class PsCog(commands.Cog):
             embedVar.add_field(name="Prvý najmenší host", value=calc.first_host, inline=True)
             embedVar.add_field(name="Posledný najväčší host", value=calc.last_host, inline=True)
             embedVar.add_field(name="Broadcast", value=calc.broadcast, inline=True)
-            embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}",icon_url=interaction.user.avatar.url)
+            embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}", icon_url=interaction.user.avatar.url)
             await interaction.send(embed=embedVar)
 
     @discord.slash_command(name="ps", description="Kalkulačky IP pre predmet počítačové systémy",guild_ids=(860527626100015154,))
@@ -109,5 +109,5 @@ class PsCog(commands.Cog):
     async def vysvetlivka(self, ctx):
         await ctx.send("https://cdn.discordapp.com/attachments/892054308563091456/998385704117731418/Subnetting.mp4?size=4096")
 
-def setup(client,baselogger):
-    client.add_cog(PsCog(client,baselogger))
+def setup(client, baselogger):
+    client.add_cog(PsCog(client, baselogger))

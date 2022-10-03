@@ -1,4 +1,3 @@
-import logging
 import os
 import random
 from nextcord.ext import commands
@@ -26,7 +25,7 @@ root = os.getcwd()
 
 class TopicCog(commands.Cog):
     def __init__(self,client,baselogger):
-        global reddithandler,topicLogger
+        global reddithandler, topicLogger
         self.client = client
         topicLogger = baselogger.getChild('topicLogger')
         reddithandler = self.RedditHandler(self)
@@ -145,7 +144,7 @@ class TopicCog(commands.Cog):
         if embedVar == None:
             await self.sendNoTopic(channel, sub)
         else:
-            viewObj = self.TopicNextButtons(self,sub=sub)
+            viewObj = self.TopicNextButtons(self, sub=sub)
             viewObj.children[2].disabled = (sub == "AskWomen")
             await channel.send(embed=embedVar, view=viewObj)
 
@@ -227,7 +226,7 @@ class TopicCog(commands.Cog):
     @discord.slash_command(name="cat", description="Send a random cat pic")
     async def cat(self, ctx):
         await ctx.response.defer()
-        subs = "Catsinasock,kittyhasaquestion,catloaf,thisismylifemeow,MEOW_IRL,noodlebones,bottlebrush,notmycat,Blep,CatsOnCats,PetAfterVet,CuddlePuddle,CatsAndPlants,curledfeetsies,teefies,tuckedinkitties,catfaceplant,CatsAndDogsBFF,squishypuppers,airplaneears,shouldercats,PeanutWhiskers,catbellies,CatCircles,catfaceplant,catsonglass,ragdolls,fatSquirrelHate,SupermodelCats,Catswhoyell,IllegallySmolCats,aww,AnimalsBeingBros,peoplefuckingdying,thecatdimension,TouchThaFishy,FancyFeet,cuddleroll,DrillCats,CatsWhoYell,catsareliquid,blurrypicturesofcats,spreadytoes,sorryoccupied,politecats,blackpussy,KittyTailWrap,thecattrapisworkings,khajiithaswares,catgrabs,stolendogbeds,bridgecats,standardissuecats,catswhoquack,catpranks,catsarealiens,dagadtmacskak,fatcat,fromKittenToCat,illegallySmolCats,MaineCoon,noodlebones,politecats,scrungycats,shouldercats,sorryoccupied,stolendogbeds,stuffOnCats,thinkcat,disneyeyes,cuddlykitties,wet_pussy,girlswithhugepussies,catsinboxes,catsonmeth,catsstandingup,catsstaringatthings,catsvsthemselves,catswhoblep,catswithjobs,catswithmustaches,OneOrangeBraincell".split(",")
+        subs = "absolutelynotmeow_irl,Catsinasock,kittyhasaquestion,catloaf,thisismylifemeow,MEOW_IRL,noodlebones,bottlebrush,notmycat,Blep,CatsOnCats,PetAfterVet,CuddlePuddle,CatsAndPlants,curledfeetsies,teefies,tuckedinkitties,catfaceplant,CatsAndDogsBFF,squishypuppers,airplaneears,shouldercats,PeanutWhiskers,catbellies,CatCircles,catfaceplant,catsonglass,ragdolls,fatSquirrelHate,SupermodelCats,Catswhoyell,IllegallySmolCats,aww,AnimalsBeingBros,peoplefuckingdying,thecatdimension,TouchThaFishy,FancyFeet,cuddleroll,DrillCats,CatsWhoYell,catsareliquid,blurrypicturesofcats,spreadytoes,sorryoccupied,politecats,blackpussy,KittyTailWrap,thecattrapisworkings,khajiithaswares,catgrabs,stolendogbeds,bridgecats,standardissuecats,catswhoquack,catpranks,catsarealiens,dagadtmacskak,fatcat,fromKittenToCat,illegallySmolCats,MaineCoon,noodlebones,politecats,scrungycats,shouldercats,sorryoccupied,stolendogbeds,stuffOnCats,thinkcat,disneyeyes,cuddlykitties,wet_pussy,girlswithhugepussies,catsinboxes,catsonmeth,catsstandingup,catsstaringatthings,catsvsthemselves,catswhoblep,catswithjobs,catswithmustaches,OneOrangeBraincell".split(",")
         while True:
             post = [i for i in reddit.subreddit(random.choice(subs)).hot(limit=20)]
             random.shuffle(post)
@@ -394,7 +393,7 @@ class TopicCog(commands.Cog):
 
         def prettyprint(self, post, *attr):
             embedVar = discord.Embed(title=post.title if len(post.title) <= 256 else "\u200b",description=post.title if len(post.title) > 256 else (post.selftext[:min(self.max_comment_length, len(post.selftext))] + ("... " if len(post.selftext) > self.max_comment_length else "")) if (post.selftext and len(post.selftext) <= 1000) else "\u200b",color=attr[0].color if attr else discord.Colour.random())
-            embedVar.set_footer(text=f"id: {post.id}" + " |{} | </topic:1011376055413649558> to change topic".format(subemoji[post.subreddit.display_name]) + (" | Low score. Might be stupid?!" if post.score < 100 else " | " + str(post.score) + " points."))
+            embedVar.set_footer(text=f"id: {post.id}" + " |{} | /topic to change topic".format(subemoji[post.subreddit.display_name]) + (" | Low score. Might be stupid?!" if post.score < 100 else " | " + str(post.score) + " points."))
             return embedVar
 
         def comments(self, post,color=None):  # please dont judge me its so fucked up

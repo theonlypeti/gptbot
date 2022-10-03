@@ -12,6 +12,8 @@ from datetime import datetime, timedelta, date
 from astral import moon
 import pytz
 from utils.antimakkcen import antimakkcen
+from utils.mentionCommand import mentionCommand
+from utils.mapvalues import mapvalues
 
 mgr = pyowm.OWM(os.getenv("OWM_TOKEN")).weather_manager()
 location = 'Bratislava,sk'
@@ -121,10 +123,6 @@ class PipikUser(object):
             for k, v in discorduser.items():
                 if k != "xp":
                     setattr(self, k, v)
-            # if not hasattr(self, "dailyStreak"): #TODO deprecate this
-            #     self.dailyStreak = 0
-            # if not hasattr(self, "dailyDate"):
-            #     self.dailyDate = (datetime.now() - timedelta(days=1)).date()
             return
         if type(discorduser) != int:
             discorduser = discorduser.id
@@ -252,8 +250,8 @@ class PipikBot(commands.Cog):
             json.dump(tempusers, file, indent=4)
         self.pipikLogger.info("saved users")
 
-    def saveSettings(self): #TODO deprecate command prefix
-        settings = {"prefix": self.client.command_prefix, "temperature": self.temperature, "weatherUpdTime": self.weatherUpdatedTime.isoformat(), "sunrise": self.sunrise_date.isoformat()}
+    def saveSettings(self):
+        settings = {"temperature": self.temperature, "weatherUpdTime": self.weatherUpdatedTime.isoformat(), "sunrise": self.sunrise_date.isoformat()}
         with open(root+"/data/pipisettings.txt", "w") as file:
             json.dump(settings, file)
         self.pipikLogger.debug("saved settings")
@@ -261,7 +259,6 @@ class PipikBot(commands.Cog):
     def readSettings(self):
         with open(root+"/data/pipisettings.txt", "r") as file:
             settings = json.load(file)
-        self.client.command_prefix = settings["prefix"]
         self.weatherUpdatedTime = datetime.fromisoformat(settings["weatherUpdTime"])
         if datetime.now() - self.weatherUpdatedTime > timedelta(hours=1):
             self.pipikLogger.debug("updating temp")
@@ -302,7 +299,7 @@ class PipikBot(commands.Cog):
             else:
                 user.items.append([pill, amount])
                 newAmount = amount
-            embedVar = discord.Embed(title="You´ve got pills!", description="try </pills:1011375968528646184> for inventory", color=colorEm)
+            embedVar = discord.Embed(title="You´ve got pills!", description=f"try {mentionCommand(self.client,'pills')} for inventory", color=colorEm)
             embedVar.add_field(name="Pill:", value=pills[pill]["name"], inline=False)
             embedVar.add_field(name="Amount:", value=amount)
             embedVar.add_field(name="In inventory:", value=newAmount)
@@ -373,7 +370,7 @@ class PipikBot(commands.Cog):
             if type(user.dailyDate) == datetime:
                 user.dailyDate = user.dailyDate.date()
         except AttributeError as e:
-            self.pipikLogger.error(e) # TODO if does not come up, remove this
+            self.pipikLogger.error(e) # TODO if does not come up, remove this #yes should not happen
             user.dailyDate = (datetime.now() - timedelta(days=1)).date()
             user.dailyStreak = 0  # kind of redundant? nvm
         finally:
@@ -397,14 +394,13 @@ class PipikBot(commands.Cog):
                 embedVar = discord.Embed(title="Daily pills", color=ctx.user.color)
                 embedVar.add_field(name="Current streak", value=user.dailyStreak)
             else:
-                self.pipikLogger.warning(
-                    f"something is wrong {user.dailyDate}, {date.today()}, {user.dailyDate - date.today()}")
+                self.pipikLogger.warning(f"something is wrong {user.dailyDate}, {date.today()}, {user.dailyDate - date.today()}")
                 return
             await ctx.send(embed=embedVar)
             user.dailyDate = datetime.now().date()
             await self.addPill(ctx, ctx.user.color, user, 0, random.randint(1, 3))  # yellow pill
             if user.dailyStreak >= random.randint(0, 99):
-                await self.addPill(ctx, ctx.user.color, user, 1, random.randint(1, 2))  # red pill #TODO consider only giving one red pill
+                await self.addPill(ctx, ctx.user.color, user, 1, random.choices((1, 2), weights=(0.8, 0.2))[0])  # red pill
             if user.dailyStreak / 10 >= random.randint(0, 99):
                 await self.addPill(ctx, ctx.user.color, user, 2, 1)  # blue pill
                 if "lucky_draw" not in user.achi:
@@ -412,13 +408,13 @@ class PipikBot(commands.Cog):
             #self.saveFile() saving happens in addpill() too
 
     @discord.slash_command(name="max", description="Leaderboard of biggest pps", dm_permission=False)
-    async def max(self, ctx: discord.Interaction, server: str = discord.SlashOption("leaderboard",description="User leaderboard or server leaderboards",required=False, choices=("This server", "Between servers"), default="This server")):
+    async def max(self, ctx: discord.Interaction, server: str = discord.SlashOption("leaderboard", description="User leaderboard or server leaderboards", required=False, choices=("This server", "Between servers"), default="This server")):
         embedVar = discord.Embed(title="Leaderboard of {} biggest pps".format(ctx.guild.name + '\'s' if server == 'This server' else ''), description=25 * "-") #cant do f string
         if server == "This server":
             try:
                 ldb = self.leaderboards[str(ctx.guild_id)]
             except KeyError:
-                await ctx.send(embed=discord.Embed(title="Leaderboard empty",description="Use the </pp:1011376052725092352> command to measure your pp first"))
+                await ctx.send(embed=discord.Embed(title="Leaderboard empty",description=f"Use the {mentionCommand(self.client,'pp')} command to measure your pp first"))
                 return
         elif server == "Between servers":
             ldb = sorted([(self.client.get_guild(int(id)).name, round(sum(map(lambda user: user[1], users)), 3)) for id, users in self.leaderboards.items()], key=lambda x: x[1], reverse=True)[:5]
@@ -429,17 +425,17 @@ class PipikBot(commands.Cog):
                     user = self.client.get_user(int(i[0])).name
             except ValueError:
                 user = i[0]
-            embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}",inline=False)
+            embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
         await ctx.send(embed=embedVar)
 
     @discord.slash_command(name="min", description="Leaderboard of smallest pps", dm_permission=False)
-    async def min(self, ctx: discord.Interaction, server: str = discord.SlashOption("leaderboard",description="User leaderboard or server leaderboards",required=False, choices=("This server", "Between servers"), default="This server")):
+    async def min(self, ctx: discord.Interaction, server: str = discord.SlashOption("leaderboard", description="User leaderboard or server leaderboards",required=False, choices=("This server", "Between servers"), default="This server")):
 
         if server == "This server":
             try:
                 ldb = self.loserboards[str(ctx.guild_id)]
             except KeyError:
-                await ctx.send(embed=discord.Embed(title="Loserboard empty",description="Use the </pp:1011376052725092352> command to measure your pp first"))
+                await ctx.send(embed=discord.Embed(title="Loserboard empty", description=f"Use the {mentionCommand(self.client,'pp')} command to measure your pp first"))
                 return
         elif server == "Between servers":
             ldb = sorted([(self.client.get_guild(int(id)).name, round(sum(map(lambda user: user[1], users)), 5)) for id, users in self.loserboards.items()], key=lambda x: x[1], reverse=False)[:5]
@@ -451,27 +447,27 @@ class PipikBot(commands.Cog):
                     user = self.client.get_user(int(i[0])).name
             except ValueError:
                 user = i[0]
-            embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}",inline=False)
+            embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
         await ctx.send(embed=embedVar)
 
-    @discord.slash_command(name="weather",description="Current weather at location, or simply see how your pp is affected at the moment.")
-    async def weather(self, ctx, location: str = discord.SlashOption(name="city",description="City name, for extra precision add a comma and a country code e.g. London,UK",required=False)):
+    @discord.slash_command(name="weather", description="Current weather at location, or simply see how your pp is affected at the moment.")
+    async def weather(self, ctx, location: str = discord.SlashOption(name="city", description="City name, for extra precision add a comma and a country code e.g. London,UK",required=False)):
         await ctx.response.defer()
         if not location:
             self.getTemp()
             offset = ((7 - abs(7 - datetime.now().month)) - 1) * 3  # average temperature okolo ktorej bude pocitat <zcvrk alebo rast>
-            embedVar = discord.Embed(title=f"It´s {self.temperature} degrees in Bratislava.",description="You can expect {} {} pps".format(("quite", "slightly")[int(abs(self.temperature - offset) < 5)],("shorter", "longer")[int(self.temperature - offset > 0)]), color=(0x17dcff if self.temperature < offset - 5 else 0xbff5ff if self.temperature <= offset else 0xff3a1c if self.temperature > offset + 5 else 0xffa496 if self.temperature > offset else ctx.user.color))
+            embedVar = discord.Embed(title=f"It´s {self.temperature} degrees in Bratislava.", description="You can expect {} {} pps".format(("quite", "slightly")[int(abs(self.temperature - offset) < 5)],("shorter", "longer")[int(self.temperature - offset > 0)]), color=(0x17dcff if self.temperature < offset - 5 else 0xbff5ff if self.temperature <= offset else 0xff3a1c if self.temperature > offset + 5 else 0xffa496 if self.temperature > offset else ctx.user.color))
             offsettime = self.sunrise_date.astimezone(pytz.timezone("Europe/Vienna"))
-            embedVar.add_field(name="And the sun is coming up at",value="{}:{:0>2}.".format(offsettime.hour, offsettime.minute))
+            embedVar.add_field(name="And the sun is coming up at", value="{}:{:0>2}.".format(offsettime.hour, offsettime.minute))
         else:
             if location == "me":
                 try:
-                    location = {617840759466360842: "Bardoňovo", 756092460265898054: "Plechotice",677496112860626975: "Giraltovce", 735473733753634827: "Veľký Šariš"}[ctx.user.id]
+                    location = {617840759466360842: "Bardoňovo", 756092460265898054: "Plechotice", 677496112860626975: "Giraltovce", 735473733753634827: "Veľký Šariš"}[ctx.user.id]
                 except KeyError:
                     pass
             else:
                 try:
-                    location = {"ds": "Dunajská Streda", "ba": "Bratislava", "temeraf": "Piešťany", "piscany": "Piešťany","pistany": "Piešťany", "mesto snov": "Piešťany", "terebes": "Trebišov", "eperjes": "Prešov","blava": "Bratislava", "diera": "Stropkov", "saris": "Veľký Šariš", "ziar": "Žiar nad Hronom","pelejte": "Plechotice", "bardonovo": "Bardoňovo", "rybnik": "Rybník,SK"}[antimakkcen(location.casefold())]
+                    location = {"ds": "Dunajská Streda", "ba": "Bratislava", "temeraf": "Piešťany", "piscany": "Piešťany","pistany": "Piešťany", "mesto snov": "Piešťany", "terebes": "Trebišov", "eperjes": "Prešov", "blava": "Bratislava", "diera": "Stropkov", "saris": "Veľký Šariš", "ziar": "Žiar nad Hronom","pelejte": "Plechotice", "bardonovo": "Bardoňovo", "rybnik": "Rybník,SK"}[antimakkcen(location.casefold())]
                 except KeyError:
                     if "better than" in location.casefold():
                         description = "Yeah babe, you are the best!"
@@ -496,10 +492,10 @@ class PipikBot(commands.Cog):
                 b = mgr.weather_at_place(location)
                 a = b.weather
             except pyowm.commons.exceptions.NotFoundError:
-                await ctx.send(embed=discord.Embed(title=location + " not found.", description=description))
+                await ctx.send(embed=discord.Embed(title=f"{location} not found.", description=description))
                 return
             else:
-                embedVar = discord.Embed(title=f"Current weather at ** {b.location.name},{b.location.country}**",description="{:-^40}".format("Local time: " + str(datetime.utcnow() + timedelta(seconds=a.utc_offset))[11:19]), color=ctx.user.color)
+                embedVar = discord.Embed(title=f"Current weather at ** {b.location.name},{b.location.country}**", color=ctx.user.color)
                 for k, v in {"Weather": a.detailed_status, "Temperature": str(a.temperature("celsius")["temp"]) + "°C",
                              "Feels like": str(a.temperature("celsius")["feels_like"]) + "°C",
                              "Clouds": str(a.clouds) + "%", "Wind": str(a.wind()["speed"] * 3.6)[:6] + "km/h",
@@ -509,7 +505,10 @@ class PipikBot(commands.Cog):
                              "UV Index": a.uvi, "Atm. Pressure": str(a.pressure["press"]) + " hPa",
                              "Precip.": str(a.rain["1h"] if "1h" in a.rain else 0) + " mm/h"}.items():
                     embedVar.add_field(name=k, value=v)
-                embedVar.set_thumbnail(url="https://openweathermap.org/img/wn/{}@2x.png".format(a.weather_icon_name))
+                embedVar.set_thumbnail(url=a.weather_icon_url())
+                moonphases = (':new_moon:', ':waning_crescent_moon:', ':last_quarter_moon:', ':waning_gibbous_moon:', ':full_moon:', ':waxing_gibbous_moon:', ':first_quarter_moon:', ':waxing_crescent_moon:')
+                currphase = int(mapvalues(moon.phase(), 0, 28, 0, len(moonphases)))
+                embedVar.set_footer(text=f"Local time: {str(datetime.utcnow() + timedelta(seconds=a.utc_offset))[11:19]} | Moon phase: {emoji.emojize(moonphases[currphase])}")
         await ctx.send(embed=embedVar)
 
     @discord.slash_command(name="tips", description="Read some tips on how to increase your pp size")
@@ -553,29 +552,34 @@ class PipikBot(commands.Cog):
         def __init__(self, user, cog):
             self.user = user
             self.cog = cog
-            pillselect = [discord.SelectOption(label="Cancel",value="-1",emoji=emoji.emojize(":cross_mark:"))]
+            pillselect = [discord.SelectOption(label="Cancel", value="-1", emoji=emoji.emojize(":cross_mark:"))]
             for pill in [item for item in self.user.items if item[0] != len(pills) - 1 and item[1] >= 10]:  # populating the select component with options
-                pillselect.append(discord.SelectOption(label=pills[pill[0]]["name"],value=str(pill[0]),description=f"in inventory: {pill[1]}"))
+                pillselect.append(discord.SelectOption(label=pills[pill[0]]["name"], value=str(pill[0]), description=f"in inventory: {pill[1]}"))
             super().__init__(placeholder="Select pills to crush up", options=pillselect)
 
-        async def callback(self, interaction):
+        async def callback(self, interaction: discord.Interaction):
             if interaction.user.id == self.user.id:
                 if self.values[0] == "-1":
-                    await interaction.response.edit_message(content="Cancelled.", view=None)
+                    await interaction.response.edit_message(embed=discord.Embed(description="Cancelled.", color=interaction.user.color), view=None, delete_after=5.0)
                 else:
                     which = int(self.values[0])
-                    # amount = int(attr[2] or 1) #TODO: do multiselect again or just add it as options
+                    # amount = int(attr[2] or 1) #TODO: do multiselect again or just add it as options,# resend view with updated dropdown options? but then need to edit msg too, then take it out into a different function
                     amount = 1
-                    self.user.items[which][1] -= amount * 10
-                    if "breaking_bad" not in self.user.achi:
-                        await self.cog.updateUserAchi(interaction, interaction.user, "breaking_bad") #moved this up so achi adding happens before savefile gets called in addpill
-                    await self.cog.addPill(interaction, interaction.user.color, self.user,(self.user.items[which][0]) + 1, amount)
-                    await interaction.response.edit_message(content=f"You crushed up 10 {pills[int(self.values[0])]['name']}",view=None)  # TODO emedize these
-                    if self.user.items[which][1] == 0:
-                        del (self.user.items[which])
+                    if self.user.items[which][1] > 10:
+                        self.user.items[which][1] -= amount * 10
+                        if "breaking_bad" not in self.user.achi:
+                            await self.cog.updateUserAchi(interaction, interaction.user, "breaking_bad") #moved this up so achi adding happens before savefile gets called in addpill
+                        await self.cog.addPill(interaction, interaction.user.color, self.user, (self.user.items[which][0]) + 1, amount) #TODO really reimagine this
+                        embedVar = discord.Embed(description=f"You crushed up 10 {pills[int(self.values[0])]['name']}", color=interaction.user.color)
+                        await interaction.response.edit_message(embed=embedVar, view=None)
+                        if self.user.items[which][1] == 0:
+                            del (self.user.items[which])
+                    else:
+                        self.cog.pipikLogger.warning(f"{interaction.user} with {self.user.items} wanted to craft up 10 {which}")
+                        # TODO error msg
 
             else:
-                await interaction.send("This is not your prompt, use </pills:1011375968528646184> to use your pills.", ephemeral=True)
+                await interaction.send(f"This is not your prompt, use {mentionCommand(self.cog.client,'pills')} to use your pills.", ephemeral=True) # i won't bother embedizing
 
     class PillsButtonsConsume(discord.ui.Button):
         def __init__(self, user: PipikUser, cog):
@@ -584,58 +588,58 @@ class PipikBot(commands.Cog):
             canConsume = len(user.items) != 0 and self.user.pill not in range(0, len(pills))
             super().__init__(label="Consume", disabled=not canConsume, style=discord.ButtonStyle.gray,emoji=emoji.emojize(":face_with_hand_over_mouth:"))
 
-        async def callback(self, interaction):
+        async def callback(self, interaction: discord.Interaction):
             if interaction.user.id != self.user.id:
-                await interaction.send("This is not your inventory, use </pills:1011375968528646184> to see your pills.",ephemeral=True)
+                await interaction.send(f"This is not your inventory, use {mentionCommand(self.cog.client,'pills')} to see your pills.", ephemeral=True) #neither this
                 return
-            self.style = discord.ButtonStyle.green
-            for child in self.view.children:
-                child.disabled = True
-            await interaction.response.edit_message(view=self.view)
+            # self.style = discord.ButtonStyle.green
+            # for child in self.view.children:
+            #     child.disabled = True
+            # await interaction.response.edit_message(view=self.view)
             viewObj = discord.ui.View()
-            viewObj.add_item(self.cog.PillTakeDropdown(self.user,self.cog))
-            await interaction.send("Pill consumption", view=viewObj)  # TODO: embedize
+            viewObj.add_item(self.cog.PillTakeDropdown(self.user, self.cog))
+            await interaction.message.edit(embed=discord.Embed(title="Pill consumption", color=interaction.user.color), view=viewObj)
 
     class PillsButtonsCraft(discord.ui.Button):
         def __init__(self, user, cog):
             self.user = user
             self.cog = cog
             canCraft = any([i[1] >= 10 for i in user.items])
-            super().__init__(label="Craft", disabled=not canCraft, style=discord.ButtonStyle.gray,emoji=emoji.emojize(":hammer:"))
+            super().__init__(label="Craft", disabled=not canCraft, style=discord.ButtonStyle.gray, emoji=emoji.emojize(":hammer:"))
 
         async def callback(self, interaction: discord.Interaction):
             if interaction.user.id != self.user.id:
-                await interaction.send("This is not your inventory, use </pills:1011375968528646184> to see your pills.", ephemeral=True)
+                await interaction.send(f"This is not your inventory, use {mentionCommand(self.cog.client,'pills')} to see your pills.", ephemeral=True)
                 return
-            self.style = discord.ButtonStyle.green
-            for child in self.view.children:
-                child.disabled = True
-            await interaction.response.edit_message(view=self.view)
+            #self.style = discord.ButtonStyle.green
+            #for child in self.view.children:
+            #    child.disabled = True
+            #await interaction.response.edit_message(view=self.view)
 
             viewObj = discord.ui.View()
-            viewObj.add_item(self.cog.PillCraftDropdown(self.user,self.cog))
-            await interaction.send("Pill crafting", view=viewObj)  # TODO: embedize
+            viewObj.add_item(self.cog.PillCraftDropdown(self.user, self.cog))
+            await interaction.message.edit(embed=discord.Embed(title="Pill crafting", color=interaction.user.color), view=viewObj)
 
     class PillTakeDropdown(discord.ui.Select):
-        def __init__(self, user: PipikUser,cog):
+        def __init__(self, user: PipikUser, cog):
             self.user = user
             self.cog = cog
-            pillselect = [discord.SelectOption(label=pills[pill[0]]["name"],value=str(pill[0]),description=f"in inventory: {pill[1]}") for pill in self.user.items if pill[1] > 0] + [discord.SelectOption(label="Cancel",value="-1",emoji=emoji.emojize(":cross_mark:"))]
+            pillselect = [discord.SelectOption(label=pills[pill[0]]["name"], value=str(pill[0]),description=f"in inventory: {pill[1]}") for pill in self.user.items if pill[1] > 0] + [discord.SelectOption(label="Cancel",value="-1",emoji=emoji.emojize(":cross_mark:"))]
 
             super().__init__(placeholder="Select a pill to consume", options=pillselect)
 
         async def callback(self, interaction: discord.Interaction):
             if interaction.user.id == self.user.id:
                 if self.values[0] == "-1":
-                    await interaction.response.edit_message(content="Cancelled.", view=None)
+                    await interaction.response.edit_message(content="Cancelled.", embed=None, view=None, delete_after=5.0)
                 else:
-                    await interaction.response.edit_message(content=None,embed=discord.Embed(title=f"You took a {pills[int(self.values[0])]['name']}",description="Now go measure your pp before it wears out!",color=interaction.user.color),view=None)
+                    await interaction.response.edit_message(content=None, embed=discord.Embed(title=f"You took a {pills[int(self.values[0])]['name']}",description="Now go measure your pp before it wears out!",color=interaction.user.color),view=None)
                     if "pill_popper" not in self.user.achi:
-                        await self.cog.updateUserAchi(interaction,interaction.user, "pill_popper") #moved this above takepill so achi adding happens before savefile gets called
-                    await self.user.takePill(int(self.values[0]),self.cog)
+                        await self.cog.updateUserAchi(interaction, interaction.user, "pill_popper") #moved this above takepill so achi adding happens before savefile gets called
+                    await self.user.takePill(int(self.values[0]), self.cog)
 
             else:
-                await interaction.send("This is not your prompt, use </pills:1011375968528646184> to use your pills.",ephemeral=True)
+                await interaction.send(f"This is not your prompt, use {mentionCommand(self.cog.client,'pills')} to use your pills.",ephemeral=True)
 
     @discord.slash_command(description="See, manage and use your pill inventory.")
     async def pills(self, ctx):
@@ -645,7 +649,7 @@ class PipikBot(commands.Cog):
         text += "Pills".center(25) + "\nCrafting takes 10 pills and crafts a better quality one\nBetter pills equals bigger pps\nExcessive use might result in impotency!\n{:-^25}\n".format("-")
         text += "\n".join(["{:<15} ({:<2} min)| amount: {}".format(pills[i[0]]["name"],(pills[i[0]]["effectDur"].seconds) // 60, i[1]) for i in list(user.items)])
         if len(user.items) == 0:
-            text += "You have no pills. Use </daily:1011375879689076767> to get some!"
+            text += f"You have no pills. Use {mentionCommand(self.client,'daily')} to get some!"
         text += "\n```"
 
         if user.pill in range(0, len(pills)):
@@ -657,12 +661,12 @@ class PipikBot(commands.Cog):
                 user.pill = None
 
         viewObj = discord.ui.View()
-        viewObj.add_item(self.PillsButtonsConsume(user,self))
-        viewObj.add_item(self.PillsButtonsCraft(user,self))
+        viewObj.add_item(self.PillsButtonsConsume(user, self))
+        viewObj.add_item(self.PillsButtonsCraft(user, self))
         await ctx.send(content=text, view=viewObj)
 
     class FapButton(discord.ui.Button):
-        def __init__(self, user,cog):
+        def __init__(self, user, cog):
             self.user = user
             self.cog = cog
             if user.cd is None:
@@ -679,7 +683,7 @@ class PipikBot(commands.Cog):
 
         async def callback(self, interaction):
             if interaction.user.id != self.user.id:
-                await interaction.send("This is not your button, use your own by using </fap:1011375969388478576>",ephemeral=True)
+                await interaction.send(f"This is not your button, use your own by using {mentionCommand(self.cog.client,'fap')}", ephemeral=True)
                 return
             if random.randint(0, 10 + (self.user.fap * 2)) < 10:
                 self.user.fap += 1
@@ -688,10 +692,10 @@ class PipikBot(commands.Cog):
                 self.style = discord.ButtonStyle.red
                 self.emoji = emoji.emojize(':sweat_droplets:')
                 self.disabled = True
-                self.label = "Oops!"
+                self.label = "Oops, too much!"
                 if self.user.fap == 0:
                     if "one_pump" not in self.user.achi:
-                        await self.cog.updateUserAchi(interaction,interaction.user, "one_pump")
+                        await self.cog.updateUserAchi(interaction, interaction.user, "one_pump")
                 self.user.cd = datetime.now() + timedelta(minutes=5)
                 self.user.fap = 0
             await interaction.response.edit_message(view=self.view)
@@ -703,13 +707,13 @@ class PipikBot(commands.Cog):
             if user.cd == 0 or user.cd - datetime.now() < timedelta(seconds=0):
                 user.cd = None
         if user.cd is None:
-            text = "Use repeatedly to increase length."
+            embedVar = discord.Embed(description="Use repeatedly to increase length.", color=ctx.user.color)
         else:
             timestr = "<t:" + str(int(user.cd.timestamp())) + ":R>"
-            text = f"Come back {timestr}"
+            embedVar = discord.Embed(description=f"Come back {timestr}.", color=ctx.user.color)
         viewObj = discord.ui.View()
-        viewObj.add_item(self.FapButton(user,self))
-        await ctx.send(content=text, view=viewObj)  # TODO: embedize
+        viewObj.add_item(self.FapButton(user, self))
+        await ctx.send(embed=embedVar, view=viewObj)
 
     @discord.slash_command(name="profile", description="See your, or someone else's pp profile") #oh my god this is ugly
     async def profile(self, ctx: discord.Interaction, user: discord.User = discord.SlashOption(name="user", description="User to display", required=False)):
@@ -736,21 +740,17 @@ class PipikBot(commands.Cog):
         temphorniness = user.fap + (pills[user.pill]["effect"] if user.pill not in (None, "None", "none") else 0)
         user.items = sorted(user.items, key=lambda a: a[0])
 
-        text = usertocheck.name.center(25,"=")
+        text = usertocheck.name.center(25, "=")
         text += f"\nPersonal best: {user.pb}\nPersonal worst: {user.pw}\n"
-        text += f"Horniness: {temphorniness}\n" if user.cd == None else ""
+        text += f"Horniness: {temphorniness}\n" if user.cd is None else ""
         text += "Pill: {} | {} minutes left.\n".format(pills[user.pill]["name"], ((pills[user.pill]["effectDur"] - takenAgo).seconds // 60) + 1) if temppill else ""
         text += "Erectyle disfunction: {} hours {} minutes\n".format(dysf_left.seconds // 3600, (dysf_left.seconds // 60 % 60) + 1) if user.cd is not None else ""
         text += "{:-^25}".format("Items") + "\n"
         text += "\n".join(["{:<20} | amount: {}".format(pills[i[0]]["name"], i[1]) for i in list(user.items)])
         text += "\n{:-^25}\n".format("Achievements")
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            text += "\n".join((emoji.emojize(":check_mark_button:") if achi.achiid in user.achi else emoji.emojize(":locked:")) + " " + achi.icon + " " + "{:23}".format(achi.name) + (("= " + achi.desc) if achi.achiid in user.achi else "= ???") for achi in self.achievements.values())
-        else:
-            text += "\n".join((emoji.emojize(":check_mark_button:") if achi.achiid in user.achi else emoji.emojize(":locked:")) + " " + achi.icon + " " + "{:23}".format(achi.name) for achi in self.achievements.values())
-            text += "\n\nfor more info, try </achi:1011376051491971082>"
+        text += "\n".join((emoji.emojize(":check_mark_button:") if achi.achiid in user.achi else emoji.emojize(":locked:")) + " " + achi.icon + " " + "{:23}".format(achi.name) for achi in self.achievements.values())
         text += "\n" + "{:-^25}".format("-")
-        await ctx.send("```\n" + text + "\n```") #lord forgive me for what ive done
+        await ctx.send("```\n" + text + "\n```" + f"for more info, try {mentionCommand(self.client,'achi')}") #lord forgive me for what ive done
 
     @discord.slash_command(name="achi", description="See your achievements")
     async def achi(self, ctx):
@@ -761,7 +761,7 @@ class PipikBot(commands.Cog):
         await ctx.send("```\n" + text + "\n```", ephemeral=True)
 
     @discord.slash_command(name="pp", description="For measuring your pp.",dm_permission=False)
-    async def pp(self,ctx: discord.Interaction, message:str =discord.SlashOption(name="message", description="Would you like to tell me something?",required=False, default=None)):
+    async def pp(self, ctx: discord.Interaction, message: str = discord.SlashOption(name="message", description="Would you like to tell me something?", required=False, default=None)):
         await ctx.response.defer()
         msg = None
         embedMsg = discord.Embed(description=".", color=ctx.user.color)  # placeholders
@@ -814,7 +814,7 @@ class PipikBot(commands.Cog):
             curve -= 0.5
             currmethods = currmethods | 8
             if "morning" not in user.achi:
-                await self.updateUserAchi(ctx,ctx.user, "morning")
+                await self.updateUserAchi(ctx, ctx.user, "morning")
 
         # compliment checker
         compliments = 0
@@ -841,15 +841,15 @@ class PipikBot(commands.Cog):
                 curve -= min(5, compliments) * 0.12
 
                 if compliments < 1:
-                    embedMsg.add_field(name=random.choice(bad_responses), value=emoji.emojize(random.choice(bad_emojis)),inline=False)
+                    embedMsg.add_field(name=random.choice(bad_responses), value=emoji.emojize(random.choice(bad_emojis)), inline=False)
                 else:
-                    embedMsg.add_field(name=random.choice(good_responses), value=emoji.emojize(random.choice(good_emojis)),inline=False)
+                    embedMsg.add_field(name=random.choice(good_responses), value=emoji.emojize(random.choice(good_emojis)), inline=False)
                     currmethods = currmethods | 2
                 # compliment achi checker
                 if compliments > 4 and "flirty" not in user.achi:
-                    await self.updateUserAchi(ctx,ctx.user, "flirty")
+                    await self.updateUserAchi(ctx, ctx.user, "flirty")
                 elif compliments < -4 and "playa" not in user.achi:
-                    await self.updateUserAchi(ctx,ctx.user, "playa")
+                    await self.updateUserAchi(ctx, ctx.user, "playa")
 
                 #compliment logger
                 if len(self.usedcompliments) > 5:

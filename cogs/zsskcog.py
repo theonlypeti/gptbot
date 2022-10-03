@@ -1,11 +1,9 @@
-import logging
 import random
-
+import aiohttp
 from nextcord.ext import commands
 import nextcord as discord
 import os
 import json
-import requests
 from bs4 import BeautifulSoup as html
 
 path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe"
@@ -14,56 +12,63 @@ maindir = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\R3"
 os.chdir(maindir)
 
 with open("vonatdb.json", "r") as file:
-    soundfiles= json.load(file)
+    soundfiles = json.load(file)
 os.chdir(root)
 
 class TimeTable(object):
-    def __init__(self,time,cities,meska,vlaktype):
+    def __init__(self, time, cities, meska, vlaktype):
         self.time = time
         self.cities = cities
         self.delay = meska
         self.vlaktype = vlaktype
 
 class ZSSKCog(commands.Cog):
-    def __init__(self,client,baselogger):
-        self.client=client
+    def __init__(self, client, baselogger):
+        self.client = client
         self.tt = None
         self.zsskLogger = baselogger.getChild("ZsskLogger")
 
-    def getTimeTable(self,link):
-        stranka = requests.get(link).content #TODO make into aiohttp
-        soup = html(stranka, 'html.parser')
-        a = soup.find_all(attrs={"title":"Zobraziť detail spoja"})[0] #TODO dont find all pls
-        link=a.get("href")
-        stranka = requests.get(link).content
-        delay = soup.find("a",attrs={"class":"delay-bubble"})        
-        if delay in (None,"meškania"):
+    async def getTimeTable(self, link): #dont judge pls
+        async with aiohttp.ClientSession() as session:
+            async with session.get(link) as req:
+                stranka = await req.content.read()
+            soup = html(stranka, 'html.parser')
+            try:
+                a = soup.find("a", attrs={"title": "Zobraziť detail spoja"})
+            except Exception as e:
+                self.zsskLogger.error(e)
+                return None
+            link = a.get("href")
+            async with session.get(link) as req:
+                stranka = await req.content.read()
+        delay = soup.find("a", attrs={"class": "delay-bubble"})
+        if delay in (None, "meškania"):
             delay = None
         else:
             delay = delay.contents[0].split(" ")[2]
         soup = html(stranka, 'html.parser')
-        a = soup.find_all("li",attrs={"class": "item"})
-        b = soup.find_all("li",attrs={"class": "item inactive"})
+        a = soup.find_all("li", attrs={"class": "item"})
+        b = soup.find_all("li", attrs={"class": "item inactive"})
         c = set(a).difference(set(b))
         a = [i for i in a if i in c]
         cities = [child.select("strong.name")[0].contents[0] for child in reversed(a)]
-        time = soup.find("span",attrs={"class":"departure"}).contents[-1].strip()
+        time = soup.find("span",attrs={"class": "departure"}).contents[-1].strip()
         
         return TimeTable(time, cities, delay, None)
 
-    @discord.slash_command(name="zssk",description="Call the announcer lady to tell you about a train´s schedule",dm_permission=False)
-    async def zssk(self,ctx: discord.Interaction,
-                   fromcity:str = discord.SlashOption(name="from",description="City",required=True),
-                   tocity:str = discord.SlashOption(name="to",description="City",required=True),
-                   time:str = discord.SlashOption(name="time",description="hh:mm",required=False),
-                   date:str = discord.SlashOption(name="date",description="dd.mm.yyyy",required=False)):
+    @discord.slash_command(name="zssk", description="Call the announcer lady to tell you about a train´s schedule", dm_permission=False)
+    async def zssk(self, ctx: discord.Interaction,
+                   fromcity: str = discord.SlashOption(name="from", description="City", required=True),
+                   tocity: str = discord.SlashOption(name="to", description="City", required=True),
+                   time: str = discord.SlashOption(name="time", description="hh:mm", required=False),
+                   date: str = discord.SlashOption(name="date", description="dd.mm.yyyy", required=False)):
         await ctx.response.defer()
         try:
             channel = ctx.user.voice.channel
             try:
                 vclient = await channel.connect()
             except Exception as e:
-                self.zsskLogger.error(f"{e}")
+                self.zsskLogger.info(f"{e}")
                 vclient = ctx.guild.voice_client
             self.vclient = vclient
             await ctx.send("Working on it...", delete_after=10)
@@ -73,7 +78,9 @@ class ZSSKCog(commands.Cog):
             return
         else:
             link = f"https://cp.hnonline.sk/vlakbus/spojenie/vysledky/?"+(f"date={date}&" if date else "") + (f"time={time}&" if time else "") +f"f={fromcity}&fc=1&t={tocity}&tc=1&af=true&trt=150,151,152,153"
-            self.tt = self.getTimeTable(link)
+            self.tt = await self.getTimeTable(link)
+            if self.tt is None:
+                await ctx.send("Not found.", delete_after=5)
             self.znelka()
 
     @zssk.on_autocomplete("tocity")
@@ -97,7 +104,8 @@ class ZSSKCog(commands.Cog):
 
     def traintype(self):
         os.chdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\V1")
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="NFVOS.WAV"),
+        sound = random.choice(os.listdir())
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=sound), #NFVOS
                           after=lambda a: self.smerom())
 
     def smerom(self):
@@ -131,15 +139,17 @@ class ZSSKCog(commands.Cog):
                                                   after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C3\\"+str(int(tt.time.split(":")[1]))+".WAV"),
                                                                                             after=lambda a: self.meskanie(tt))))
 
-    def meskanie(self,tt):
+    def meskanie(self, tt):
         if tt.delay:
-            delay = int(tt.delay)
-            delay = round(delay//5)*5
-            if delay == 0:
-                delay = 5
-            
             try:
-                delay = str(round(delay // 10) * 10) or 5
+                delay = int(tt.delay)
+                delay = round(delay//5)*5
+                if delay == 0:
+                    delay = 5
+            except Exception:
+                delay = 5
+            try:
+                delay = str((round(delay // 10) * 10) or 5)
                 file = open("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+str(delay)+".WAV","r")
             except OSError:
                 file = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+str(delay)+".WAV"

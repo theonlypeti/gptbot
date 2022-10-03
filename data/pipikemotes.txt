@@ -103,8 +103,6 @@
     "justhangingout": "<a:justhangingout:964537932373442611>",
     "cozywave": "<a:cozywave:964537929852669992>",
     "smajl": "<:smajl:883397232882237481>",
-    "KekHold": "<:KekHold:945089242198057040>",
-    "chillinbean": "<:chillinbean:880202032974274591>",
     "questionmark": "<:questionmark:980097303387971646>",
     "wumpusheart": "<a:wumpusheart:987086556835758160>",
     "winetime": "<a:winetime:976119101174988900>",
@@ -118,11 +116,11 @@
     "epico": "<:epico:872860048748077137>",
     "feidonalds": "<:feidonalds:999643131597291591>",
     "nice": "<:nice:957960054064185384>",
-    "penalty": "<:penalty:931183856160210984>",
-    "investigation": "<:investigation:931183309097160735>",
-    "blueflagboard": "<:blueflagboard:948505520753487903>",
     "ded": "<:ded:1003398366077665421>",
     "tiphat": "<:tiphat:760147853070303285>",
     "nothapi": "<:nothapi:1007757789629796422>",
-    "ptoo": "<:ptoo:957957282354835497>"
+    "ptoo": "<:ptoo:957957282354835497>",
+    "adam": "<:adam:605761460718665801>",
+    "doggoblush": "<:doggoblush:962465828178100264>",
+    "pepeflushed": "<:pepeflushed:957957282849755146>"
 }

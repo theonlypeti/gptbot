@@ -33,13 +33,15 @@
                     ":pig:",
                     ":monkey_face:",
                     ":rooster:",
-                    ":mouse:"
+                    ":mouse:",
+                    ":turtle:"
                 ],
                 "symbols": [
                     ":globe_with_meridians:",
                     ":ok:",
                     ":mens:",
-                    ":radioactive:"
+                    ":radioactive:",
+                    ":free:"
                 ],
                 "meme": [
                     ":clown_face:",
@@ -47,7 +49,9 @@
                     ":chair:",
                     ":socks:",
                     ":100:",
-                    ":woman_gesturing_ok:"
+                    ":woman_gesturing_ok:",
+                    ":nail_care:",
+                    ":bowling:"
                 ],
                 "pipikachis": [
                     ":sunrise_over_mountains:",
@@ -107,20 +111,20 @@
             "customs": {}
         },
         "stats": {
-            "Steps taken": 2163,
+            "Steps taken": 2357,
             "Players kicked out": 32,
-            "Times kicked out": 35,
+            "Times kicked out": 39,
             "First places": 6,
             "Second places": 4,
             "Third places": 0,
-            "Dice thrown": 848,
-            "Spins": 55,
-            "Default icons owned": 57,
+            "Dice thrown": 945,
+            "Spins": 59,
+            "Default icons owned": 61,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":radioactive:",
         "ready": false,
-        "dailyDate": "2022-08-23",
+        "dailyDate": "2022-09-25",
         "inLobby": null
     },
     {

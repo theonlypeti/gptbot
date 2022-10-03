@@ -6,20 +6,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import emoji
 from random import choices,choice,randint
-#import __future__.annotations
 from copy import deepcopy as new #maybe useful for equipping items
 from funcy import print_durations
+from utils.mapvalues import mapvalues
 
 def chance(percent: Union[int, float]) ->bool:
-    return choices((True,False),weights=(percent,100-percent))[0]
-
-def limitto(x,low,high):
-    x = min(x,high)
-    x = max(x,low)
-    return x
-
-def mapvalues(x, in_min, in_max, out_min, out_max) -> float:
-    return float((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
+    return choices((True, False), weights=(percent, 100-percent))[0]
 
 class Noise(object):
     @staticmethod
@@ -145,7 +137,7 @@ class RPGGame:
     #------------------------------------------
 
     class Enemy(object):
-        def __init__(self,name,hp,atk,exp,gold,loot):
+        def __init__(self, name, hp, atk, exp, gold, loot):
             self.display_name = name
             self.hp = hp
             self.atk = atk
@@ -161,7 +153,7 @@ class RPGGame:
         def showStats(self):
             return str(self.hp) + " hp, " + str(self.atk) + " atk"
 
-        def attack(self,players):
+        def attack(self, players):
             player = random.choice(players)
             player.hp -= self.atk
             return f"{self.display_name} attacks {player.display_name} for {self.atk} damage!"
@@ -172,7 +164,7 @@ class RPGGame:
                 if effect.hasattr("hpeffect"):
                     self.hp += effect.hpeffect["flat"]
                     self.hp += self.hp * effect.hpeffect["multiplier"]
-                    if effect.hpeffect["set"]!= None:
+                    if effect.hpeffect["set"] != None:
                         self.hp = effect.hpeffect["set"]
 
                 if effect.hasattr("atkeffect"):
@@ -691,8 +683,8 @@ class RPGGame:
 
         #@print_durations
         def discoverMap(self,sight_range):
-            for row in self.discovered_mask[limitto(self.position[0]-sight_range,0,self.terkep.mapsize):limitto(self.position[0]+sight_range+1,0,self.terkep.mapsize)]:
-                for col in range(limitto(self.position[1]-sight_range,0,self.terkep.mapsize),limitto(self.position[1]+sight_range+1,0,self.terkep.mapsize)):
+            for row in self.discovered_mask[np.clip(self.position[0]-sight_range,0,self.terkep.mapsize):np.clip(self.position[0]+sight_range+1,0,self.terkep.mapsize)]:
+                for col in range(np.clip(self.position[1]-sight_range,0,self.terkep.mapsize),np.clip(self.position[1]+sight_range+1,0,self.terkep.mapsize)):
                     row[col] = True
 
         #@print_durations
@@ -774,8 +766,8 @@ class RPGGame:
                     self.grid[player.position[0]][player.position[1]].isPlayer = player.walkicon
 
             msg = ""
-            xbegin = limitto(as_player.position[0]-size//2,0,self.mapsize-size)
-            ybegin = limitto(as_player.position[1]-size//2,0,self.mapsize-size)
+            xbegin = np.clip(as_player.position[0]-size//2,0,self.mapsize-size)
+            ybegin = np.clip(as_player.position[1]-size//2,0,self.mapsize-size)
             for row,maskrow in zip(self.grid[xbegin:xbegin+size],as_player.discovered_mask[xbegin:xbegin+size]):
                 for i,maskcol in zip(row[ybegin:ybegin+size],maskrow[ybegin:ybegin+size]):
                     msg+=emoji.emojize(str(i)) if maskcol else emoji.emojize(":black_large_square:")
