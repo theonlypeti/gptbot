@@ -2,7 +2,7 @@ import asyncio
 import os
 import random
 from io import BytesIO
-from typing import Union, Optional
+from typing import Union
 import nextcord as discord
 from PIL import Image, ImageOps
 from nextcord.ext import commands
@@ -10,7 +10,7 @@ from nextcord.ext import commands
 TESTSERVER = (860527626100015154,)
 
 class Selection:
-    def __init__(self,img: Image,boundary: tuple):
+    def __init__(self,img: Image, boundary: tuple):
         copy = img.copy()
         self.image = copy.crop(boundary)
         self.boundary = boundary
@@ -42,7 +42,7 @@ class Testing(commands.Cog):
     class TextInputModal(discord.ui.Modal):
         def __init__(self):
             super().__init__(title="d")
-            self.bottomtext = discord.ui.TextInput(label="Bottom Text",required=False)
+            self.bottomtext = discord.ui.TextInput(label="Bottom Text", required=False)
             self.add_item(self.bottomtext)
 
         async def callback(self,interaction: discord.Interaction):
@@ -111,13 +111,13 @@ class Testing(commands.Cog):
                 image_binary.seek(0)
 
             if isinstance(interface, discord.Interaction):
-                msg = await interface.send(txt,file=discord.File(fp=image_binary, filename=f'image.{filetype}'),view=view)
+                msg = await interface.send(txt, file=discord.File(fp=image_binary, filename=f'image.{filetype}'), view=view)
 
             elif isinstance(interface, discord.Message):
                 if img:
-                    msg = await interface.edit(file=discord.File(fp=image_binary, filename=f'image.{filetype}'),view=view,content=txt)
+                    msg = await interface.edit(file=discord.File(fp=image_binary, filename=f'image.{filetype}'), view=view, content=txt)
                 else:
-                    msg = await interface.edit(view=view,content=txt)
+                    msg = await interface.edit(view=view, content=txt)
 
             else:
                 raise NotImplementedError("interface must be either discord.Interaction or discord.Message")
@@ -133,28 +133,28 @@ class Testing(commands.Cog):
         @discord.ui.button(label="Delete me")
         async def removeeview(self, button, interaction):
             print(interaction.message, "\n", self.message)
-            print(interaction.message.id, self.message.id,interaction.message == self.message)
+            print(interaction.message.id, self.message.id, interaction.message == self.message)
 
             await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=None,txt="Removing view via inter.message with a file present")  # this one will not remove the view
             await asyncio.sleep(4)
-            await self.cog.showimg(interaction.message, img=None, filetype="png", view=None,txt="Removing view via inter.message with file not included")  # this one will remove the view
+            await self.cog.showimg(interaction.message, img=None, filetype="png", view=None, txt="Removing view via inter.message with file not included")  # this one will remove the view
             await asyncio.sleep(4)
-            await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=self,txt="lets try again")
+            await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=self, txt="lets try again")
             await asyncio.sleep(2)
-            await self.cog.showimg(self.message, img=self.img, filetype="png", view=None,txt="Removing view via a saved var:WebhookMessage with a file present")  # this one will remove the view
+            await self.cog.showimg(self.message, img=self.img, filetype="png", view=None, txt="Removing view via a saved var:WebhookMessage with a file present")  # this one will remove the view
             await asyncio.sleep(4)
             await self.cog.showimg(self.message, img=self.img, filetype="png", view=self, txt="lets try again")
             await asyncio.sleep(2)
-            await self.cog.showimg(self.message, img=None, filetype="png", view=None,txt="Removing view via a saved var:WebhookMessage without a file")  # this one will remove the view
+            await self.cog.showimg(self.message, img=None, filetype="png", view=None, txt="Removing view via a saved var:WebhookMessage without a file")  # this one will remove the view
 
     @discord.slash_command(name="testeditview", description="bug maybe")
-    async def testimageeditorcommand(self, interaction: discord.Interaction,img: discord.Attachment):
+    async def testimageeditorcommand(self, interaction: discord.Interaction, img: discord.Attachment):
         await interaction.response.defer()
         image = await img.read()
         img = Image.open(BytesIO(image))
         view = self.TestDeleteButton(self, img)
-        msg = await self.showimg(interaction, img, "png", view,txt="Hi")
+        msg = await self.showimg(interaction, img, "png", view, txt="Hi")
         view.message = msg
 
 def setup(client,baselogger):
-    client.add_cog(Testing(client,baselogger))
+    client.add_cog(Testing(client, baselogger))

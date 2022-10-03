@@ -12,6 +12,7 @@ def getCommandId(client, command) -> dict:
 
     return {command: {client.get_guild(i[0][0]) or "Global": i[0][1] for i in (tuple(comm.command_ids.items()) for comm in (comm for comm in client.get_application_commands() if comm.name == command))}}
 
+
 def mentionCommand(client, command, guild: int = None, raw: bool = False) -> str:
     ids = getCommandId(client, command.split(" ")[0])
     iddict = list(ids.values())[0]

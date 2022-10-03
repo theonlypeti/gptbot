@@ -6,15 +6,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import emoji
 from random import choices,choice,randint
-#import __future__.annotations
 from copy import deepcopy as new #maybe useful for equipping items
 from funcy import print_durations
+from utils.mapvalues import mapvalues
 
 def chance(percent: Union[int, float]) ->bool:
     return choices((True, False), weights=(percent, 100-percent))[0]
-
-def mapvalues(x, in_min, in_max, out_min, out_max) -> float:
-    return float((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
 
 class Noise(object):
     @staticmethod

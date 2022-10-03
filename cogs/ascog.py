@@ -3,12 +3,14 @@ import nextcord as discord
 from nextcord.ext import commands
 from utils.assolver import *
 
+
 class AsFunc:
     def __init__(self, func=None, title=None, label=None, placeholder=None):
         self.func = func
         self.title = title
         self.label = label
         self.placeholder = placeholder
+
 
 permut = AsFunc(title="Permutácie", label="Permutacie", placeholder="(1,2)(3,4)o(5,6)o(7,8,9)", func=solver)
 zobraz = AsFunc(title="Zobrazenie", label="Zobrazenie", placeholder="(a,b,c,d)o(b,c,d,a)", func=solver2)
@@ -19,7 +21,7 @@ class AsCog(commands.Cog):
         pass
 
     class AsModal(discord.ui.Modal):
-        def __init__(self,func: AsFunc):
+        def __init__(self, func: AsFunc):
             super().__init__(title=func.title)
             self.inputlabel = discord.ui.TextInput(label=func.label, placeholder=func.placeholder, required=True)
             self.add_item(self.inputlabel)

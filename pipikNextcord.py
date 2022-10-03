@@ -11,13 +11,14 @@ import time as time_module
 import logging
 from dotenv import load_dotenv
 import coloredlogs
+from sympy import Sum
 from utils.mentionCommand import mentionCommand
 
 start = time_module.perf_counter()
-
+version = 3.5
 load_dotenv(r"./credentials/main.env")
 
-parser = argparse.ArgumentParser(prog="PipikBot V3.5",description='A fancy discord bot.',epilog="Written by theonlypeti.")
+parser = argparse.ArgumentParser(prog=f"PipikBot V{version}", description='A fancy discord bot.', epilog="Written by theonlypeti.")
 
 for cog in os.listdir("./cogs"):
     if cog.endswith("cog.py"):
@@ -45,12 +46,12 @@ if args.debug:
     pipikLogger.setLevel(logging.DEBUG)
     #std.setLevel(logging.DEBUG)
     #fl.setLevel(logging.INFO)
-    coloredlogs.install(level='DEBUG', logger=pipikLogger,fmt=fmt)
+    coloredlogs.install(level='DEBUG', logger=pipikLogger, fmt=fmt)
 else:
     pipikLogger.setLevel(logging.INFO)
     #std.setLevel(logging.INFO)
     #fl.setLevel(logging.INFO)
-    coloredlogs.install(level='INFO', logger=pipikLogger,fmt=fmt)
+    coloredlogs.install(level='INFO', logger=pipikLogger, fmt=fmt)
 #pipikLogger.addHandler(std)
 #pipikLogger.addHandler(fl)
 
@@ -117,7 +118,7 @@ client.remove_command('help')
 class CaesarModal(discord.ui.Modal):
     def __init__(self, title):
         super().__init__(title=title)
-        self.inputtext = discord.ui.TextInput(label="Input the text",style=discord.TextInputStyle.paragraph)
+        self.inputtext = discord.ui.TextInput(label="Input the text", style=discord.TextInputStyle.paragraph)
         self.add_item(self.inputtext)
 
     async def callback(self, ctx):
@@ -147,7 +148,7 @@ class BfModal(discord.ui.Modal):
         embedVar.set_author(name=ctx.user.display_name, icon_url=ctx.user.avatar.url)
         await ctx.send(embed=embedVar)
 
-@client.slash_command(description="Brainfuck interpreter",name="brainfuck")
+@client.slash_command(description="Brainfuck interpreter", name="brainfuck")
 async def bf_modal(ctx):
     modal = BfModal(title="Brainfuck")
     await ctx.response.send_modal(modal)
@@ -242,7 +243,7 @@ discord_emotes = {}
 
 @client.event
 async def on_ready():
-    game = discord.Game(f"{linecount} lines of code; V3.5! use /help")
+    game = discord.Game(f"{linecount} lines of code; V{version}! use /help")
     await client.change_presence(status=discord.Status.online, activity=game)
     print(f"Signed in at {datetime.now()}")
     pipikLogger.info(f"{time_module.perf_counter() - start} Bootup time")
@@ -269,23 +270,24 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                       "Kiégtem",
                       "Bruh miafasz xd",
                       "Hát ilyet még nem baszott a világ <:kekcry:956217725880000603> <:hapi:889603218273878118>",
-                      "<:kekcry:956217725880000603> <:kekcry:956217725880000603> <:kekcry:956217725880000603> Még jó hogy anyu alszik",
                       "Azért ennyire ne <:kekcry:956217725880000603>",
                       "Jolvan nembirom xdddd",
                       "Hát ez a földhöz baszott <:kekcry:956217725880000603>",
                       "Sikítok xddd",
                       "Ez sok nekem <:kekcry:956217725880000603>",
                       "Sípolok xdd",
-                      "Beszarok gec <:kekcry:956217725880000603> <:kekcry:956217725880000603>"
+                      "Beszarok gec <:kekcry:956217725880000603> <:kekcry:956217725880000603>",
+                      "Leköptem a laptopom xddd",
+                      "Mekkora komedista <:hapi:889603218273878118>"
                       )
     global already_checked
 
-    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>", "<:hapi:889603218273878118>"):
+    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>", "<:hapi:889603218273878118>", ":joy:"):
         if reaction.message.author.id == 569937005463601152:
             if user.id == 569937005463601152:
                 kapja: discord.Member = reaction.message.author
                 already_checked.append(reaction.message.id)
-                await kapja.timeout(timedelta(minutes=3), reason="Saját magára rakta a keket")
+                await kapja.timeout(timedelta(minutes=2), reason="Saját magára rakta a keket")
                 uzenet = "Imagine saját vicceiden nevetni. <:bonkdoge:950439465904644128> <a:catblushy:913875026606948393>"
                 await reaction.message.reply(uzenet)
 

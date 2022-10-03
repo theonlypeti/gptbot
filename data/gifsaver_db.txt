@@ -15,6 +15,9 @@
         },
         "beans": {
             "beanswiggly": "https://cdn.discordapp.com/emojis/875038255991623710.gif?size=4096&quality=lossless"
+        },
+        "gta_sa": {
+            "shit real fucked up": "https://tenor.com/view/gta-sa-gta-san-andreas-grand-theft-auto-san-andreas-gta-grand-theft-auto-gif-17464161"
         }
     },
     "677496112860626975": {

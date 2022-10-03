@@ -68,16 +68,11 @@ class AisCog(commands.Cog):
                     else:
                         diff = set(oldNames).difference(newNames)
                         diffTemy = [oldDict[name] for name in diff]
-                    try:
-                        text = "\n".join(tema.find_all("td")[0].text + " = " + tema.find_all("td")[2].text for tema in sorted(diffTemy, key=lambda a:int(a.find_all("td")[0].text)))
-                    except Exception as e:
-                        self.aisLogger.error(e)
-                        text = "\n".join(tema.find_all("td")[0].text + " = " + tema.find_all("td")[2].text for tema in diffTemy)
-                    else:
-                        self.aisLogger.info("success") #TODO test and remove
+
+                    text = "\n".join(tema.find_all("td")[0].text + " = " + tema.find_all("td")[2].text for tema in sorted(diffTemy, key=lambda a:int(a.find_all("td")[0].text[:-1])))
                     if len(text) > 2000:
                         text = text[:1997] + "..."
-                    embedVar = discord.Embed(title="Počet tém bakalárskych prác sa zmenil!",description=text,color=(discord.Color.red(), discord.Color.green())[len(self.temy) < len(c)])
+                    embedVar = discord.Embed(title="Počet tém bakalárskych prác sa zmenil!", description=text, color=(discord.Color.red(), discord.Color.green())[len(self.temy) < len(c)])
                     #embedVar = discord.Embed(title="Just testing :*")
                 except Exception as e:
                     logging.error(e)
@@ -101,25 +96,25 @@ class AisCog(commands.Cog):
         await self.client.wait_until_ready()
 
     class NotificationButton(discord.ui.View):
-        @discord.ui.button(emoji=emoji.emojize(':no_bell:', language="alias"),label="Don't notify me")
+        @discord.ui.button(emoji=emoji.emojize(':no_bell:', language="alias"), label="Don't notify me")
         async def unsub(self, button, ctx: discord.Interaction):
             try:
                 await ctx.user.remove_roles(discord.utils.find(lambda m: m.name == 'Bakalarka notifications', ctx.user.roles))
             except Exception as e:
                 logging.error(e)
-            await ctx.send(embed=discord.Embed(description="Odteraz nebudeš dostávať pingy ak pribudnú nové témy.",color=discord.Color.red()), ephemeral=True)
+            await ctx.send(embed=discord.Embed(description="Odteraz nebudeš dostávať pingy ak pribudnú nové témy.", color=discord.Color.red()), ephemeral=True)
 
-        @discord.ui.button(emoji=emoji.emojize(':bell:', language="alias"),label="Notify me")
+        @discord.ui.button(emoji=emoji.emojize(':bell:', language="alias"), label="Notify me")
         async def sub(self, button, ctx):
             try:
                 await ctx.user.add_roles([i for i in ctx.guild.roles if i.name == "Bakalarka notifications"][0])
             except Exception as e:
                 logging.error(e)
-            await ctx.send(embed=discord.Embed(description="Odteraz budeš dostávať pingy ak pribudnú nové témy.",color=discord.Color.green()),ephemeral=True)
+            await ctx.send(embed=discord.Embed(description="Odteraz budeš dostávať pingy ak pribudnú nové témy.", color=discord.Color.green()), ephemeral=True)
 
         def __init__(self):
             super().__init__(timeout=None)
-            self.add_item(discord.ui.Button(label="Zobraz temy (copy link)",url="https://is.stuba.sk/auth/student/zp_temata.pl?seznam=1",style=discord.ButtonStyle.url,emoji=emoji.emojize(":globe_with_meridians:")))
+            self.add_item(discord.ui.Button(label="Zobraz temy (copy link)", url="https://is.stuba.sk/auth/student/zp_temata.pl?seznam=1", style=discord.ButtonStyle.url, emoji=emoji.emojize(":globe_with_meridians:")))
 
     @discord.slash_command(description="Commands for STU bakalarka témy")
     async def bakalarka(self, interaction):
@@ -173,4 +168,4 @@ class AisCog(commands.Cog):
             await interaction.message.edit(view=None)
 
 def setup(client,baselogger): #bot shit
-    client.add_cog(AisCog(client,baselogger))
+    client.add_cog(AisCog(client, baselogger))

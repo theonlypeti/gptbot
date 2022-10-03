@@ -3,9 +3,7 @@ import json
 import os
 import random
 from datetime import datetime
-from typing import Optional, Literal
-
-import emoji
+from typing import Literal
 import nextcord as discord
 from nextcord.ext import commands
 from utils.antimakkcen import antimakkcen
@@ -157,7 +155,7 @@ class EmoteCog(commands.Cog):
                 custom = f"[__{self.displaytext.value}__]({self.link.value})"
             await interaction.send(self.context.value.format(custom) if "{}" in self.context.value else self.context.value + custom if self.context.value else custom)
 
-    @discord.slash_command(name="makelink", guild_ids=(860527626100015154,))
+    @discord.slash_command(name="makelink")
     async def makelink(self, interaction: discord.Interaction, mode: Literal["Simple", "Complex"]):
         if mode == "Simple":
             await interaction.response.send_modal(self.FancyLinkModal(mode=mode))
@@ -198,9 +196,6 @@ class EmoteCog(commands.Cog):
     @discord.message_command(name="Word react")
     async def reacts(self, interaction: discord.Interaction, message: discord.Message):
         await interaction.response.send_modal(self.AddReactLettersModal(message))
-
-
-
 
 def setup(client, baselogger):
     client.add_cog(EmoteCog(client, baselogger))

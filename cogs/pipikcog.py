@@ -13,6 +13,7 @@ from astral import moon
 import pytz
 from utils.antimakkcen import antimakkcen
 from utils.mentionCommand import mentionCommand
+from utils.mapvalues import mapvalues
 
 mgr = pyowm.OWM(os.getenv("OWM_TOKEN")).weather_manager()
 location = 'Bratislava,sk'
@@ -428,13 +429,13 @@ class PipikBot(commands.Cog):
         await ctx.send(embed=embedVar)
 
     @discord.slash_command(name="min", description="Leaderboard of smallest pps", dm_permission=False)
-    async def min(self, ctx: discord.Interaction, server: str = discord.SlashOption("leaderboard",description="User leaderboard or server leaderboards",required=False, choices=("This server", "Between servers"), default="This server")):
+    async def min(self, ctx: discord.Interaction, server: str = discord.SlashOption("leaderboard", description="User leaderboard or server leaderboards",required=False, choices=("This server", "Between servers"), default="This server")):
 
         if server == "This server":
             try:
                 ldb = self.loserboards[str(ctx.guild_id)]
             except KeyError:
-                await ctx.send(embed=discord.Embed(title="Loserboard empty",description=f"Use the {mentionCommand(self.client,'pp')} command to measure your pp first"))
+                await ctx.send(embed=discord.Embed(title="Loserboard empty", description=f"Use the {mentionCommand(self.client,'pp')} command to measure your pp first"))
                 return
         elif server == "Between servers":
             ldb = sorted([(self.client.get_guild(int(id)).name, round(sum(map(lambda user: user[1], users)), 5)) for id, users in self.loserboards.items()], key=lambda x: x[1], reverse=False)[:5]
@@ -449,24 +450,24 @@ class PipikBot(commands.Cog):
             embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
         await ctx.send(embed=embedVar)
 
-    @discord.slash_command(name="weather",description="Current weather at location, or simply see how your pp is affected at the moment.")
-    async def weather(self, ctx, location: str = discord.SlashOption(name="city",description="City name, for extra precision add a comma and a country code e.g. London,UK",required=False)):
+    @discord.slash_command(name="weather", description="Current weather at location, or simply see how your pp is affected at the moment.")
+    async def weather(self, ctx, location: str = discord.SlashOption(name="city", description="City name, for extra precision add a comma and a country code e.g. London,UK",required=False)):
         await ctx.response.defer()
         if not location:
             self.getTemp()
             offset = ((7 - abs(7 - datetime.now().month)) - 1) * 3  # average temperature okolo ktorej bude pocitat <zcvrk alebo rast>
-            embedVar = discord.Embed(title=f"It´s {self.temperature} degrees in Bratislava.",description="You can expect {} {} pps".format(("quite", "slightly")[int(abs(self.temperature - offset) < 5)],("shorter", "longer")[int(self.temperature - offset > 0)]), color=(0x17dcff if self.temperature < offset - 5 else 0xbff5ff if self.temperature <= offset else 0xff3a1c if self.temperature > offset + 5 else 0xffa496 if self.temperature > offset else ctx.user.color))
+            embedVar = discord.Embed(title=f"It´s {self.temperature} degrees in Bratislava.", description="You can expect {} {} pps".format(("quite", "slightly")[int(abs(self.temperature - offset) < 5)],("shorter", "longer")[int(self.temperature - offset > 0)]), color=(0x17dcff if self.temperature < offset - 5 else 0xbff5ff if self.temperature <= offset else 0xff3a1c if self.temperature > offset + 5 else 0xffa496 if self.temperature > offset else ctx.user.color))
             offsettime = self.sunrise_date.astimezone(pytz.timezone("Europe/Vienna"))
-            embedVar.add_field(name="And the sun is coming up at",value="{}:{:0>2}.".format(offsettime.hour, offsettime.minute))
+            embedVar.add_field(name="And the sun is coming up at", value="{}:{:0>2}.".format(offsettime.hour, offsettime.minute))
         else:
             if location == "me":
                 try:
-                    location = {617840759466360842: "Bardoňovo", 756092460265898054: "Plechotice",677496112860626975: "Giraltovce", 735473733753634827: "Veľký Šariš"}[ctx.user.id]
+                    location = {617840759466360842: "Bardoňovo", 756092460265898054: "Plechotice", 677496112860626975: "Giraltovce", 735473733753634827: "Veľký Šariš"}[ctx.user.id]
                 except KeyError:
                     pass
             else:
                 try:
-                    location = {"ds": "Dunajská Streda", "ba": "Bratislava", "temeraf": "Piešťany", "piscany": "Piešťany","pistany": "Piešťany", "mesto snov": "Piešťany", "terebes": "Trebišov", "eperjes": "Prešov","blava": "Bratislava", "diera": "Stropkov", "saris": "Veľký Šariš", "ziar": "Žiar nad Hronom","pelejte": "Plechotice", "bardonovo": "Bardoňovo", "rybnik": "Rybník,SK"}[antimakkcen(location.casefold())]
+                    location = {"ds": "Dunajská Streda", "ba": "Bratislava", "temeraf": "Piešťany", "piscany": "Piešťany","pistany": "Piešťany", "mesto snov": "Piešťany", "terebes": "Trebišov", "eperjes": "Prešov", "blava": "Bratislava", "diera": "Stropkov", "saris": "Veľký Šariš", "ziar": "Žiar nad Hronom","pelejte": "Plechotice", "bardonovo": "Bardoňovo", "rybnik": "Rybník,SK"}[antimakkcen(location.casefold())]
                 except KeyError:
                     if "better than" in location.casefold():
                         description = "Yeah babe, you are the best!"
@@ -491,10 +492,10 @@ class PipikBot(commands.Cog):
                 b = mgr.weather_at_place(location)
                 a = b.weather
             except pyowm.commons.exceptions.NotFoundError:
-                await ctx.send(embed=discord.Embed(title=location + " not found.", description=description))
+                await ctx.send(embed=discord.Embed(title=f"{location} not found.", description=description))
                 return
             else:
-                embedVar = discord.Embed(title=f"Current weather at ** {b.location.name},{b.location.country}**",description="{:-^40}".format("Local time: " + str(datetime.utcnow() + timedelta(seconds=a.utc_offset))[11:19]), color=ctx.user.color)
+                embedVar = discord.Embed(title=f"Current weather at ** {b.location.name},{b.location.country}**", color=ctx.user.color)
                 for k, v in {"Weather": a.detailed_status, "Temperature": str(a.temperature("celsius")["temp"]) + "°C",
                              "Feels like": str(a.temperature("celsius")["feels_like"]) + "°C",
                              "Clouds": str(a.clouds) + "%", "Wind": str(a.wind()["speed"] * 3.6)[:6] + "km/h",
@@ -504,7 +505,10 @@ class PipikBot(commands.Cog):
                              "UV Index": a.uvi, "Atm. Pressure": str(a.pressure["press"]) + " hPa",
                              "Precip.": str(a.rain["1h"] if "1h" in a.rain else 0) + " mm/h"}.items():
                     embedVar.add_field(name=k, value=v)
-                embedVar.set_thumbnail(url="https://openweathermap.org/img/wn/{}@2x.png".format(a.weather_icon_name))
+                embedVar.set_thumbnail(url=a.weather_icon_url())
+                moonphases = (':new_moon:', ':waning_crescent_moon:', ':last_quarter_moon:', ':waning_gibbous_moon:', ':full_moon:', ':waxing_gibbous_moon:', ':first_quarter_moon:', ':waxing_crescent_moon:')
+                currphase = int(mapvalues(moon.phase(), 0, 28, 0, len(moonphases)))
+                embedVar.set_footer(text=f"Local time: {str(datetime.utcnow() + timedelta(seconds=a.utc_offset))[11:19]} | Moon phase: {emoji.emojize(moonphases[currphase])}")
         await ctx.send(embed=embedVar)
 
     @discord.slash_command(name="tips", description="Read some tips on how to increase your pp size")
@@ -736,9 +740,9 @@ class PipikBot(commands.Cog):
         temphorniness = user.fap + (pills[user.pill]["effect"] if user.pill not in (None, "None", "none") else 0)
         user.items = sorted(user.items, key=lambda a: a[0])
 
-        text = usertocheck.name.center(25,"=")
+        text = usertocheck.name.center(25, "=")
         text += f"\nPersonal best: {user.pb}\nPersonal worst: {user.pw}\n"
-        text += f"Horniness: {temphorniness}\n" if user.cd == None else ""
+        text += f"Horniness: {temphorniness}\n" if user.cd is None else ""
         text += "Pill: {} | {} minutes left.\n".format(pills[user.pill]["name"], ((pills[user.pill]["effectDur"] - takenAgo).seconds // 60) + 1) if temppill else ""
         text += "Erectyle disfunction: {} hours {} minutes\n".format(dysf_left.seconds // 3600, (dysf_left.seconds // 60 % 60) + 1) if user.cd is not None else ""
         text += "{:-^25}".format("Items") + "\n"
