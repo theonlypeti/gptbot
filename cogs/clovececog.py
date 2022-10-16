@@ -1,12 +1,12 @@
 import os
-from typing import Union, Optional
+from typing import Optional
 import nextcord as discord
 from nextcord.ext import commands
 import asyncio
 import json 
-from datetime import datetime,date,timedelta
+from datetime import datetime, date, timedelta
 import emoji
-from random import randint,choice,choices,shuffle
+from random import randint, choice, choices, shuffle
 from copy import deepcopy
 
 from utils.mentionCommand import mentionCommand
@@ -27,7 +27,7 @@ spinShardIcon = "<:shard:957469681474744340>"
 root = os.getcwd()
 
 os.makedirs(root + r"/data", exist_ok=True)
-with open(root + r"/data/emojis.txt","r") as file:
+with open(root + r"/data/emojis.txt", "r") as file:
     allemojis_dict = json.load(file)
 allemojis = sum([v for v in allemojis_dict.values()],[])
 unlockable_emojis_dict = {k:v for k,v in allemojis_dict.items() if k not in ("pipikachis","cloveceachis")}

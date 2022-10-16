@@ -59,7 +59,7 @@
         "cd": "2022-09-05T00:38:09.459647",
         "methods": 127,
         "dailyStreak": 1,
-        "dailyDate": "2022-09-17"
+        "dailyDate": "2022-09-17T00:00:00"
     },
     {
         "id": 307985197926973452,
@@ -687,15 +687,20 @@
             "megapp",
             "contributor"
         ],
-        "items": [],
+        "items": [
+            [
+                0,
+                3
+            ]
+        ],
         "pb": 340.401,
         "pw": 2.128,
         "cd": null,
         "methods": 1,
         "pill": null,
         "pillPopTime": 0,
-        "dailyStreak": 0,
-        "dailyDate": "2022-08-19T00:00:00"
+        "dailyStreak": 1,
+        "dailyDate": "2022-10-10T00:00:00"
     },
     {
         "id": 358149204180205572,
@@ -706,11 +711,11 @@
         "items": [],
         "pb": 223.863,
         "pw": 1.714,
-        "cd": null,
+        "cd": "2022-10-09T22:37:50.814990",
         "methods": 5,
         "pill": null,
         "pillPopTime": 0,
-        "dailyStreak": 0,
+        "dailyStreak": 1,
         "dailyDate": "2022-08-19T00:00:00"
     },
     {
@@ -865,7 +870,7 @@
         "pb": 634.65,
         "pw": 0.137,
         "cd": null,
-        "methods": 62,
+        "methods": 126,
         "pill": null,
         "pillPopTime": "2022-06-20T09:53:15.457250",
         "dailyStreak": 7,

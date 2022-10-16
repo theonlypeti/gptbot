@@ -96,19 +96,19 @@ class GifCog(commands.Cog):
         viewObj = discord.ui.View()
         
         try:
-            viewObj.add_item(self.GifSaveFolderSelect(self.db[str(ctx.user.id)],msg,self))
+            viewObj.add_item(self.GifSaveFolderSelect(self.db[str(ctx.user.id)], msg, self))
         except KeyError:
             self.db[str(ctx.user.id)] = {}
-            viewObj.add_item(self.GifSaveFolderSelect(self.db[str(ctx.user.id)],msg,self))
-        await ctx.send("select foldah",view=viewObj,ephemeral=True)
+            viewObj.add_item(self.GifSaveFolderSelect(self.db[str(ctx.user.id)], msg, self))
+        await ctx.send("select foldah", view=viewObj, ephemeral=True)
 
     class GifLoadFolderSelect(discord.ui.Select):
-        def __init__(self,ctx,msg,giffolders):
+        def __init__(self, ctx, msg, giffolders):
             self.ogctx = ctx
             self.msg = msg
             self.giffolders = giffolders
             optionen = [discord.SelectOption(label=emoji.emojize(i),value=i) for i in list(self.giffolders.keys())]
-            super().__init__(options=optionen,placeholder="Select a folder to pick a GIF from")
+            super().__init__(options=optionen, placeholder="Select a folder to pick a GIF from")
 
         async def callback(self,ctx):
             folder = self.values[0]

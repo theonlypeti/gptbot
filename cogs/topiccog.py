@@ -195,6 +195,7 @@ class TopicCog(commands.Cog):
 
     @discord.slash_command(name="sub", description="Retrieve a random post from a given subreddit.")
     async def sub(self, ctx, subreddit: str = discord.SlashOption(name="subreddit",description="a subreddit name without the /r/")):
+        await ctx.response.defer()
         if not ctx.channel.is_nsfw() and reddit.subreddit(subreddit.strip("/r/")).over18:
             await ctx.send(embed=discord.Embed(title="That is an NSFW subreddit you are tying to send into a non-NSFW text channel.",color=discord.Color.red()))
             return

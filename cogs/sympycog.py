@@ -238,13 +238,12 @@ class SympyCog(commands.Cog):
             #zapravd = eval(zapravd) if zapravd else None
             sympylogger.debug(zapravd)
             try:
-                result = P(expression, condition=eval(zapravd) if zapravd else None)
+                result = P(expression, given_condition=eval(zapravd) if zapravd else None)
             except Exception as e:
                 sympylogger.debug(e)
                 try:
                     result = density(expression, condition=eval(zapravd) if zapravd else None)
                     sympylogger.debug(result)
-                    sympylogger.debug(result.items())
                     result = {j: Rational(i.p * (max([j.q for j in result.values()]) / i.q), max([j.q for j in result.values()]), gcd=1) for j, i in result.items()}
                     result = "\n".join((f"{k}={v}" for k, v in result.items()))
                 except Exception as f:

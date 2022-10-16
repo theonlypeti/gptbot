@@ -35,10 +35,11 @@ class ZSSKCog(commands.Cog):
             soup = html(stranka, 'html.parser')
             try:
                 a = soup.find("a", attrs={"title": "Zobraziť detail spoja"})
+                self.zsskLogger.debug(a)
             except Exception as e:
                 self.zsskLogger.error(e)
                 return None
-            link = a.get("href")
+            link = a.get("href") #ez szokott errorozni mert nonetype az a
             async with session.get(link) as req:
                 stranka = await req.content.read()
         delay = soup.find("a", attrs={"class": "delay-bubble"})
@@ -57,7 +58,7 @@ class ZSSKCog(commands.Cog):
         return TimeTable(time, cities, delay, None)
 
     @discord.slash_command(name="zssk", description="Call the announcer lady to tell you about a train´s schedule", dm_permission=False)
-    async def zssk(self, ctx: discord.Interaction,
+    async def zssk(self, ctx: discord.Interaction, #todo make it print tt to chat, so u dont have to be in voice
                    fromcity: str = discord.SlashOption(name="from", description="City", required=True),
                    tocity: str = discord.SlashOption(name="to", description="City", required=True),
                    time: str = discord.SlashOption(name="time", description="hh:mm", required=False),
@@ -65,6 +66,7 @@ class ZSSKCog(commands.Cog):
         await ctx.response.defer()
         try:
             channel = ctx.user.voice.channel
+            self.zsskLogger.info(f"{ctx.user} in {channel} used zssk {fromcity} {tocity}")
             try:
                 vclient = await channel.connect()
             except Exception as e:
@@ -78,6 +80,7 @@ class ZSSKCog(commands.Cog):
             return
         else:
             link = f"https://cp.hnonline.sk/vlakbus/spojenie/vysledky/?"+(f"date={date}&" if date else "") + (f"time={time}&" if time else "") +f"f={fromcity}&fc=1&t={tocity}&tc=1&af=true&trt=150,151,152,153"
+            self.zsskLogger.debug(link)
             self.tt = await self.getTimeTable(link)
             if self.tt is None:
                 await ctx.send("Not found.", delete_after=5)

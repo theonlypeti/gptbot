@@ -2,6 +2,8 @@ import logging
 import os
 from datetime import datetime
 import json
+from typing import List
+import bs4
 import nextcord as discord
 from nextcord.ext import commands, tasks
 import aiohttp
@@ -10,6 +12,23 @@ import emoji
 from dotenv import load_dotenv
 root = os.getcwd()
 load_dotenv(r"./credentials/ais.env")
+
+class Tema(object):
+    def __init__(self, tema: bs4.Tag):
+        rows = tema.find_all('td')
+        self.num = rows[0].text
+        self.name = rows[2].text
+        self.rawlink = rows[10]
+        temaid = f"https://is.stuba.sk{rows[10].find('a').get('href')}"
+        temaid = temaid[temaid.find("detail="):]
+        temaid = temaid[:temaid.find(";")]
+        self.link = f"https://is.stuba.sk/auth/student/zp_temata.pl?seznam=1;{temaid}"
+
+    def __str__(self):
+        return f"{self.num} = {self.name}"
+
+    def makeLink(self):
+        return f'{self.num} = [__{self.name}__]({self.link}\n"Nestiahne to súbor len je bugnutý, inak Copy link ak áno" )'
 
 class AisCog(commands.Cog):
     def __init__(self, client, baselogger):
@@ -30,12 +49,13 @@ class AisCog(commands.Cog):
             'credential_0': os.getenv("AIS_NAME"),
             'credential_1': os.getenv("AIS_PWD"),
             'login_hidden': 1,
-            'destination': '/auth/student/zp_temata.pl?studium=163040;obdobi=605;seznam=1;lang=sk',
+            #'destination': '/auth/student/zp_temata.pl?studium=163040;obdobi=605;seznam=1;lang=sk',
+            'destination': '/auth/student/zp_temata.pl?seznam=1;lang=sk',
             'auth_id_hidden': 0,
             'auth_2fa_type': 'no',
             "seznam": "1",
-            "studium": "163040",
-            "obdobi": "605"
+            #"studium": "163040",
+            #"obdobi": "605"
         }
         async with aiohttp.ClientSession() as session:
             async with session.post('https://is.stuba.sk/system/login.pl?studium=163040;obdobi=605;seznam=1;lang=sk', headers=headers, data=payload) as req:
@@ -44,32 +64,33 @@ class AisCog(commands.Cog):
             a = soup.find(attrs={"id": "table_1"})
             b = a.find("tbody")
             c = b.find_all("tr")
+            temy = list(map(Tema, c))
         except AttributeError:
             self.aisLogger.info("No temy found")
             return
-        self.aisLogger.info(f"Checking for témy, {len(c)} found.")
+        self.aisLogger.info(f"Checking for témy, {len(temy)} found.")
 
         if len(self.temy) > 0:
         #if True: #debug
             if len(self.temy) != len(c):
                 os.makedirs(root+r"/temyLogs", exist_ok=True)
-                with open(root+r"/temyLogs/"+f"temy_{datetime.now().strftime('%m-%d-%H-%M')}.txt", "w",encoding="UTF-8") as file:
-                    temyJson = [{"poradie": tema.find_all("td")[0].text, "nazov": tema.find_all("td")[2].text} for tema in c]
+                with open(root+r"/temyLogs/"+f"temy_{datetime.now().strftime('%m-%d-%H-%M')}.txt", "w", encoding="UTF-8") as file:
+                    temyJson = [{"poradie": tema.num, "nazov": tema.name} for tema in temy]
                     json.dump(temyJson, file, indent=4)
 
                 try:
-                    newDict = {tema.find_all("td")[2].text: tema for tema in c}
-                    oldDict = {tema.find_all("td")[2].text: tema for tema in self.temy}
-                    newNames = list(newDict.keys())
-                    oldNames = [tema.find_all("td")[2].text for tema in self.temy]
-                    if len(c) > len(self.temy):
+                    newDict = {tema.name: tema for tema in temy}
+                    oldDict = {tema.name: tema for tema in self.temy}
+                    newNames: List[str] = list(newDict.keys())
+                    oldNames: List[str] = list(oldDict.keys()) #[tema.name for tema in self.temy]
+                    if len(temy) > len(self.temy):
                         diff = set(newNames).difference(oldNames)
-                        diffTemy = [newDict[name] for name in diff]
+                        diffTemy: List[Tema] = [newDict[name] for name in diff]
                     else:
                         diff = set(oldNames).difference(newNames)
-                        diffTemy = [oldDict[name] for name in diff]
+                        diffTemy: List[Tema] = [oldDict[name] for name in diff]
 
-                    text = "\n".join(tema.find_all("td")[0].text + " = " + tema.find_all("td")[2].text for tema in sorted(diffTemy, key=lambda a:int(a.find_all("td")[0].text[:-1])))
+                    text = "\n".join([tema.makeLink() for tema in sorted(diffTemy, key=lambda tem:tem.num)])
                     if len(text) > 2000:
                         text = text[:1997] + "..."
                     embedVar = discord.Embed(title="Počet tém bakalárskych prác sa zmenil!", description=text, color=(discord.Color.red(), discord.Color.green())[len(self.temy) < len(c)])
@@ -78,17 +99,17 @@ class AisCog(commands.Cog):
                     logging.error(e)
                     embedVar = discord.Embed(title="Počet tém bakalárskych prác sa zmenil!")
                 embedVar.add_field(name="Starý počet tém", value=len(self.temy))
-                embedVar.add_field(name="Nový počet tém", value=len(c))
+                embedVar.add_field(name="Nový počet tém", value=len(temy))
                 viewObj = AisCog.NotificationButton()
 
                 for channelid in self.channels:
                     channel = self.client.get_channel(channelid)
-                    if len(self.temy) < len(c):
+                    if len(self.temy) < len(temy):
                         role = discord.utils.find(lambda m: m.name == 'Bakalarka notifications', channel.guild.roles)
                         await channel.send(role.mention if role is not None else "", embed=embedVar, view=viewObj)
                     else:
                         await channel.send(embed=embedVar, view=viewObj)
-        self.temy = c
+        self.temy = temy
 
     @printer.before_loop #i could comment this out but then it would look not pretty how my bootup time shot up by 5s haha
     async def before_printer(self):
@@ -120,43 +141,55 @@ class AisCog(commands.Cog):
     async def bakalarka(self, interaction):
         pass
 
+    @bakalarka.subcommand(name="debug", description="Print current témy")
+    async def debugprint(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        text = ""
+        for tema in self.temy:
+            if len(tema.makeLink()) + len(text) >= 1869:
+                text += f'And some more [__here__](https://is.stuba.sk/auth/student/zp_temata.pl?seznam=1\n"Nestiahne to súbor len je bugnutý, inak Copy link ak áno" )'
+                break
+            text += f"{tema.makeLink()}\n"
+            ""
+        await interaction.send(embed=discord.Embed(title="Zoznam tém", description=text))
+
     @bakalarka.subcommand(name="enable", description="Set this channel as notification channel")
     async def setupchannel(self, interaction: discord.Interaction):
         await interaction.response.defer()
         if interaction.channel.id in self.channels:
-            await interaction.send(embed=discord.Embed(description="Tento channel už má setupované notifikácie.",color=discord.Color.red()),ephemeral=True)
+            await interaction.send(embed=discord.Embed(description="Tento channel už má setupované notifikácie.",color=discord.Color.red()), ephemeral=True)
             return
         self.channels.append(interaction.channel.id)
         with open(root+r"/data/ais_notif_channels.txt", "w", encoding="UTF-8") as file:
             json.dump(self.channels, file, indent=4)
         if (role:=(discord.utils.find(lambda m: m.name == 'Bakalarka notifications', interaction.guild.roles))) is None:
             role = await interaction.guild.create_role(name="Bakalarka notifications",mentionable=True,color=discord.Color.dark_red())
-        await interaction.send(embed=discord.Embed(description=f"Notifikácie pre témy bakalárskych prác boli nastavené v tomto kanáli.\nPridajte si rolu {role.mention} aby ste dostávali pingy.",color=discord.Color.dark_red()),view=self.NotificationButton())
+        await interaction.send(embed=discord.Embed(description=f"Notifikácie pre témy bakalárskych prác boli nastavené v tomto kanáli.\nPridajte si rolu {role.mention} gombíkmi, aby ste dostávali pingy.", color=discord.Color.dark_red()), view=self.NotificationButton())
 
     @bakalarka.subcommand(name="disable", description="Remove this channel as notification channel")
     async def removechannel(self, interaction: discord.Interaction):
         await interaction.response.defer()
         if interaction.channel.id not in self.channels:
-            await interaction.send(embed=discord.Embed(description="Tento channel nemá nastavené notifikácie.",color=discord.Color.red()),ephemeral=True)
+            await interaction.send(embed=discord.Embed(description="Tento channel nemá nastavené notifikácie.", color=discord.Color.red()),ephemeral=True)
             return
         self.channels.remove(interaction.channel.id)
-        with open(root+r"/data/ais_notif_channels.txt", "w",encoding="UTF-8") as file:
+        with open(root+r"/data/ais_notif_channels.txt", "w", encoding="UTF-8") as file:
             json.dump(self.channels, file, indent=4)
         viewObj = self.RemoveRoleView(interaction.user)
         await interaction.send(embed=discord.Embed(description="Notifikácie pre témy bakalárskych prác boli odstránené v tomto kanáli.",color=discord.Color.dark_red()),view=viewObj)
 
     class RemoveRoleView(discord.ui.View):
-        def __init__(self,user: discord.User):
+        def __init__(self, user: discord.User):
             self.original_user = user
             super().__init__(timeout=None)
 
         async def interaction_check(self, interaction: discord.Interaction) -> bool:
             return interaction.user == self.original_user
 
-        @discord.ui.button(emoji=emoji.emojize(':wastebasket:', language="alias"), label="Vymaž aj rolu",style=discord.ButtonStyle.danger)
+        @discord.ui.button(emoji=emoji.emojize(':wastebasket:', language="alias"), label="Vymaž aj rolu", style=discord.ButtonStyle.danger)
         async def deleterole(self, button, interaction: discord.Interaction):
             try:
-                if (role := discord.utils.find(lambda m: m.name == 'Bakalarka notifications',interaction.guild.roles)) is not None:
+                if (role := discord.utils.find(lambda m: m.name == 'Bakalarka notifications', interaction.guild.roles)) is not None:
                     await role.delete(reason=f"{interaction.user.name}#{interaction.user.discriminator} disabled notification channel {interaction.channel.name} for bakalarka temy")
                 await interaction.message.edit(view=None)
             except Exception as e:
@@ -164,7 +197,7 @@ class AisCog(commands.Cog):
                 await interaction.send(str(e))
 
         @discord.ui.button(emoji=emoji.emojize(':check_mark_button:', language="alias"), label="Iba presúvam channel")
-        async def keeprole(self, button, interaction:discord.Interaction):
+        async def keeprole(self, button, interaction: discord.Interaction):
             await interaction.message.edit(view=None)
 
 def setup(client,baselogger): #bot shit

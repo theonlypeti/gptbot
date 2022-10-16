@@ -50,5 +50,5 @@ class ConverterCog(commands.Cog):
             currs = {item[0]: item[1] for item in tuple((v, k) for k, v in self.currencylist.items() if currency.casefold().strip() in f"{k.casefold()} {v.casefold()}")[:25]}
             await interaction.response.send_autocomplete(currs)
 
-def setup(client,baselogger): #bot shit
+def setup(client,baselogger):
     client.add_cog(ConverterCog(client, baselogger))

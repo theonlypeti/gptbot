@@ -25,7 +25,7 @@ Radio X - Funk, Disco
 SF-UR - House""".split("\n")}
 
 class RadioCog(commands.Cog):
-    def __init__(self,client,baselogger):
+    def __init__(self, client, baselogger):
         global radioLogger
         #self.radios = []
         self.client = client
@@ -143,6 +143,7 @@ class RadioCog(commands.Cog):
     @discord.slash_command(name="leave", description="Kicks the bot if playing in a voice channel.")
     async def leave(self, ctx: discord.Interaction):
         server = ctx.guild.voice_client
+        radioLogger.info(f"{ctx.user} used disconnect in {ctx.guild}")
         await server.disconnect(force=True)
         os.chdir(root)
         await ctx.send("Left voice channel.", delete_after=2.0)

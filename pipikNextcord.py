@@ -1,4 +1,7 @@
+import json
 import sys
+from collections import defaultdict
+
 import nextcord as discord
 import random
 from nextcord.ext import commands
@@ -68,6 +71,7 @@ root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pip
 protocol = False
 spehmode = True
 already_checked = []
+timeouts = defaultdict(int)
 
 # TODO play with this @commands.has_permissions(manage_server=True)
 # TODO colored ansi text
@@ -85,6 +89,7 @@ already_checked = []
 # TODO In math when returning the latex, invert the black text in pillow? that takes time tho to upload
 # TODO merge caesar, clownize, t9 ize into one context command
 # TODO maybe make some mafia type game but rebrand it to some discord admins and mods vs spammers and use right click user commands
+# TODO replace the bootup time print from on ready to smth else cuz it prints incredible big numbers every time it reconnects
 
 intents = discord.Intents.all() #TODO remember what do i use members intent for?!?!! update: members is used when checking if guild is premium for example
 intents.presences = False
@@ -139,7 +144,7 @@ class BfModal(discord.ui.Modal):
         self.codetext = discord.ui.TextInput(label="Input the code", style=discord.TextInputStyle.paragraph,default_value="+[-->-[>>+>-----<<]<--<---]>-.>>>+.>>..+++[.>]<<<<.+++.------.<<-.>>>>+.")
         self.add_item(self.codetext)
 
-        self.inputtext = discord.ui.TextInput(label="input from user (if any)", required=False,style=discord.TextInputStyle.paragraph, placeholder="123")
+        self.inputtext = discord.ui.TextInput(label="input from user (if any)", required=False, style=discord.TextInputStyle.paragraph, placeholder="123")
         self.add_item(self.inputtext)
 
     async def callback(self, ctx):
@@ -167,9 +172,9 @@ async def pfp(interaction: discord.Interaction):
 
 @client.slash_command(name="time", description="/time help for more info")
 async def time(ctx,
-               time:str =discord.SlashOption(name="time", description="Y.m.d H:M or H:M or relative (minutes=30 etc...)"),
-               arg:str = discord.SlashOption(name="format", description="raw = copypasteable, full = not relative", required=False,choices=["raw", "full", "raw+full"],default=""),
-               message:str =discord.SlashOption(name="message",description="Your message to insert the timestamp into, use {} as a placeholder",required=False)):
+               time: str = discord.SlashOption(name="time", description="Y.m.d H:M or H:M or relative (minutes=30 etc...)"),
+               arg: str = discord.SlashOption(name="format", description="raw = copypasteable, full = not relative", required=False, choices=["raw", "full", "raw+full"], default=""),
+               message: str = discord.SlashOption(name="message", description="Your message to insert the timestamp into, use {} as a placeholder", required=False)):
     try:
         if "." in time and ":" in time:  # if date and time is given
             timestr = datetime.strptime(time, "%Y.%m.%d %H:%M")
@@ -185,7 +190,7 @@ async def time(ctx,
             embedVar.add_field(name="/time 12:34", value="Today´s date with time given")
             embedVar.add_field(name="/time 2022.12.31 12:34", value="Full date format")
             embedVar.add_field(name="/time hours=1,minutes=30", value="Relative to current time")
-            embedVar.add_field(name="optional arg: raw/full/raw+full",value="raw= Copy pasteable timestamp\nfull= Written out date instead of relative time")
+            embedVar.add_field(name="optional arg: raw/full/raw+full", value="raw= Copy pasteable timestamp\nfull= Written out date instead of relative time")
             embedVar.add_field(name="optional message:", value="Brb {}; Meeting starts at {} be there!")
             await ctx.send(embed=embedVar)
             return
@@ -205,11 +210,11 @@ async def time(ctx,
 #     chanel = ctx.guild.get_channel(int(chanel))
 #     await ctx.user.move_to(chanel)
 
-@client.message_command(name="Unemojize")
-async def unemojize(interaction, message):
-    await interaction.response.send_message(f"`{emoji.demojize(message.content)}`", ephemeral=True)
+# @client.message_command(name="Unemojize")
+# async def unemojize(interaction, message):
+#     await interaction.response.send_message(f"`{emoji.demojize(message.content)}`", ephemeral=True)
 
-@client.message_command(name="Spongebob mocking")  # pelda jobbklikk uzenetre commandra
+@client.message_command(name="Spongebob mocking")
 async def randomcase(interaction, message):
     assert message.content
     await interaction.send("".join(random.choice([betu.casefold(), betu.upper()]) for betu in message.content) + " <:pepeclown:803763139006693416>")
@@ -232,21 +237,30 @@ async def run(ctx: discord.Interaction, command):
         await ctx.send("Lol no sorry not risking anyone else doing stuff with MY reddit account xDDD")
         return
     try:
-        #async with ctx.channel.typing():
         await ctx.response.defer()
         a = eval(command)
         await ctx.send(a)
     except Exception as a:
-        await ctx.send(a)
+        await ctx.send(f"{a}")
 
 discord_emotes = {}
 
 @client.event
 async def on_ready():
-    game = discord.Game(f"{linecount} lines of code; V{version}! use /help")
+    global timeouts
+    game = discord.Game(f"{linecount} lines of code; V{version}! Use /help")
     await client.change_presence(status=discord.Status.online, activity=game)
     print(f"Signed in at {datetime.now()}")
     pipikLogger.info(f"{time_module.perf_counter() - start} Bootup time")
+    try:
+        with open("timeouts.txt", "r") as file:
+            timeouts = defaultdict(int)
+            for k,v in json.load(file).items():
+                timeouts.update({k: v})
+    except IOError:
+        with open("timeouts.txt", "w") as file:
+            json.dump({}, file, indent=4)
+    pipikLogger.debug(timeouts)
 
 @client.event
 async def on_message(ctx):
@@ -259,6 +273,7 @@ async def on_message(ctx):
 
 @client.event
 async def on_reaction_add(reaction: discord.Reaction, user):
+    global timeouts
     if reaction.message.author.bot:
         return
 
@@ -286,21 +301,30 @@ async def on_reaction_add(reaction: discord.Reaction, user):
         if reaction.message.author.id == 569937005463601152:
             if user.id == 569937005463601152:
                 kapja: discord.Member = reaction.message.author
+                timeout = timeouts.get(str(kapja.id), 0)
                 already_checked.append(reaction.message.id)
-                await kapja.timeout(timedelta(minutes=2), reason="Saját magára rakta a keket")
-                uzenet = "Imagine saját vicceiden nevetni. <:bonkdoge:950439465904644128> <a:catblushy:913875026606948393>"
-                await reaction.message.reply(uzenet)
+                await kapja.timeout(timedelta(minutes=2 ** timeout), reason="Saját magára rakta a keket")
+                uzenet = discord.Embed(description="Imagine saját vicceiden nevetni. <:bonkdoge:950439465904644128> <a:catblushy:913875026606948393>")
+                uzenet.set_footer(text=f"Current timeout is at {2 ** timeout} minutes.")
+                await reaction.message.reply(embed=uzenet)
+                timeouts[str(kapja.id)] += 1
+                pipikLogger.debug(timeouts)
 
     if reaction.emoji == emoji.emojize(":thumbs_down:"):
         #if reaction.message.author.id == 569937005463601152:
         if True:
             kapja = reaction.message.author
+            timeout = timeouts.get(str(kapja.id), 0)
             if reaction.count >= 3:
                 if reaction.message.id not in already_checked:
                     already_checked.append(reaction.message.id)
-                    await kapja.timeout(timedelta(minutes=2), reason="Nem volt vicces")
-                    uzenet = f"Nem volt vicces, {reaction.message.author.display_name} <:nothapi:1007757789629796422>."
-                    await reaction.message.reply(uzenet)
+                    await kapja.timeout(timedelta(minutes=2 ** timeout), reason="Nem volt vicces")
+                    uzenet = discord.Embed(description=f"Nem volt vicces, {reaction.message.author.display_name} <:nothapi:1007757789629796422>.")
+                    uzenet.set_footer(text=f"Current timeout is at {2 ** timeout} minutes.")
+                    await reaction.message.reply(embed=uzenet)
+                    timeouts[str(kapja.id)] += 1
+                    pipikLogger.debug(timeouts)
+
 
     if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>",  "<:hapi:889603218273878118>"):
         #if reaction.message.author.id == 569937005463601152:
@@ -310,9 +334,17 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                     already_checked.append(reaction.message.id)
                     uzenet = random.choice(good_responses)
                     await reaction.message.reply(uzenet)
+                    try:
+                        timeouts[str(reaction.message.author.id)] -= 1
+                        pipikLogger.debug(timeouts)
+                    except KeyError as e:
+                        pipikLogger.info(e)
 
     if spehmode:
-        print("react at:", str(datetime.now()), (emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:",user, "on message:", reaction.message.content)
+        print("react at:", str(datetime.now()), (emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:", user, "on message:", reaction.message.content)
+
+    with open("timeouts.txt", "w") as file:
+        json.dump(timeouts, file, indent=4)
 
 @client.command(aliases=("angy", "angry"))
 async def upset(ctx):
@@ -365,9 +397,10 @@ cogs.remove("testing.py") if args.no_testing else None
 for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know how many cogs to load and so dont know how to format loading bar
     with open("./cogs/"+file, "r", encoding="UTF-8") as f:
         linecount += len(f.readlines())
-    client.load_extension("cogs." + file[:-3], extras={"baselogger":pipikLogger})
-    sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.2f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
-    sys.stdout.flush()
+    client.load_extension("cogs." + file[:-3], extras={"baselogger": pipikLogger})
+    if not args.debug:
+        sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.2f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
+        sys.stdout.flush()
 sys.stdout.write(f"\r{len(cogs)}/{len(allcogs)} cogs loaded.                    \n")
 sys.stdout.flush()
 os.chdir(root)

@@ -1,7 +1,7 @@
 from io import BytesIO
 from logging import Logger
 from math import ceil
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 import emoji
 import nextcord as discord
 from nextcord.ext import commands
@@ -593,7 +593,6 @@ class PillowCog(commands.Cog):
             await self.returnView.cog.show(interaction.message, thumbnail, self.returnView.filetype, self.returnView)
 
     class TextInputModal(discord.ui.Modal):
-        #def __init__(self,returnView: EditorView):
         def __init__(self, returnView):
             self.returnView = returnView
 
@@ -632,8 +631,20 @@ class PillowCog(commands.Cog):
 
             await self.returnView.cog.returnMenu(self.returnView)
 
+    class AttachmentSelectDropdown(discord.ui.Select):
+        def __init__(self, attachments: List[discord.Attachment], cog):
+            self.cog = cog
+            self.attachments = attachments
+            opts = [discord.SelectOption(label=i.filename, value=str(n)) for n, i in enumerate(attachments)]
+            super().__init__(options=opts, placeholder="Select an image to edit")
+
+        async def callback(self, interaction: discord.Interaction):
+            val = int(self.values[0])
+            await self.cog.makeEditor(interaction.message, self.attachments[val])
+
     @discord.message_command(name="Image editor")
     async def imeditor(self, interaction: discord.Interaction, msg: discord.Message):
+        await interaction.response.defer()
         if not msg.attachments:
             if "https:" in msg.content:
                 if msg.content.startswith("https:"):
@@ -642,22 +653,24 @@ class PillowCog(commands.Cog):
                     pass  #todo
             return
         elif len(msg.attachments) > 1:
-            img = msg.attachments[0]  #TODO selector
+            viewObj = discord.ui.View()
+            viewObj.add_item(self.AttachmentSelectDropdown(attachments=msg.attachments, cog=self))
+            await interaction.send(view=viewObj)
         else:
             img = msg.attachments[0]
-        await interaction.response.defer()
-        await self.makeEditor(interaction, img)
+            await self.makeEditor(interaction, img)
 
     @discord.slash_command(name="imageditor", description="Image editor in development")
     async def imageeditorcommand(self, interaction: discord.Interaction, img: discord.Attachment = discord.SlashOption(name="image", description="The image to edit.", required=True)):
         await interaction.response.defer()
         await self.makeEditor(interaction, img)
 
-    async def makeEditor(self, interaction: discord.Interaction, img: discord.Attachment):
+    async def makeEditor(self, interaction: discord.Interaction | discord.Message, img: discord.Attachment):
         filetype = img.content_type.split("/")[1]
         image = await img.read()
-        image = Image.open(BytesIO(image))
-        viewObj = self.EditorView(self, interaction.message, image, filetype)
+        image = Image.open(BytesIO(image)) #invalid start byte
+        msg = interaction.message if isinstance(interaction, discord.Interaction) else interaction
+        viewObj = self.EditorView(self, msg, image, filetype)
         th = self.makeThumbnail(viewObj)
         message = await self.show(interaction, th, filetype, viewObj)
         viewObj.message = message
