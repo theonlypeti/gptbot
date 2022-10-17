@@ -2,7 +2,7 @@ import asyncio
 import os
 import random
 from io import BytesIO
-from typing import Union
+from typing import Union, Optional
 import nextcord as discord
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 from nextcord.ext import commands
@@ -63,24 +63,14 @@ class Testing(commands.Cog):
     #     await ctx.send("done")
     #     print(counter)
 
-    @discord.slash_command(name="testingvw", description="testing")
-    async def testing(self, ctx):
-        viewObj = self.testvw()
-        viewObj.msg = await ctx.send(content="Hello", view=viewObj, tts=True)
+    # @discord.slash_command(name="testingvw", description="testing")
+    # async def testing(self, ctx):
+    #     viewObj = self.testvw()
+    #     viewObj.msg = await ctx.send(content="Hello", view=viewObj, tts=True)
 
-    @discord.slash_command(name="ticho", description="Uber hlasitost", guild_ids=TESTSERVER)
-    async def ticho(self, ctx: discord.Interaction, message: str):
-        ogname = ctx.guild.me.display_name
-        await ctx.guild.me.edit(nick=ctx.user.name)
-        for session in AudioUtilities.GetAllSessions():
-            if session.Process and session.Process.name() in ("chrome.exe", "jetAudio"):
-                session.SimpleAudioVolume.SetMasterVolume(session.SimpleAudioVolume.GetMasterVolume()/3)
-        await ctx.send(content=message, tts=True)
-        await ctx.guild.me.edit(nick=ogname)
-
-    @discord.slash_command(name="modaltesting", description="testing", guild_ids=TESTSERVER)
-    async def modaltesting(self, ctx):
-        await ctx.response.send_modal(self.TextInputModal())
+    # @discord.slash_command(name="modaltesting", description="testing", guild_ids=TESTSERVER)
+    # async def modaltesting(self, ctx):
+    #     await ctx.response.send_modal(self.TextInputModal())
 
     @discord.slash_command(name="pick", description="pick", guild_ids=TESTSERVER)
     async def fut(self, ctx):
@@ -91,23 +81,23 @@ class Testing(commands.Cog):
         sample = [file for file in os.listdir() if not file.endswith(".mp4")]
         await ctx.send(files=[discord.File(random.choice(sample))])
 
-    @discord.slash_command(name="testselections", description="Image editor in development")
-    async def testimageeditorcommand(self, interaction: discord.Interaction,
-                                 img: discord.Attachment = discord.SlashOption(name="image",
-                                                                               description="The image to edit.",
-                                                                               required=True)):
-        await interaction.response.defer()
-        filetype = img.content_type.split("/")[1]
-        image = await img.read()
-        img = Image.open(BytesIO(image))
-        img = img.convert("RGB")  # .point(lambda x: 255 - x)
-        selection = Selection(img, (0, 0, img.size[0]/2, img.size[1]/2))   #left top right bottom
-        selection.image = ImageOps.invert(selection.image)
-        img.paste(selection.image, box=selection.boundary)
-        with BytesIO() as image_binary:
-            img.save(image_binary, filetype)
-            image_binary.seek(0)
-            await interaction.send(file=discord.File(fp=image_binary, filename=f'image.{filetype}'))
+    # @discord.slash_command(name="testselections", description="Image editor in development")
+    # async def testimageeditorcommand(self, interaction: discord.Interaction,
+    #                              img: discord.Attachment = discord.SlashOption(name="image",
+    #                                                                            description="The image to edit.",
+    #                                                                            required=True)):
+    #     await interaction.response.defer()
+    #     filetype = img.content_type.split("/")[1]
+    #     image = await img.read()
+    #     img = Image.open(BytesIO(image))
+    #     img = img.convert("RGB")  # .point(lambda x: 255 - x)
+    #     selection = Selection(img, (0, 0, img.size[0]/2, img.size[1]/2))   #left top right bottom
+    #     selection.image = ImageOps.invert(selection.image)
+    #     img.paste(selection.image, box=selection.boundary)
+    #     with BytesIO() as image_binary:
+    #         img.save(image_binary, filetype)
+    #         image_binary.seek(0)
+    #         await interaction.send(file=discord.File(fp=image_binary, filename=f'image.{filetype}'))
 
     async def showimg(self,
                     interface: Union[discord.Interaction, discord.Message],
@@ -134,38 +124,38 @@ class Testing(commands.Cog):
                 raise NotImplementedError("interface must be either discord.Interaction or discord.Message")
         return msg
 
-    class TestDeleteButton(discord.ui.View):
-        def __init__(self, cog, img=None):
-            self.message = None
-            self.img = img
-            self.cog = cog
-            super().__init__(timeout=None)
+    # class TestDeleteButton(discord.ui.View):
+    #     def __init__(self, cog, img=None):
+    #         self.message = None
+    #         self.img = img
+    #         self.cog = cog
+    #         super().__init__(timeout=None)
+    #
+    #     @discord.ui.button(label="Delete me")
+    #     async def removeeview(self, button, interaction):
+    #         print(interaction.message, "\n", self.message)
+    #         print(interaction.message.id, self.message.id, interaction.message == self.message)
+    #
+    #         await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=None,txt="Removing view via inter.message with a file present")  # this one will not remove the view
+    #         await asyncio.sleep(4)
+    #         await self.cog.showimg(interaction.message, img=None, filetype="png", view=None, txt="Removing view via inter.message with file not included")  # this one will remove the view
+    #         await asyncio.sleep(4)
+    #         await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=self, txt="lets try again")
+    #         await asyncio.sleep(2)
+    #         await self.cog.showimg(self.message, img=self.img, filetype="png", view=None, txt="Removing view via a saved var:WebhookMessage with a file present")  # this one will remove the view
+    #         await asyncio.sleep(4)
+    #         await self.cog.showimg(self.message, img=self.img, filetype="png", view=self, txt="lets try again")
+    #         await asyncio.sleep(2)
+    #         await self.cog.showimg(self.message, img=None, filetype="png", view=None, txt="Removing view via a saved var:WebhookMessage without a file")  # this one will remove the view
 
-        @discord.ui.button(label="Delete me")
-        async def removeeview(self, button, interaction):
-            print(interaction.message, "\n", self.message)
-            print(interaction.message.id, self.message.id, interaction.message == self.message)
-
-            await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=None,txt="Removing view via inter.message with a file present")  # this one will not remove the view
-            await asyncio.sleep(4)
-            await self.cog.showimg(interaction.message, img=None, filetype="png", view=None, txt="Removing view via inter.message with file not included")  # this one will remove the view
-            await asyncio.sleep(4)
-            await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=self, txt="lets try again")
-            await asyncio.sleep(2)
-            await self.cog.showimg(self.message, img=self.img, filetype="png", view=None, txt="Removing view via a saved var:WebhookMessage with a file present")  # this one will remove the view
-            await asyncio.sleep(4)
-            await self.cog.showimg(self.message, img=self.img, filetype="png", view=self, txt="lets try again")
-            await asyncio.sleep(2)
-            await self.cog.showimg(self.message, img=None, filetype="png", view=None, txt="Removing view via a saved var:WebhookMessage without a file")  # this one will remove the view
-
-    @discord.slash_command(name="testeditview", description="bug maybe")
-    async def testimageeditorcommand(self, interaction: discord.Interaction, img: discord.Attachment):
-        await interaction.response.defer()
-        image = await img.read()
-        img = Image.open(BytesIO(image))
-        view = self.TestDeleteButton(self, img)
-        msg = await self.showimg(interaction, img, "png", view, txt="Hi")
-        view.message = msg
+    # @discord.slash_command(name="testeditview", description="bug maybe")
+    # async def testimageeditorcommand(self, interaction: discord.Interaction, img: discord.Attachment):
+    #     await interaction.response.defer()
+    #     image = await img.read()
+    #     img = Image.open(BytesIO(image))
+    #     view = self.TestDeleteButton(self, img)
+    #     msg = await self.showimg(interaction, img, "png", view, txt="Hi")
+    #     view.message = msg
 
     @discord.slash_command(name="flowers", description="viragok")
     async def flowers(self, interaction: discord.Interaction, num: int):
@@ -185,65 +175,24 @@ class Testing(commands.Cog):
             image_binary.seek(0)
             await interaction.send(file=discord.File(image_binary, "flowers.PNG"))
 
-    @discord.user_command(name="FbAnna")
-    async def flowers(self, interaction: discord.Interaction, user: discord.User):
-        await interaction.response.defer()
-        with BytesIO() as image:
-            await user.avatar.save(image)
-            img = Image.open(image)
-        #img = Image.new("RGBA", (3072, 2048), (0, 0, 0, 0))
-            for i in range(56):
-                mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
-                mappa = r"D:\Users\Peti.B\Downloads\viragok/" + random.choice(mappak)
-                virag = mappa + "/" + random.choice(os.listdir(mappa))
-                with open(virag, "rb") as file:
-                    virag = Image.open(file)
-                    size = img.width//8
-                    virag.thumbnail((size, size))
-                    img.paste(virag, (random.choice([i for i in range(-size//3, int(img.width-(size*1))) if i not in range(size*1, img.width-size*3)]), random.randint(0, img.height-size*2)), virag)
-
-            for i in range(24):
-                mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
-                mappa = r"D:\Users\Peti.B\Downloads\viragok/" + random.choice(mappak)
-                virag = mappa + "/" + random.choice(os.listdir(mappa))
-                with open(virag, "rb") as file:
-                    virag = Image.open(file)
-                    size = img.width//8
-                    virag.thumbnail((size, size))
-                    img.paste(virag, (random.randint(0, img.width), random.randint(img.height-size*2, img.height-size)), virag)
-
-            d = ImageDraw.Draw(img)
-            fnt = ImageFont.truetype('FREESCPT.TTF', size=size)
-
-            textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": img.width // 100, "fill": (255, 255, 255), "anchor": "mm"}
-
-            szoveg = random.choice(("Jó éjszakát mindenkinek","Kellemes ünnepeket","Áldott hétvégét kívánok","Meghalt a Jóska xd"))
-            #szoveg = random.choice(("Dobrú noc vám prajem!","Pozehnaný víkend vám prajem!","Kávicka pohodicka","Príjemné popoludnie prajem!"))
-            d.multiline_text((img.width / 2, img.height - size), szoveg, **textconfig)
-
-        with BytesIO() as image_binary:
-            img.save(image_binary, "PNG")
-            image_binary.seek(0)
-            await interaction.send(file=discord.File(image_binary, "flowers.PNG"))
-
-    @discord.slash_command(name="flipemote", description="flips an emote",guild_ids=TESTSERVER)
-    async def flipemote(self, interaction: discord.Interaction, emote: str):
-        emoteserver: discord.Guild = self.client.get_guild(957469186798518282)
-        em = discord.PartialEmoji.from_str(emote)
-        em = discord.PartialEmoji.with_state(interaction.guild.me._state,name=em.name,animated=em.animated,id=em.id)
-        print(em)
-        # with BytesIO() as image_binary:
-        #     img.save(image_binary, format="png")
-        #     image_binary.seek(0)
-        file = await em.to_file()
-        img = Image.open(file.fp) #invalid start byte if em.read
-        img = img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
-        with BytesIO() as image_binary:
-            img.save(image_binary, format="png")
-            image_binary.seek(0)
-            newemoji = await emoteserver.create_custom_emoji(name=f"{em.name}flip", image=image_binary.read())
-        await interaction.send(f"{newemoji}")
-        await emoteserver.delete_emoji(newemoji)
+    # @discord.slash_command(name="flipemote", description="flips an emote",guild_ids=tuple())
+    # async def flipemote(self, interaction: discord.Interaction, emote: str):
+    #     emoteserver: discord.Guild = self.client.get_guild(957469186798518282)
+    #     em = discord.PartialEmoji.from_str(emote)
+    #     em = discord.PartialEmoji.with_state(interaction.guild.me._state,name=em.name,animated=em.animated,id=em.id)
+    #     print(em)
+    #     # with BytesIO() as image_binary:
+    #     #     img.save(image_binary, format="png")
+    #     #     image_binary.seek(0)
+    #     file = await em.to_file()
+    #     img = Image.open(file.fp) #invalid start byte if em.read
+    #     img = img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
+    #     with BytesIO() as image_binary:
+    #         img.save(image_binary, format="png")
+    #         image_binary.seek(0)
+    #         newemoji = await emoteserver.create_custom_emoji(name=f"{em.name}flip", image=image_binary.read())
+    #     await interaction.send(f"{newemoji}")
+    #     await emoteserver.delete_emoji(newemoji)
 
 def setup(client,baselogger):
     client.add_cog(Testing(client, baselogger))

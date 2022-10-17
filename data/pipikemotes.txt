@@ -124,5 +124,9 @@
     "pepeflushed": "<:pepeflushed:957957282849755146>",
     "stream": "<:stream:999022998784843848>",
     "hapi2": "<:hapi2:1026520873571733556>",
-    "gabipog": "<:gabipog:934383410850447400>"
+    "gabipog": "<:gabipog:934383410850447400>",
+    "toothlesswhat": "<a:toothlesswhat:971456524633378888>",
+    "heysmile": "<a:heysmile:967110481091375124>",
+    "bocilike": "<:bocilike:883765686281838693>",
+    "aranyaso": "<:aranyaso:710571872609108109>"
 }

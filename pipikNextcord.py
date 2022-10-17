@@ -1,11 +1,15 @@
 import json
 import sys
 from collections import defaultdict
+from io import BytesIO
+from typing import Optional
 
 import nextcord as discord
 import random
 from nextcord.ext import commands
 from datetime import datetime, timedelta
+
+from pycaw.utils import AudioUtilities
 from utils.antimakkcen import antimakkcen
 import emoji
 import os
@@ -15,6 +19,7 @@ import logging
 from dotenv import load_dotenv
 import coloredlogs
 from sympy import Sum
+from PIL import Image, ImageDraw, ImageFont
 from utils.mentionCommand import mentionCommand
 
 start = time_module.perf_counter()
@@ -85,8 +90,6 @@ timeouts = defaultdict(int)
 # TODO make a better help command
 # TODO make pipikbot users a dict of id:user instead of a list of users, also redo the getUserFromDC func then
 # TODO make an actual lobby extension
-# TODO make pills buttons edit message not reply
-# TODO In math when returning the latex, invert the black text in pillow? that takes time tho to upload
 # TODO merge caesar, clownize, t9 ize into one context command
 # TODO maybe make some mafia type game but rebrand it to some discord admins and mods vs spammers and use right click user commands
 # TODO replace the bootup time print from on ready to smth else cuz it prints incredible big numbers every time it reconnects
@@ -170,6 +173,16 @@ async def pfp(interaction: discord.Interaction):
         await interaction.guild.edit(icon=file.read())
     os.chdir(root)
 
+@client.slash_command(name="ticho", description="Uber hlasitost", guild_ids= (860527626100015154,))
+async def ticho(ctx: discord.Interaction, message: Optional[str]):
+    ogname = ctx.guild.me.display_name
+    await ctx.guild.me.edit(nick=ctx.user.name)
+    for session in AudioUtilities.GetAllSessions():
+        if session.Process and session.Process.name() in ("chrome.exe", "jetAudio"):
+            session.SimpleAudioVolume.SetMasterVolume(session.SimpleAudioVolume.GetMasterVolume()/3, None)
+    await ctx.send(content=message or "Tíško si poprosím", tts=True)
+    await ctx.guild.me.edit(nick=ogname)
+
 @client.slash_command(name="time", description="/time help for more info")
 async def time(ctx,
                time: str = discord.SlashOption(name="time", description="Y.m.d H:M or H:M or relative (minutes=30 etc...)"),
@@ -218,6 +231,47 @@ async def time(ctx,
 async def randomcase(interaction, message):
     assert message.content
     await interaction.send("".join(random.choice([betu.casefold(), betu.upper()]) for betu in message.content) + " <:pepeclown:803763139006693416>")
+
+@client.user_command(name="FbAnna")
+async def flowers(self, interaction: discord.Interaction, user: discord.User):
+    await interaction.response.defer()
+    with BytesIO() as image:
+        await user.avatar.save(image)
+        img = Image.open(image)
+    #img = Image.new("RGBA", (3072, 2048), (0, 0, 0, 0))
+        for i in range(56):
+            mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
+            mappa = r"D:\Users\Peti.B\Downloads\viragok/" + random.choice(mappak)
+            virag = mappa + "/" + random.choice(os.listdir(mappa))
+            with open(virag, "rb") as file:
+                virag = Image.open(file)
+                size = img.width//8
+                virag.thumbnail((size, size))
+                img.paste(virag, (random.choice([i for i in range(-size//3, int(img.width-(size*1))) if i not in range(size*1, img.width-size*3)]), random.randint(0, img.height-size*2)), virag)
+
+        for i in range(24):
+            mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
+            mappa = r"D:\Users\Peti.B\Downloads\viragok/" + random.choice(mappak)
+            virag = mappa + "/" + random.choice(os.listdir(mappa))
+            with open(virag, "rb") as file:
+                virag = Image.open(file)
+                size = img.width//8
+                virag.thumbnail((size, size))
+                img.paste(virag, (random.randint(0, img.width), random.randint(img.height-size*2, img.height-size)), virag)
+
+        d = ImageDraw.Draw(img)
+        fnt = ImageFont.truetype('FREESCPT.TTF', size=size)
+
+        textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": img.width // 100, "fill": (255, 255, 255), "anchor": "mm"}
+
+        szoveg = random.choice(("Jó éjszakát mindenkinek","Kellemes ünnepeket","Áldott hétvégét kívánok","Meghalt a Jóska xd"))
+        #szoveg = random.choice(("Dobrú noc vám prajem!","Pozehnaný víkend vám prajem!","Kávicka pohodicka","Príjemné popoludnie prajem!"))
+        d.multiline_text((img.width / 2, img.height - size), szoveg, **textconfig)
+
+    with BytesIO() as image_binary:
+        img.save(image_binary, "PNG")
+        image_binary.seek(0)
+        await interaction.send(file=discord.File(image_binary, "flowers.PNG"))
 
 @client.command()
 async def initiatespeh(ctx):

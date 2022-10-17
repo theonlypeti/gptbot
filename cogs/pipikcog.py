@@ -552,9 +552,9 @@ class PipikBot(commands.Cog):
         def __init__(self, user, cog):
             self.user = user
             self.cog = cog
-            pillselect = [discord.SelectOption(label="Cancel", value="-1", emoji=emoji.emojize(":cross_mark:"))]
-            for pill in [item for item in self.user.items if item[0] != len(pills) - 1 and item[1] >= 10]:  # populating the select component with options
-                pillselect.append(discord.SelectOption(label=pills[pill[0]]["name"], value=str(pill[0]), description=f"in inventory: {pill[1]}"))
+            pillselect = [discord.SelectOption(label="Cancel", value="-1", emoji=emoji.emojize(":cross_mark:"))] #TODO please migrate to a dict alredy so i dont have to juggle these *which* values and remove the enum
+            for n,pill in enumerate([item for item in self.user.items if item[0] != len(pills) - 1 and item[1] >= 10]):  # populating the select component with options
+                pillselect.append(discord.SelectOption(label=pills[pill[0]]["name"], value=f"{n}", description=f"in inventory: {pill[1]}"))
             super().__init__(placeholder="Select pills to crush up", options=pillselect)
 
         async def callback(self, interaction: discord.Interaction):
@@ -565,7 +565,7 @@ class PipikBot(commands.Cog):
                     which = int(self.values[0])
                     # amount = int(attr[2] or 1) #TODO: do multiselect again or just add it as options,# resend view with updated dropdown options? but then need to edit msg too, then take it out into a different function
                     amount = 1
-                    if self.user.items[which][1] > 10:
+                    if self.user.items[which][1] >= 10:
                         self.user.items[which][1] -= amount * 10
                         if "breaking_bad" not in self.user.achi:
                             await self.cog.updateUserAchi(interaction, interaction.user, "breaking_bad") #moved this up so achi adding happens before savefile gets called in addpill
@@ -574,9 +574,8 @@ class PipikBot(commands.Cog):
                         await interaction.response.edit_message(embed=embedVar, view=None)
                         if self.user.items[which][1] == 0:
                             del (self.user.items[which])
-                    else:
+                    else: #TODO remove this shouldnt be possible
                         self.cog.pipikLogger.warning(f"{interaction.user} with {self.user.items} wanted to craft up 10 {which}")
-                        # TODO error msg
 
             else:
                 await interaction.send(f"This is not your prompt, use {mentionCommand(self.cog.client,'pills')} to use your pills.", ephemeral=True) # i won't bother embedizing
@@ -604,7 +603,7 @@ class PipikBot(commands.Cog):
         def __init__(self, user, cog):
             self.user = user
             self.cog = cog
-            canCraft = any([i[1] >= 10 for i in user.items])
+            canCraft = any((i[1] >= 10 for i in user.items))
             super().__init__(label="Craft", disabled=not canCraft, style=discord.ButtonStyle.gray, emoji=emoji.emojize(":hammer:"))
 
         async def callback(self, interaction: discord.Interaction):
@@ -644,6 +643,7 @@ class PipikBot(commands.Cog):
     @discord.slash_command(description="See, manage and use your pill inventory.")
     async def pills(self, ctx):
         user = self.getUserFromDC(ctx.user)
+        user.items = [item for item in user.items if item[1] > 0] #removnig ones that you dont own, idk where this is implemented, maybe got lost in the migration
         user.items = sorted(user.items, key=lambda a: a[0])
         text = "```py\n"
         text += "Pills".center(25) + "\nCrafting takes 10 pills and crafts a better quality one\nBetter pills equals bigger pps\nExcessive use might result in impotency!\n{:-^25}\n".format("-")
@@ -653,7 +653,7 @@ class PipikBot(commands.Cog):
         text += "\n```"
 
         if user.pill in range(0, len(pills)):
-            self.pipikLogger.debug("uh oh pill already in you")
+            self.pipikLogger.debug(f"uh oh pill already in you {user.pill}")
             takenAgo = datetime.now() - user.pillPopTime
             if takenAgo < pills[user.pill]["effectDur"] + pills[user.pill]["badEffectDur"]:
                 self.pipikLogger.debug("nem jart le")

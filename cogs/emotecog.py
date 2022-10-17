@@ -24,13 +24,16 @@ class EmoteCog(commands.Cog):
         self.emotelogger = baselogger.getChild("EmoteLogger")
         self.readEmotes()
 
-    async def flipemote(self, emote, state):
+    async def flipemote(self, emote, state, orient: Literal["H"] | Literal["V"]):
         self.emoteserver: discord.Guild = self.emoteserver or self.client.get_guild(957469186798518282)
         em = discord.PartialEmoji.from_str(emote)
         em = discord.PartialEmoji.with_state(state, name=em.name, animated=em.animated, id=em.id)
         file = await em.to_file()
         img = Image.open(file.fp)  # invalid start byte if em.read
-        img = img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
+        if orient == "H":
+            img = img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
+        elif orient == "V":
+            img = img.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
         with BytesIO() as image_binary:
             img.save(image_binary, format="gif" if em.animated else "png")
             image_binary.seek(0)
@@ -108,45 +111,62 @@ class EmoteCog(commands.Cog):
             return not user.bot and (str(reaction.emoji) in list(self.discord_emotes.values()))
 
         self.emotelogger.debug(f"{ctx.user}, {emote}, {datetime.now()}")
-        if msg and emote:
-            #await ctx.response.defer() nono because i wont be able to ephemeral
-            mess = await getMsgFromLink(self.client, msg)
-            if emote.endswith("+flip"):
-                emote = await self.flipemote(self.discord_emotes[emote.removesuffix("+flip")], ctx.guild.me._state)
+        if emote:
+            if emote.endswith("+flipH"):
+                flipped = True
+                emote = await self.flipemote(self.discord_emotes[emote.removesuffix("+flipH")],ctx.guild.me._state,orient="H")
+            if emote.endswith("+flipV"):
+                flipped = True
+                emote = await self.flipemote(self.discord_emotes[emote.removesuffix("+flipV")], ctx.guild.me._state,orient="V")
             else:
+                flipped = False
                 emote = self.discord_emotes[emote]
-            await mess.add_reaction(emote)
-            await ctx.send("Now go react on the message", ephemeral=True)
-            try:
-                _, _ = await self.client.wait_for('reaction_add', timeout=6.0, check=check)
-            except asyncio.TimeoutError:
-                self.emotelogger.debug("emote timed out")
-            finally:
-                await mess.remove_reaction(emote, self.client.user)
+            if msg:
+                #await ctx.response.defer() nono because i wont be able to ephemeral
+                mess = await getMsgFromLink(self.client, msg)
+                await mess.add_reaction(emote)
+                await ctx.send("Now go react on the message", ephemeral=True)
                 try:
-                    await self.emoteserver.delete_emoji(emote)
-                except AttributeError:
-                    pass #thats okay that means it wasnt a flipped one
+                    _, _ = await self.client.wait_for('reaction_add', timeout=6.0, check=check)
+                except asyncio.TimeoutError:
+                    self.emotelogger.debug("emote timed out")
+                finally:
+                    await mess.remove_reaction(emote, self.client.user)
+
+            else:
+                await ctx.response.defer()
+                await ctx.send(emote)
+            if flipped:
+                await self.emoteserver.delete_emoji(emote)
+
         elif text:
             await ctx.response.defer()
             try:
-                flips = [m.start() for m in re.finditer('\+flip', text)]
-                self.emotelogger.debug(msg=",".join(map(str, flips)))
-                emotestoflip = [(text.rfind("{",0,i),i) for i in flips]
-                emotestoflip = set([text[i[0]+1:i[1]] for i in emotestoflip])
+                flips = [m.start() for m in re.finditer('\+flipH', text)] #ends of emotes
+                emotestoflip = [(text.rfind("{",0,i),i) for i in flips] #beginnings of toflip emotes
+                emotestoflip = set([text[i[0]+1:i[1]] for i in emotestoflip]) #capturing their names from begin:end ranges, also making a set
                 self.emotelogger.debug(msg=",".join(map(str, emotestoflip)))
-                flippedemotes = [await self.flipemote(self.discord_emotes[emotetoflip], ctx.guild.me._state) for emotetoflip in emotestoflip]
-                #self.emotelogger.debug(msg=",".join(map(str, flippedemotes)))
-                self.discord_emotes.update({f"{i}+flip":j for i,j in zip(emotestoflip, flippedemotes)})
+                flippedemotes = [await self.flipemote(self.discord_emotes[emotetoflip], ctx.guild.me._state, orient="H") for emotetoflip in emotestoflip] #flipping, adding to server
+                self.discord_emotes.update({f"{i}+flipH": j for i, j in zip(emotestoflip, flippedemotes)}) #update the translation dict temporarily
+
+                flips = [m.start() for m in re.finditer('\+flipV', text)]  # ends of emotes
+                emotestoflipv = [(text.rfind("{", 0, i), i) for i in flips]  # beginnings of toflip emotes
+                emotestoflipv = set([text[i[0] + 1:i[1]] for i in emotestoflipv])  # capturing their names from begin:end ranges, also making a set
+                self.emotelogger.debug(msg=",".join(map(str, emotestoflipv)))
+                flippedemotesv = [await self.flipemote(self.discord_emotes[emotetoflip], ctx.guild.me._state, orient="V") for emotetoflip in emotestoflipv]  # flipping, adding to server
+                self.discord_emotes.update({f"{i}+flipV": j for i, j in zip(emotestoflipv, flippedemotesv)})
+
                 self.emotelogger.debug(self.discord_emotes)
                 text = text.replace("{", "{self.discord_emotes['")
                 text = text.replace("}", "']}")
                 text = eval(f'f"{text}"')
                 await ctx.send(f"{text}")
-                for i in flippedemotes:
+                for i in flippedemotes + flippedemotesv:
                     await self.emoteserver.delete_emoji(i)
                 for i in emotestoflip:
-                    del self.discord_emotes[f"{i}+flip"]
+                    del self.discord_emotes[f"{i}+flipH"]
+                for i in emotestoflipv:
+                    del self.discord_emotes[f"{i}+flipV"]
 
             except Exception as e:
                 self.emotelogger.warning(e)
@@ -156,7 +176,7 @@ class EmoteCog(commands.Cog):
         elif not emote:
             emotestr = ";".join([f"{v} {k}" for k, v in self.discord_emotes.items()])
             if emotestr:
-                splitat = emotestr.rfind(";")
+                splitat = emotestr.rfind(";", 0, 4096)
                 embedVar = discord.Embed(title="Emotes", description=emotestr[:splitat], color=ctx.user.color)
                 if len(emotestr) > 4096:
                     for i in range(splitat, len(emotestr), 1024): #TODO do splitat here too
@@ -165,12 +185,7 @@ class EmoteCog(commands.Cog):
                 await ctx.send(embed=embedVar, ephemeral=True)
             return
         else:
-            if emote.endswith("+flip"):
-                flipped = await self.flipemote(self.discord_emotes[emote.removesuffix("+flip")], ctx.guild.me._state)
-                await ctx.send(flipped)
-                await self.emoteserver.delete_emoji(flipped)
-            else:
-                await ctx.send(self.discord_emotes[emote])
+            await ctx.send("What")
 
     @emote.on_autocomplete("emote")
     async def emote_autocomplete(self, interaction, emote: str):
@@ -184,7 +199,8 @@ class EmoteCog(commands.Cog):
         get_near_emote = [i for i in self.discord_emotes.keys() if i.casefold().startswith(emote.casefold())]
         get_near_emote = get_near_emote[:25]
         if len(get_near_emote) == 1:
-            get_near_emote.append(get_near_emote[0]+"+flip")
+            get_near_emote.append(get_near_emote[0] + "+flipH")
+            get_near_emote.append(get_near_emote[0] + "+flipV")
         await interaction.response.send_autocomplete(get_near_emote)
 
     @emote.on_autocomplete("text")
