@@ -79,26 +79,28 @@ class ZSSKCog(commands.Cog):
             await ctx.send(embed=discord.Embed(title="Command caller not in a voice channel."))
             return
         else:
-            link = f"https://cp.hnonline.sk/vlakbus/spojenie/vysledky/?"+(f"date={date}&" if date else "") + (f"time={time}&" if time else "") +f"f={fromcity}&fc=1&t={tocity}&tc=1&af=true&trt=150,151,152,153"
-            self.zsskLogger.debug(link)
+            link = f"https://cp.hnonline.sk/vlakbus/spojenie/vysledky/?"+(f"date={date}&" if date else "") + (f"time={time}&" if time else "") +f"f={fromcity}&fc=100003&t={tocity}&tc=1&af=true&trt=150,151,152,153"
+            self.zsskLogger.debug(f"{link},{len(link)}")
             self.tt = await self.getTimeTable(link)
             if self.tt is None:
                 await ctx.send("Not found.", delete_after=5)
             self.znelka()
 
+    @zssk.on_autocomplete("fromcity")
     @zssk.on_autocomplete("tocity")
     async def stanica_autocomplete(self,interaction, city: str):
         if city:
-            get_near_city = [i for i in soundfiles.keys() if i.casefold().startswith(city.casefold())]
-            get_near_city = get_near_city[:25]
+            get_near_city = {i:i.replace(" ","%20") for i in soundfiles.keys() if i.casefold().startswith(city.casefold())}
+            get_near_city = dict(list(get_near_city.items())[:25])
+            self.zsskLogger.debug(get_near_city)
             await interaction.response.send_autocomplete(get_near_city)
 
-    @zssk.on_autocomplete("fromcity") #not sure if i can use one func for both autocomplete decorators so i just split them
-    async def stanica_autocomplete2(self,interaction, city: str):
-        if city:
-            get_near_city = [i for i in soundfiles.keys() if i.casefold().startswith(city.casefold())]
-            get_near_city = get_near_city[:25]
-            await interaction.response.send_autocomplete(get_near_city)
+    # #not sure if i can use one func for both autocomplete decorators so i just split them
+    # async def stanica_autocomplete2(self,interaction, city: str):
+    #     if city:
+    #         get_near_city = [i for i in soundfiles.keys() if i.casefold().startswith(city.casefold())]
+    #         get_near_city = get_near_city[:25]
+    #         await interaction.response.send_autocomplete(get_near_city)
             
     def znelka(self): #TODO make these relative paths
         os.chdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\ZNELKY")
@@ -153,14 +155,14 @@ class ZSSKCog(commands.Cog):
                 delay = 5
             try:
                 delay = str((round(delay // 10) * 10) or 5)
-                file = open("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+str(delay)+".WAV","r")
+                file = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+str(delay)+".WAV"
             except OSError:
                 file = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+str(delay)+".WAV"
             finally:
                 self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA\\BMA.WAV"),
-                                  after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=file),
-                                                          after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA\\MSMZ.WAV"),
-                                                                                           after=lambda a:self.znelkaOut())))
+                                  after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=file),
+                                                          after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path, source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA\\MSMZ.WAV"),
+                                                                                           after=lambda a: self.znelkaOut())))
         else:
             nastupiste = random.choice(("01","02","03"))
             kolaj = random.choice(os.listdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\K1"))

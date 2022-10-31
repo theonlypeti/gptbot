@@ -47,7 +47,7 @@ class PillowCog(commands.Cog):
             self.selection = None
             super().__init__()
 
-        @discord.ui.button(label="Add Text", style=discord.ButtonStyle.gray,emoji=emoji.emojize(":memo:"))
+        @discord.ui.button(label="Add Text", style=discord.ButtonStyle.gray, emoji=emoji.emojize(":memo:"))
         async def texteditorbutton(self, button, interaction):
             await interaction.response.send_modal(self.cog.TextInputModal(self))
             pass #edit text button modal, okbuttn, edit size select, edit font select, edit color select?, edit outline select?
@@ -122,7 +122,7 @@ class PillowCog(commands.Cog):
         async def splitemotesbutton(self, button, interaction: discord.Interaction):
             emotesneeded = ceil(self.img.width / 256) * ceil(self.img.height/256)
             if interaction.guild.emoji_limit - len(interaction.guild.emojis) < emotesneeded:
-                await interaction.send(embed=discord.Embed(description=f"Not enough emote slots on this server. {emotesneeded} needed", color=discord.Color.red()),delete_after=15)
+                await interaction.send(embed=discord.Embed(description=f"Not enough emote slots on this server. {emotesneeded} needed", color=discord.Color.red()), delete_after=15)
                 return
             modal = self.cog.NameEmoteModal(self, "split")
             await interaction.response.send_modal(modal)
@@ -161,13 +161,13 @@ class PillowCog(commands.Cog):
                 name = self.emotename.value
                 if self.mode == "split":
                     await interaction.response.defer()
-                    th, tw = 0, 0
-                    while th < self.img.height:
+                    th, tw = 0, 0 #target height/width
+                    while th < self.img.height: #((self.height//256)+1)*256
                         th += 256
                     while tw < self.img.width:
                         tw += 256
-                    ni = Image.new(self.img.mode, (tw, th), (0, 0, 0, 0))
-                    ni.paste(self.img, (0, 0))
+                    ni = Image.new(self.img.mode, (tw, th), (0, 0, 0, 0)) #make a new image, size rounded to a multiple of 256, all empty pixels
+                    ni.paste(self.img, (0, 0)) #original image anchored to top left
                     for h in range(0, th, 256):
                         nh = h + 256
                         for w in range(0, tw, 256):
@@ -181,6 +181,7 @@ class PillowCog(commands.Cog):
                                 await interaction.guild.create_custom_emoji(name=f"{name}_{h//256}_{w//256}", image=image_binary.read())
 
                 elif self.mode == "sticker":
+                    await interaction.response.defer()
                     emote = self.emote.value
                     if not emoji.is_emoji(emote):
                         await interaction.send(embed=discord.Embed(description="You need to supply an emoji.", color=discord.Color.red()))
@@ -193,6 +194,7 @@ class PillowCog(commands.Cog):
                         await interaction.guild.create_sticker(name=name, emoji=emoji.demojize(emote, language="alias", delimiters=("", "")), file=discord.File(image_binary))
 
                 else:
+                    await interaction.response.defer()
                     em = self.img.copy()
                     em.thumbnail((256, 256))
                     with BytesIO() as image_binary:
@@ -215,7 +217,7 @@ class PillowCog(commands.Cog):
             #button for a modal to enter dimensions
             #select with aspect ratio options
 
-    class FiltersDropdown(discord.ui.Select):
+    class FiltersDropdown(discord.ui.Select): #TODO add flowers filter
         def __init__(self, returnView):
             self.returnview = returnView
             self.cog = returnView.cog
@@ -239,7 +241,7 @@ class PillowCog(commands.Cog):
                 toedit = self.img
 
             if self.values[0] == "Cancel":
-                await self.message.edit(view=self.returnview)
+                await self.cog.returnMenu(view=self.returnview)
                 return
             elif self.values[0] == "Deepfry":
                 toedit = self.deepfry(toedit)
@@ -479,7 +481,7 @@ class PillowCog(commands.Cog):
 
         async def callback(self, interaction: discord.Interaction):
             await interaction.response.defer()
-            w, h = self.returnView.img.size
+            w, h = self.returnView.img.size  #glossary: nw,nh=new width/height;asp,nasp= (new) aspect ratio; hdiff,wdiff = height/width difference;
             nw, nh = map(int, self.values[0].split(":"))
             asp, nasp = h/w, nh/nw
             pillowlogger.debug(f"{w=},{h=},,{nh=},{nw=},,{asp=},{nasp=}")
@@ -647,7 +649,7 @@ class PillowCog(commands.Cog):
         await interaction.response.defer()
         if not msg.attachments:
             if "https:" in msg.content:
-                if msg.content.startswith("https:"):
+                if msg.content.startswith("https://cdn.discordapp.com/attachments"): #or imgur
                     pass  #todo
                 else:
                     pass  #todo

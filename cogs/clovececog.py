@@ -987,12 +987,12 @@ class CloveceGame(object):
     async def posToPole(self,pocet_poli,panakAmount):
         """takes every active panacik´s poziciu a polozi ich na hracie polia"""
         #polia je 1D reprezentacia vsetkych poli na ktore panaky mozu stupit. Nulte pole je pravo hore (start hráca A)
-        polia = [Empty(self.emptyIcon) if i%(self.velkost-1)!=0 else Empty(self.spawnIcon) for i in range(pocet_poli)] #naplni hracie pole prazdnymi polickami, start pozicie maju inu ikonku
+        polia = [Empty(self.emptyIcon) if i % (self.velkost-1) != 0 else Empty(self.spawnIcon) for i in range(pocet_poli)] #naplni hracie pole prazdnymi polickami, start pozicie maju inu ikonku
         for player in self.playerList:
             await player.fillHouses(panakAmount) #reset domcekovych policok 
             for panak in player.panaky:
-                if panak.inSpawn == False: #ak je none tak je v spawn/stajni tak ho mozme nechat v pokoji
-                    if panak.homePos != None:
+                if not panak.inSpawn: #ak je none tak je v spawn/stajni tak ho mozme nechat v pokoji
+                    if panak.homePos is not None:
                         player.domceky[panak.homePos] = panak
                     else:
                         polia[panak.currPos] = panak #dam na currPos-té policka cely panak objekt
@@ -1016,7 +1016,7 @@ class CloveceGame(object):
 
     class VyberPanacikButton(discord.ui.Button):
         def __init__(self, num, throw, player, availablePanaciky, disabled=False):
-            self.player=player
+            self.player = player
             self.num = num
             self.throw = throw
             self.availablePanaciky = availablePanaciky
@@ -1025,7 +1025,7 @@ class CloveceGame(object):
 
             super().__init__(emoji=icon, disabled=disabled)
     
-        async def callback(self,interaction):
+        async def callback(self, interaction):
             if interaction.user.id != self.player.player.userid:
                 await interaction.send("It´s not your turn!", ephemeral=True)
                 return
@@ -1035,13 +1035,13 @@ class CloveceGame(object):
             self.view.stop()
 
     class ExtraPanacikButton(discord.ui.Button):
-        def __init__(self,player,panak,disabled=False):
+        def __init__(self, player, panak, disabled=False):
             self.player=player
             self.panak = panak
             icon = emoji.emojize(":plus:")
             super().__init__(emoji=icon, disabled=disabled)
     
-        async def callback(self,interaction):
+        async def callback(self, interaction):
             if interaction.user.id != self.player.player.userid:
                 await interaction.send("It´s not your turn!", ephemeral=True)
                 return
@@ -1049,7 +1049,7 @@ class CloveceGame(object):
             await self.panak.move(6)
             self.view.stop()
 
-    async def processTurn(self,player,throw):
+    async def processTurn(self, player, throw):
         #self.emojis = ["{}\N{COMBINING ENCLOSING KEYCAP}".format(num) for num in range(1,5)]
         panakyInSpawn = [i for i in player.panaky if (i.inSpawn and await i.canMove(throw))] #kolko panakov je este na spawne
         availablePanaciky = [i for i in player.panaky if (await i.canMove(throw) and not i.inSpawn)] #panaciky na vybranie
@@ -1096,7 +1096,7 @@ class CloveceGame(object):
                     cloveceLogger.info("player is cpu now")
             else:
                 if player.diffculty == "Hard":
-                    chosen = await self.pickPanakBot(player,throw)
+                    chosen = await self.pickPanakBot(player, throw)
                 await chosen.move(throw) 
 
     async def pickPanakBot(self,player,throw):
@@ -1263,7 +1263,7 @@ ci je v spawne/na poli/alebo uz v domceku"""
     def __bool__(self):
         return True
 
-    async def canMove(self,steps): #toto by som mal zjednodusit ale bojim sa ho dotknut
+    async def canMove(self, steps): #toto by som mal zjednodusit ale bojim sa ho dotknut
         """vrati True alebo False podla toho ci panacik moze stupit na policko [steps] krokov vpred. Berie do uvahy
 obsadene policka svojmi panakmi, prekrocenie dlzky domceku a obsadene policka v domceku."""
         if self.inSpawn:
@@ -1315,7 +1315,7 @@ obsadene policka svojmi panakmi, prekrocenie dlzky domceku a obsadene policka v 
             content+=f"\n<i> Moving \"{str(self)}\" {amount} spaces" #STATUS MESSAGE
             self.stepsTaken += amount                                     #this is why english is fvcking better
             user = self.owner
-            if user.isCPU != True:
+            if not user.isCPU:
                 user.player.stats["Steps taken"] += amount
             
             if self.stepsTaken >= self.game.pocet_poli: #ak ideme do domceku
@@ -1346,5 +1346,6 @@ obsadene policka svojmi panakmi, prekrocenie dlzky domceku a obsadene policka v 
         await self.game.infomsg.edit(content=content) #STATUS MESSAGE
         await asyncio.sleep(sleepTimeMult)
 
-def setup(client,baselogger):
-    client.add_cog(LobbyCog(client,baselogger))
+
+def setup(client, baselogger):
+    client.add_cog(LobbyCog(client, baselogger))

@@ -75,11 +75,13 @@ class Testing(commands.Cog):
     @discord.slash_command(name="pick", description="pick", guild_ids=TESTSERVER)
     async def fut(self, ctx):
         await ctx.response.defer()
+        orig = os.getcwd()
         if ctx.user.id != 617840759466360842:
             return
         os.chdir(r"D:\Users\Peti.B\Pictures\microsoft\Windows\shop")
         sample = [file for file in os.listdir() if not file.endswith(".mp4")]
         await ctx.send(files=[discord.File(random.choice(sample))])
+        os.chdir(orig)
 
     # @discord.slash_command(name="testselections", description="Image editor in development")
     # async def testimageeditorcommand(self, interaction: discord.Interaction,
@@ -194,5 +196,6 @@ class Testing(commands.Cog):
     #     await interaction.send(f"{newemoji}")
     #     await emoteserver.delete_emoji(newemoji)
 
-def setup(client,baselogger):
+
+def setup(client, baselogger):
     client.add_cog(Testing(client, baselogger))

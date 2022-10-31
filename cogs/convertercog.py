@@ -32,13 +32,13 @@ class ConverterCog(commands.Cog):
             async with session.get(f'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/{fromcurr}/{to}.json') as req:
                 rate = await req.json()
         rate = rate.get(to)
-        self.converterLogger.debug(f"{interaction.user} {fromcurr} {to} {rate}")
+        self.converterLogger.debug(f"{interaction.user} used {fromcurr=} {to=} {rate=}")
         converted = float(rate) * amount
 
         embedVar = discord.Embed(description=f"{amount} {self.currencylist[fromcurr]} = {converted} {self.currencylist[to]}", color=interaction.user.color, timestamp=datetime.now())
         embedVar.set_footer(text=f"{interaction.user}", icon_url=interaction.user.avatar.url)
         if fromcurr == to:
-            embedVar.add_field(name="What",value=emoji.emojize(':face_with_raised_eyebrow:'))
+            embedVar.add_field(name="What", value=emoji.emojize(':face_with_raised_eyebrow:'))
         elif amount != 1.0:
             embedVar.add_field(name="Current rate:", value=f"1 {fromcurr} = {rate} {to}")
         await interaction.send(embed=embedVar)
@@ -50,5 +50,6 @@ class ConverterCog(commands.Cog):
             currs = {item[0]: item[1] for item in tuple((v, k) for k, v in self.currencylist.items() if currency.casefold().strip() in f"{k.casefold()} {v.casefold()}")[:25]}
             await interaction.response.send_autocomplete(currs)
 
-def setup(client,baselogger):
+
+def setup(client, baselogger):
     client.add_cog(ConverterCog(client, baselogger))

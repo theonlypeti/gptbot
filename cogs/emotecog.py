@@ -98,9 +98,9 @@ class EmoteCog(commands.Cog):
 
     @discord.slash_command(name="emote", description="For using special emotes") #TODO split these to subcommands, react, send and list?
     async def emote(self, ctx,
-                    emote: str =discord.SlashOption(name="emoji",
-                                              description="An emoji name, leave blank if you want to list them all out.",
-                                              required=False, default=None),
+                    emote: str = discord.SlashOption(name="emoji",
+                                                     description="An emoji name, leave blank if you want to list them all out.",
+                                                     required=False, default=None),
                     msg: str = discord.SlashOption(name="message_link",
                                                    description="Use 'copy message link' to specify a message to react to.",
                                                    required=False),
@@ -114,8 +114,8 @@ class EmoteCog(commands.Cog):
         if emote:
             if emote.endswith("+flipH"):
                 flipped = True
-                emote = await self.flipemote(self.discord_emotes[emote.removesuffix("+flipH")],ctx.guild.me._state,orient="H")
-            if emote.endswith("+flipV"):
+                emote = await self.flipemote(self.discord_emotes[emote.removesuffix("+flipH")], ctx.guild.me._state,orient="H")
+            elif emote.endswith("+flipV"):
                 flipped = True
                 emote = await self.flipemote(self.discord_emotes[emote.removesuffix("+flipV")], ctx.guild.me._state,orient="V")
             else:
@@ -156,7 +156,7 @@ class EmoteCog(commands.Cog):
                 flippedemotesv = [await self.flipemote(self.discord_emotes[emotetoflip], ctx.guild.me._state, orient="V") for emotetoflip in emotestoflipv]  # flipping, adding to server
                 self.discord_emotes.update({f"{i}+flipV": j for i, j in zip(emotestoflipv, flippedemotesv)})
 
-                self.emotelogger.debug(self.discord_emotes)
+                #self.emotelogger.debug(self.discord_emotes)
                 text = text.replace("{", "{self.discord_emotes['")
                 text = text.replace("}", "']}")
                 text = eval(f'f"{text}"')
@@ -169,7 +169,7 @@ class EmoteCog(commands.Cog):
                     del self.discord_emotes[f"{i}+flipV"]
 
             except Exception as e:
-                self.emotelogger.warning(e)
+                self.emotelogger.error(e)
                 await ctx.send(e, ephemeral=True)
                 raise e
 
@@ -203,11 +203,11 @@ class EmoteCog(commands.Cog):
             get_near_emote.append(get_near_emote[0] + "+flipV")
         await interaction.response.send_autocomplete(get_near_emote)
 
-    @emote.on_autocomplete("text")
+    @emote.on_autocomplete("text") #does not really work
     async def emote_autocomplete(self, interaction, text: str):
         if not text:
-            return
-        text = text.partition("{")
+            return None
+        text = text.rpartition("{")
         emote = text[2]
         if emote:
             get_near_emote = [text[0]+text[1]+i+"}" for i in self.discord_emotes.keys() if i.casefold().startswith(emote.casefold())]
@@ -266,7 +266,7 @@ class EmoteCog(commands.Cog):
                     word += chr(127358)
                 else:
                     word += chr(127397 + ord(letter.upper()))
-            word = list(dict.fromkeys(antimakkcen(word)))
+            word = list(dict.fromkeys(antimakkcen(word))) #what the hell is this doing
             if len(word) != len(myword):
                 await interaction.send("Word has duplicate letter, can't make out the whole word", ephemeral=True)
             else:

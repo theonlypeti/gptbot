@@ -13,10 +13,11 @@ from dotenv import load_dotenv
 root = os.getcwd()
 load_dotenv(r"./credentials/ais.env")
 
+
 class Tema(object):
     def __init__(self, tema: bs4.Tag):
         rows = tema.find_all('td')
-        self.num = rows[0].text
+        self.num = int(rows[0].text[:-1])
         self.name = rows[2].text
         self.rawlink = rows[10]
         temaid = f"https://is.stuba.sk{rows[10].find('a').get('href')}"
@@ -28,7 +29,11 @@ class Tema(object):
         return f"{self.num} = {self.name}"
 
     def makeLink(self):
-        return f'{self.num} = [__{self.name}__]({self.link}\n"Nestiahne to súbor len je bugnutý, inak Copy link ak áno" )'
+        return f'{self.num} = [__{self.name}__]({self.link}\n"Nestiahne nič, je to len bug")'
+
+    def makeShortLink(self):
+        return f'{self.num} = [__{self.name}__]({self.link})'
+
 
 class AisCog(commands.Cog):
     def __init__(self, client, baselogger):
@@ -89,10 +94,16 @@ class AisCog(commands.Cog):
                     else:
                         diff = set(oldNames).difference(newNames)
                         diffTemy: List[Tema] = [oldDict[name] for name in diff]
-
-                    text = "\n".join([tema.makeLink() for tema in sorted(diffTemy, key=lambda tem:tem.num)])
-                    if len(text) > 2000:
-                        text = text[:1997] + "..."
+                    text = ""
+                    temanums = [tema.num for tema in temy]
+                    for tema in self.temy:
+                        andmoretext = f"a ešte {', '.join(map(str,temanums))}"
+                        if len(text) + len(tema.makeShortLink()) + len(andmoretext) < 2000:
+                            text += f"{tema.makeShortLink()}\n"
+                            temanums.remove(tema.num)
+                        else:
+                            break
+                        text += f"{andmoretext}"
                     embedVar = discord.Embed(title="Počet tém bakalárskych prác sa zmenil!", description=text, color=(discord.Color.red(), discord.Color.green())[len(self.temy) < len(c)])
                     #embedVar = discord.Embed(title="Just testing :*")
                 except Exception as e:
@@ -100,6 +111,7 @@ class AisCog(commands.Cog):
                     embedVar = discord.Embed(title="Počet tém bakalárskych prác sa zmenil!")
                 embedVar.add_field(name="Starý počet tém", value=len(self.temy))
                 embedVar.add_field(name="Nový počet tém", value=len(temy))
+                embedVar.set_footer(text="Ak sa pýta stiahnuť súbor, je to len bug, nestiahne nič, otvorí stránku normálne.")
                 viewObj = AisCog.NotificationButton()
 
                 for channelid in self.channels:
@@ -135,7 +147,7 @@ class AisCog(commands.Cog):
 
         def __init__(self):
             super().__init__(timeout=None)
-            self.add_item(discord.ui.Button(label="Zobraz temy (copy link)", url="https://is.stuba.sk/auth/student/zp_temata.pl?seznam=1", style=discord.ButtonStyle.url, emoji=emoji.emojize(":globe_with_meridians:")))
+            self.add_item(discord.ui.Button(label="Zobraz temy", url="https://is.stuba.sk/auth/student/zp_temata.pl?seznam=1", style=discord.ButtonStyle.url, emoji=emoji.emojize(":globe_with_meridians:")))
 
     @discord.slash_command(description="Commands for STU bakalarka témy")
     async def bakalarka(self, interaction):
@@ -145,13 +157,19 @@ class AisCog(commands.Cog):
     async def debugprint(self, interaction: discord.Interaction):
         await interaction.response.defer()
         text = ""
+        temanums = [tema.num for tema in self.temy]
+        andmoretext = f"Zdá sa nie sú žiadne témy."
         for tema in self.temy:
-            if len(tema.makeLink()) + len(text) >= 1869:
-                text += f'And some more [__here__](https://is.stuba.sk/auth/student/zp_temata.pl?seznam=1\n"Nestiahne to súbor len je bugnutý, inak Copy link ak áno" )'
+            andmoretext = f"a ešte {', '.join(map(str, temanums))}"
+            if len(text) + len(tema.makeShortLink()) + len(andmoretext) < 2000:
+                text += f"{tema.makeShortLink()}\n"
+                temanums.remove(tema.num)
+            else:
                 break
-            text += f"{tema.makeLink()}\n"
-            ""
-        await interaction.send(embed=discord.Embed(title="Zoznam tém", description=text))
+        text += f"{andmoretext}"
+        embedVar = discord.Embed(title="Zoznam tém", description=text)
+        embedVar.set_footer(text="Ak sa pýta stiahnuť súbor, je to ok, ais je starý bugnutý, nestiahne nič, otvorí stránku normálne.")
+        await interaction.send(embed=embedVar, view=self.NotificationButton())
 
     @bakalarka.subcommand(name="enable", description="Set this channel as notification channel")
     async def setupchannel(self, interaction: discord.Interaction):
@@ -200,5 +218,6 @@ class AisCog(commands.Cog):
         async def keeprole(self, button, interaction: discord.Interaction):
             await interaction.message.edit(view=None)
 
-def setup(client,baselogger): #bot shit
+
+def setup(client, baselogger): #bot shit
     client.add_cog(AisCog(client, baselogger))

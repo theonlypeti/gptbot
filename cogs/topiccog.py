@@ -23,6 +23,8 @@ subemoji = {k: v for k, v in zip(subs, emoji_buttons)}
 emoji_buttons = (emoji.emojize(":red_question_mark:"), emoji.emojize(":men’s_room:"), emoji.emojize(":women’s_room:"),emoji.emojize(":person_raising_hand:"), emoji.emojize(":no_one_under_eighteen:"))
 root = os.getcwd()
 
+#TODO async praw, see bottemplate
+
 class TopicCog(commands.Cog):
     def __init__(self,client,baselogger):
         global reddithandler, topicLogger
@@ -195,8 +197,8 @@ class TopicCog(commands.Cog):
 
     @discord.slash_command(name="sub", description="Retrieve a random post from a given subreddit.")
     async def sub(self, ctx, subreddit: str = discord.SlashOption(name="subreddit",description="a subreddit name without the /r/")):
-        await ctx.response.defer()
-        if not ctx.channel.is_nsfw() and reddit.subreddit(subreddit.strip("/r/")).over18:
+        #await ctx.response.defer()
+        if (not ctx.channel.is_nsfw() and reddit.subreddit(subreddit.strip("/r/")).over18) or ctx.user.id == 617840759466360842:
             await ctx.send(embed=discord.Embed(title="That is an NSFW subreddit you are tying to send into a non-NSFW text channel.",color=discord.Color.red()))
             return
         try:
@@ -217,7 +219,7 @@ class TopicCog(commands.Cog):
                 if post.is_self:
                     viewObj = discord.ui.View()
                     viewObj.add_item(discord.ui.Button(style=discord.ButtonStyle.link, url="https://redd.it/" + post.id,label="Comments", emoji=emoji.emojize(":memo:")))
-                    await ctx.send(embed=discord.Embed(title=post.title, description=(post.selftext if post.selftext else "")),view=viewObj)
+                    await ctx.send(embed=discord.Embed(title=post.title, description=(post.selftext if post.selftext else "")), view=viewObj)
                 else:
                     await ctx.send(post.url)
         except Exception as e:
@@ -246,8 +248,8 @@ class TopicCog(commands.Cog):
         else:
             if post.is_self:
                 viewObj = discord.ui.View()
-                viewObj.add_item(discord.ui.Button(style=discord.ButtonStyle.link, url="https://redd.it/" + post.id,label="Comments", emoji=emoji.emojize(":memo:")))
-                await ctx.send(embed=discord.Embed(title=post.title, description=(post.selftext if post.selftext else "")),view=viewObj)
+                viewObj.add_item(discord.ui.Button(style=discord.ButtonStyle.link, url="https://redd.it/" + post.id, label="Comments", emoji=emoji.emojize(":memo:")))
+                await ctx.send(embed=discord.Embed(title=post.title, description=(post.selftext if post.selftext else "")), view=viewObj)
             else:
                 await ctx.send(post.url)
 
@@ -263,7 +265,7 @@ class TopicCog(commands.Cog):
 
     # this piece of a crap code was made quite possibly drunk at midnight frustrated at a topic bot that ran out of questions to offer so take it with a grain of salt
     class RedditHandler(object):
-        def __init__(self,cog):
+        def __init__(self, cog):
             self.cog = cog
             self.usedposts = []  # array of used titles
             self.availablePosts = {}  # dict of subs and their posts

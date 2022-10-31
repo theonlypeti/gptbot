@@ -3,12 +3,10 @@ import sys
 from collections import defaultdict
 from io import BytesIO
 from typing import Optional
-
 import nextcord as discord
 import random
 from nextcord.ext import commands
 from datetime import datetime, timedelta
-
 from pycaw.utils import AudioUtilities
 from utils.antimakkcen import antimakkcen
 import emoji
@@ -77,6 +75,7 @@ protocol = False
 spehmode = True
 already_checked = []
 timeouts = defaultdict(int)
+stunlocked = None
 
 # TODO play with this @commands.has_permissions(manage_server=True)
 # TODO colored ansi text
@@ -92,12 +91,12 @@ timeouts = defaultdict(int)
 # TODO make an actual lobby extension
 # TODO merge caesar, clownize, t9 ize into one context command
 # TODO maybe make some mafia type game but rebrand it to some discord admins and mods vs spammers and use right click user commands
-# TODO replace the bootup time print from on ready to smth else cuz it prints incredible big numbers every time it reconnects
 
 intents = discord.Intents.all() #TODO remember what do i use members intent for?!?!! update: members is used when checking if guild is premium for example
 intents.presences = False
+intents.typing = True
 
-client = commands.Bot(command_prefix='&', intents=intents,chunk_guilds_at_startup=True) #TODO chunk_guilds_at_startup=False might help me
+client = commands.Bot(command_prefix='&', intents=intents, chunk_guilds_at_startup=True) #TODO chunk_guilds_at_startup=False might help me
 client.remove_command('help')
 
 
@@ -227,18 +226,17 @@ async def time(ctx,
 # async def unemojize(interaction, message):
 #     await interaction.response.send_message(f"`{emoji.demojize(message.content)}`", ephemeral=True)
 
-@client.message_command(name="Spongebob mocking")
+@client.message_command(name="Mocking clown")
 async def randomcase(interaction, message):
     assert message.content
     await interaction.send("".join(random.choice([betu.casefold(), betu.upper()]) for betu in message.content) + " <:pepeclown:803763139006693416>")
 
-@client.user_command(name="FbAnna")
-async def flowers(self, interaction: discord.Interaction, user: discord.User):
+@client.user_command(name="FbAnna profilka")
+async def flowersprofilka(interaction: discord.Interaction, user: discord.User):
     await interaction.response.defer()
     with BytesIO() as image:
         await user.avatar.save(image)
         img = Image.open(image)
-    #img = Image.new("RGBA", (3072, 2048), (0, 0, 0, 0))
         for i in range(56):
             mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
             mappa = r"D:\Users\Peti.B\Downloads\viragok/" + random.choice(mappak)
@@ -264,14 +262,23 @@ async def flowers(self, interaction: discord.Interaction, user: discord.User):
 
         textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": img.width // 100, "fill": (255, 255, 255), "anchor": "mm"}
 
-        szoveg = random.choice(("Jó éjszakát mindenkinek","Kellemes ünnepeket","Áldott hétvégét kívánok","Meghalt a Jóska xd"))
-        #szoveg = random.choice(("Dobrú noc vám prajem!","Pozehnaný víkend vám prajem!","Kávicka pohodicka","Príjemné popoludnie prajem!"))
+        #szoveg = random.choice(("Jó éjszakát mindenkinek", "Kellemes ünnepeket", "Áldott hétvégét kívánok", "Meghalt a Jóska xd"))
+        szoveg = random.choice(("Dobrú noc vám prajem!","Pozehnaný víkend vám prajem!","Kávicka pohodicka","Príjemné popoludnie prajem!"))
         d.multiline_text((img.width / 2, img.height - size), szoveg, **textconfig)
 
     with BytesIO() as image_binary:
         img.save(image_binary, "PNG")
         image_binary.seek(0)
         await interaction.send(file=discord.File(image_binary, "flowers.PNG"))
+
+@client.user_command(name="Stunlock",guild_ids=(601381789096738863,))
+async def flowersprofilka(interaction: discord.Interaction, user: discord.User):
+    global stunlocked
+    if stunlocked == user:
+        stunlocked = None
+    else:
+        stunlocked = user
+    await interaction.send(f"Stunlokced {user}",ephemeral=True)
 
 @client.command()
 async def initiatespeh(ctx):
@@ -317,8 +324,15 @@ async def on_ready():
     pipikLogger.debug(timeouts)
 
 @client.event
+async def on_disconnect():
+    global start
+    start = time_module.perf_counter()
+
+@client.event
 async def on_message(ctx):
     if not ctx.author.bot:
+        # if ctx.guild.id == 601381789096738863:
+        #     await ctx.add_reaction("<:kekw:800726027290148884>")
         #if spehmode:
             #print("message at:",str(datetime.now()),"content:",ctx.content,"by:",ctx.author,"in:",ctx.channel.name)
         if "free nitro" in antimakkcen(ctx.content).casefold():
@@ -326,8 +340,14 @@ async def on_message(ctx):
     await client.process_commands(ctx)
 
 @client.event
+async def on_typing(channel: discord.TextChannel, who: discord.Member, when: datetime):
+    if stunlocked:
+        if who.id == stunlocked.id:
+            await who.timeout(timedelta(seconds=15), reason="Te csak ne írjál")
+            await channel.send("Te csak ne írjál semmit, Boci.")
+
+@client.event
 async def on_reaction_add(reaction: discord.Reaction, user):
-    global timeouts
     if reaction.message.author.bot:
         return
 
@@ -349,24 +369,25 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                       "Leköptem a laptopom xddd",
                       "Mekkora komedista <:hapi:889603218273878118>"
                       )
-    global already_checked
+    global already_checked, timeouts
 
     if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>", "<:hapi:889603218273878118>", ":joy:"):
-        if reaction.message.author.id == 569937005463601152:
-            if user.id == 569937005463601152:
+        #if reaction.message.author.id in (569937005463601152, 422386822350635008):
+        if True:
+            if user.id == reaction.message.author.id: # (569937005463601152, 422386822350635008):
                 kapja: discord.Member = reaction.message.author
-                timeout = timeouts.get(str(kapja.id), 0)
                 already_checked.append(reaction.message.id)
-                await kapja.timeout(timedelta(minutes=2 ** timeout), reason="Saját magára rakta a keket")
+                timeout = timeouts.get(str(kapja.id), 0)
                 uzenet = discord.Embed(description="Imagine saját vicceiden nevetni. <:bonkdoge:950439465904644128> <a:catblushy:913875026606948393>")
                 uzenet.set_footer(text=f"Current timeout is at {2 ** timeout} minutes.")
                 await reaction.message.reply(embed=uzenet)
+                await kapja.timeout(timedelta(minutes=2 ** timeout), reason="Saját magára rakta a keket")
                 timeouts[str(kapja.id)] += 1
                 pipikLogger.debug(timeouts)
 
-    if reaction.emoji == emoji.emojize(":thumbs_down:"):
-        #if reaction.message.author.id == 569937005463601152:
-        if True:
+    if reaction.emoji in (emoji.emojize(i) for i in (":thumbs_down:","<:2head:913874980033421332>","<:bruh:913875008697286716>","<:brainlet:766681101305118721>","<:whatchamp:913874952887873596>")):
+        #if reaction.message.author.id == 569937005463601152: #csak bocira timeout
+        if True: #mindenkire timeout
             kapja = reaction.message.author
             timeout = timeouts.get(str(kapja.id), 0)
             if reaction.count >= 3:
@@ -380,7 +401,7 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                     pipikLogger.debug(timeouts)
 
 
-    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>",  "<:hapi:889603218273878118>"):
+    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>",  "<:hapi:889603218273878118>", ":joy:"):
         #if reaction.message.author.id == 569937005463601152:
         if True:
             if reaction.count >= 3:
@@ -399,6 +420,15 @@ async def on_reaction_add(reaction: discord.Reaction, user):
 
     with open("timeouts.txt", "w") as file:
         json.dump(timeouts, file, indent=4)
+
+@client.slash_command(name="banboci", description="Timeout boci mindkét accját.",guild_ids=(601381789096738863,), dm_permission=False)
+async def pfp(interaction: discord.Interaction, minutes: float, reason: str):
+    boci1: discord.Member = interaction.guild.get_member(569937005463601152)
+    await boci1.timeout(timeout=timedelta(minutes=minutes), reason=reason)
+    boci2: discord.Member = interaction.guild.get_member(422386822350635008)
+    await boci2.timeout(timeout=timedelta(minutes=minutes), reason=reason)
+    await interaction.send(f"Timeouted both Boci accounts for {minutes} minutes, reason: {reason}")
+
 
 @client.command(aliases=("angy", "angry"))
 async def upset(ctx):

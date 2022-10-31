@@ -128,5 +128,6 @@
     "toothlesswhat": "<a:toothlesswhat:971456524633378888>",
     "heysmile": "<a:heysmile:967110481091375124>",
     "bocilike": "<:bocilike:883765686281838693>",
-    "aranyaso": "<:aranyaso:710571872609108109>"
+    "aranyaso": "<:aranyaso:710571872609108109>",
+    "ajinko": "<:ajinko:1033358440560599090>"
 }
