@@ -5,6 +5,7 @@ from utils.ps import Adress, broadcasty
 
 #TODO broadcast calc does not always come up with unique adresses #ok but when #low priority
 
+
 class PsCog(commands.Cog):
     def __init__(self, client, baselogger):
         global pslogger
@@ -108,6 +109,7 @@ class PsCog(commands.Cog):
     @psbase.subcommand(name="vysvetlivka", description="Ukáže animáciu ako funguje subnetting")
     async def vysvetlivka(self, ctx):
         await ctx.send("https://cdn.discordapp.com/attachments/892054308563091456/998385704117731418/Subnetting.mp4?size=4096")
+
 
 def setup(client, baselogger):
     client.add_cog(PsCog(client, baselogger))

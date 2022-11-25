@@ -14,8 +14,11 @@ import emoji
 # TODO maybe keep last used colors on server
 # TODO add cooldown
 
+
 class ColorRoleCog(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client, baselogger):
+        global logger
+        logger = baselogger.getChild("colorrolelogger")
         self.colorstopick = 4
         self.client = client
         self.getemoteserver.start()  #funky workaround but works
@@ -32,19 +35,20 @@ class ColorRoleCog(commands.Cog):
     class HexModal(discord.ui.Modal):
         def __init__(self, cog):
             self.cog = cog
-            super().__init__(title="Pick your color")
+            super().__init__(title="Pick your role color")
             self.hextext = discord.ui.TextInput(label="#", style=discord.TextInputStyle.short, placeholder="aabbcc", min_length=6, max_length=6)
             self.add_item(self.hextext)
 
         async def callback(self, ctx):
-            dccolor = discord.Color.from_rgb(*[int(self.hextext.value[i:i + 2], 16) for i in range(0, 5, 2)])
+            dccolor = discord.Color(int(self.hextext.value, 16))
+            # dccolor = discord.Color.from_rgb(*[int(self.hextext.value[i:i + 2], 16) for i in range(0, 5, 2)])
             await self.cog.setcustomcolor(ctx, dccolor)
             await ctx.send(embed=discord.Embed(title="Color changed", color=dccolor), ephemeral=True)
 
     class RGBModal(discord.ui.Modal):
         def __init__(self, cog):
             self.cog = cog
-            super().__init__(title="Pick your server name color")
+            super().__init__(title="Pick your role color")
             self.rtext = discord.ui.TextInput(label="R", style=discord.TextInputStyle.short, placeholder="0-255", max_length=3)
             self.add_item(self.rtext)
             self.gtext = discord.ui.TextInput(label="G", style=discord.TextInputStyle.short, placeholder="0-255", max_length=3)
@@ -75,7 +79,8 @@ class ColorRoleCog(commands.Cog):
             else:
                 await interaction.edit(view=None, embed=discord.Embed(title="Cancelled", color=interaction.user.color), delete_after=5)
             emotes = [e for e in self.cog.emoteserver.emojis if e.name in ["a".join(map(str, color)) for color in self.palette]]
-            for emote in emotes:
+            for emote in emotes: #todo maybe remove all emojis that match the naming scheme if sometime ago they werent deleted?
+                logger.debug(f"removing {emote}")
                 await self.cog.emoteserver.delete_emoji(emote)
 
     class MyColorView(discord.ui.View):
@@ -88,7 +93,7 @@ class ColorRoleCog(commands.Cog):
         async def on_timeout(self):
             emotes = [e for e in self.cog.emoteserver.emojis if e.name in ["+".join(map(str, color)) for color in self.palette]]
             for emote in emotes:
-                await self.cog.emoteserver.delete_emoji(emote)
+                await self.cog.emoteserver.delete_emoji(emote) #todo delete message too
 
         async def interaction_check(self, interaction: discord.Interaction) -> bool:
             return interaction.user == self.user
@@ -164,9 +169,9 @@ class ColorRoleCog(commands.Cog):
             color = role.color
         else:
             color = interaction.user.color
-        hexcode = f"{hex(color.r)[2:].zfill(2)}{hex(color.g)[2:].zfill(2)}{hex(color.b)[2:].zfill(2)}".upper()
+        hexcode = str(color)
         embedVar = discord.Embed(title="Color", color=color)
-        embedVar.add_field(name="#", value=hexcode, inline=False)
+        embedVar.add_field(name="hex", value=hexcode, inline=False)
         colors = (emoji.emojize(i) for i in [":red_square:", ":green_square:", ":blue_square:"])
         for key, val in zip(colors, color.to_rgb()):
             embedVar.add_field(name=f"{key}", value=f"{val}", inline=True)
@@ -175,4 +180,4 @@ class ColorRoleCog(commands.Cog):
         await interaction.send(embed=embedVar)
 
 def setup(client, baselogger): #TODO maybe add some logging messages
-    client.add_cog(ColorRoleCog(client))
+    client.add_cog(ColorRoleCog(client, baselogger))

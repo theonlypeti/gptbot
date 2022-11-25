@@ -5,6 +5,8 @@ from io import BytesIO
 from typing import Optional
 import nextcord as discord
 import random
+import nextcord.ext.commands
+import numpy as np
 from nextcord.ext import commands
 from datetime import datetime, timedelta
 from pycaw.utils import AudioUtilities
@@ -21,7 +23,7 @@ from PIL import Image, ImageDraw, ImageFont
 from utils.mentionCommand import mentionCommand
 
 start = time_module.perf_counter()
-version = 3.5
+version = 3.7
 load_dotenv(r"./credentials/main.env")
 
 parser = argparse.ArgumentParser(prog=f"PipikBot V{version}", description='A fancy discord bot.', epilog="Written by theonlypeti.")
@@ -33,6 +35,7 @@ for cog in os.listdir("./cogs"):
 parser.add_argument("--minimal", action="store_true", help="Disable most of the extensions.")
 parser.add_argument("--debug", action="store_true", help="Enable debug mode.")
 parser.add_argument("--no_testing", action="store_true", help="Disable testing module.")
+parser.add_argument("--logfile", action="store_true", help="Turns on logging to a text file.")
 args = parser.parse_args()
 
 pipikLogger = logging.getLogger("Base")
@@ -48,18 +51,36 @@ coloredlogs.DEFAULT_LEVEL_STYLES = {'critical': {'bold': True, 'color': 'red'}, 
 #std.setFormatter(formatter)
 #fl = logging.FileHandler("pipikLog.txt")
 #fl.setFormatter(formatter)
+if args.logfile:
+    pipikLogger.setLevel(5)
 if args.debug:
-    pipikLogger.setLevel(logging.DEBUG)
+    # pipikLogger.setLevel(logging.DEBUG)
     #std.setLevel(logging.DEBUG)
     #fl.setLevel(logging.INFO)
     coloredlogs.install(level='DEBUG', logger=pipikLogger, fmt=fmt)
 else:
-    pipikLogger.setLevel(logging.INFO)
+    # pipikLogger.setLevel(logging.INFO)
     #std.setLevel(logging.INFO)
     #fl.setLevel(logging.INFO)
     coloredlogs.install(level='INFO', logger=pipikLogger, fmt=fmt)
+    # coloredlogs.install(level=5, logger=pipikLogger, fmt=fmt)
 #pipikLogger.addHandler(std)
 #pipikLogger.addHandler(fl)
+
+if args.logfile: #if you need a text file
+    FORMAT = "[{asctime}][{filename}][{lineno:4}][{funcName}][{levelname}] {message}"
+    formatter = logging.Formatter(FORMAT, style="{")  #this is for default logger
+    filename = f"./logs/bot_log_{datetime.now().strftime('%m-%d-%H-%M-%S')}.txt"
+    os.makedirs(r"./logs", exist_ok=True)
+    with open(filename, "w") as f:
+        pass
+    fl = logging.FileHandler(filename)
+    fl.setFormatter(formatter)
+    fl.setLevel(5)
+    logging.addLevelName(5, "Message")
+    fl.addFilter(lambda rec: rec.levelno < 10)
+    pipikLogger.addHandler(fl)
+
 
 if not args.minimal and not args.no_sympy:
     import MyScripts.matstatMn
@@ -74,8 +95,16 @@ root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pip
 protocol = False
 spehmode = True
 already_checked = []
+discord_emotes = {}
 timeouts = defaultdict(int)
 stunlocked = None
+
+intents = discord.Intents.all() #TODO remember what do i use members intent for?!?!! update: members is used when checking if guild is premium for example
+intents.presences = False
+intents.typing = True
+
+client = commands.Bot(command_prefix='&', intents=intents, chunk_guilds_at_startup=True, status=discord.Status.online, activity=discord.Game(name="Booting up...")) #TODO chunk_guilds_at_startup=False might help me
+client.remove_command('help')
 
 # TODO play with this @commands.has_permissions(manage_server=True)
 # TODO colored ansi text
@@ -91,14 +120,8 @@ stunlocked = None
 # TODO make an actual lobby extension
 # TODO merge caesar, clownize, t9 ize into one context command
 # TODO maybe make some mafia type game but rebrand it to some discord admins and mods vs spammers and use right click user commands
-
-intents = discord.Intents.all() #TODO remember what do i use members intent for?!?!! update: members is used when checking if guild is premium for example
-intents.presences = False
-intents.typing = True
-
-client = commands.Bot(command_prefix='&', intents=intents, chunk_guilds_at_startup=True) #TODO chunk_guilds_at_startup=False might help me
-client.remove_command('help')
-
+# TODO play with this  if interaction.user.guild_permissions.administrator:
+# TODO play with ClientCog and its application_commands property
 
 #T9 = ({key * i: letter for i, key, letter in zip([(num % 3) + 1 for num in range(0, 26)], [str(q // 3) for q in range(6, 30)],sorted({chr(a) for a in range(ord("A"), ord("Z") + 1)} - {"S", "Z"}))} | {"7777": "S", "9999": "Z","0": " "})
 #T9rev = {v: k for k, v in T9.items()}
@@ -140,6 +163,32 @@ async def caesar_modal(ctx):
     modal = CaesarModal(title="ROT13 cypher")
     await ctx.response.send_modal(modal)
 
+@client.slash_command(description="Yes or no", name="yesorno")
+async def yesorno(ctx: discord.Interaction, question: Optional[str]):
+    if not question:
+        await ctx.send("https://cdn.discordapp.com/attachments/607897146750140457/1040242560964251678/3d-yes-or-no-little-man-drawings_csp19386099.jpg")
+    else:
+        img = Image.open(r"data/yesorno.jpeg")
+        d = ImageDraw.Draw(img)
+        textsize = img.width * (1/(len(question)))
+        textsize = int(np.clip(textsize, 25, 60))
+        fnt = ImageFont.truetype('impact.ttf', size=textsize)
+
+        newquestion = ""
+        for i in range(0,len(question), 38):
+            newquestion += question[i:i+38] + "\n"
+
+        textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": img.width // 100, "fill": (255, 255, 255), "anchor": "mm"}
+        d.multiline_text((img.width / 2, textsize + (textsize * len(question)//38)), newquestion, **textconfig)
+        with BytesIO() as image_binary:
+            img.save(image_binary, "jpeg")
+            image_binary.seek(0)
+            await ctx.send(file=discord.File(fp=image_binary, filename=f'yesorno.jpeg'))
+    mesage = await ctx.original_message()
+    await mesage.add_reaction("<:yes:1040243872095281152>")
+    await mesage.add_reaction("<:no:1040243824489943040>")
+
+
 class BfModal(discord.ui.Modal):
     def __init__(self, title):
         super().__init__(title=title)
@@ -177,7 +226,7 @@ async def ticho(ctx: discord.Interaction, message: Optional[str]):
     ogname = ctx.guild.me.display_name
     await ctx.guild.me.edit(nick=ctx.user.name)
     for session in AudioUtilities.GetAllSessions():
-        if session.Process and session.Process.name() in ("chrome.exe", "jetAudio"):
+        if session.Process and session.Process.name() in ("chrome.exe", "JetAudio.exe"):
             session.SimpleAudioVolume.SetMasterVolume(session.SimpleAudioVolume.GetMasterVolume()/3, None)
     await ctx.send(content=message or "Tíško si poprosím", tts=True)
     await ctx.guild.me.edit(nick=ogname)
@@ -235,7 +284,7 @@ async def randomcase(interaction, message):
 async def flowersprofilka(interaction: discord.Interaction, user: discord.User):
     await interaction.response.defer()
     with BytesIO() as image:
-        await user.avatar.save(image)
+        await user.display_avatar.save(image)
         img = Image.open(image)
         for i in range(56):
             mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
@@ -278,7 +327,7 @@ async def flowersprofilka(interaction: discord.Interaction, user: discord.User):
         stunlocked = None
     else:
         stunlocked = user
-    await interaction.send(f"Stunlokced {user}",ephemeral=True)
+    await interaction.send(f"Stunlokced {stunlocked}",ephemeral=True)
 
 @client.command()
 async def initiatespeh(ctx):
@@ -304,15 +353,14 @@ async def run(ctx: discord.Interaction, command):
     except Exception as a:
         await ctx.send(f"{a}")
 
-discord_emotes = {}
-
 @client.event
 async def on_ready():
     global timeouts
-    game = discord.Game(f"{linecount} lines of code; V{version}! Use /help")
-    await client.change_presence(status=discord.Status.online, activity=game)
     print(f"Signed in at {datetime.now()}")
     pipikLogger.info(f"{time_module.perf_counter() - start} Bootup time")
+    game = discord.Game(f"{linecount} lines of code; V{version}! Use /help")  # dont even try to move this believe me ive tried
+    await client.change_presence(activity=game)
+    #print("\n".join(i.name for i in client.get_application_commands()))
     try:
         with open("timeouts.txt", "r") as file:
             timeouts = defaultdict(int)
@@ -329,22 +377,26 @@ async def on_disconnect():
     start = time_module.perf_counter()
 
 @client.event
-async def on_message(ctx):
-    if not ctx.author.bot:
+async def on_message(msg: nextcord.Message):
+    if not msg.author.bot:
         # if ctx.guild.id == 601381789096738863:
         #     await ctx.add_reaction("<:kekw:800726027290148884>")
-        #if spehmode:
-            #print("message at:",str(datetime.now()),"content:",ctx.content,"by:",ctx.author,"in:",ctx.channel.name)
-        if "free nitro" in antimakkcen(ctx.content).casefold():
-            await ctx.channel.send("bitch what the fok **/ban**")
-    await client.process_commands(ctx)
+        if args.logfile:
+            tolog = f"{msg.author} said ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {emoji.demojize(msg.channel.name)} at {str(datetime.now())}"
+            pipikLogger.log(5, tolog)
+        if msg.attachments:
+            for att in msg.attachments:
+                ...  # todo implement image saving? but only on prepinač
+        if "free nitro" in antimakkcen(msg.content).casefold():
+            await msg.channel.send("bitch what the fok **/ban**")
+    await client.process_commands(msg)
 
 @client.event
 async def on_typing(channel: discord.TextChannel, who: discord.Member, when: datetime):
     if stunlocked:
         if who.id == stunlocked.id:
             await who.timeout(timedelta(seconds=15), reason="Te csak ne írjál")
-            await channel.send("Te csak ne írjál semmit, Boci.")
+            await channel.send(f"Te csak ne írjál semmit, {who.display_name}.")
 
 @client.event
 async def on_reaction_add(reaction: discord.Reaction, user):
@@ -385,8 +437,8 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                 timeouts[str(kapja.id)] += 1
                 pipikLogger.debug(timeouts)
 
-    if reaction.emoji in (emoji.emojize(i) for i in (":thumbs_down:","<:2head:913874980033421332>","<:bruh:913875008697286716>","<:brainlet:766681101305118721>","<:whatchamp:913874952887873596>")):
-        #if reaction.message.author.id == 569937005463601152: #csak bocira timeout
+    if str(reaction.emoji) in (":thumbs_down:","<:2head:913874980033421332>","<:bruh:913875008697286716>","<:brainlet:766681101305118721>","<:whatchamp:913874952887873596>"):
+        #if reaction.message.author.id in (569937005463601152, 422386822350635008): #csak bocira timeout
         if True: #mindenkire timeout
             kapja = reaction.message.author
             timeout = timeouts.get(str(kapja.id), 0)
@@ -415,19 +467,21 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                     except KeyError as e:
                         pipikLogger.info(e)
 
-    if spehmode:
-        print("react at:", str(datetime.now()), (emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:", user, "on message:", reaction.message.content)
+    if args.logfile:
+        tolog = f"{user} reacted {(emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name)} in {reaction.channel.name} at {str(datetime.now())}"
+        pipikLogger.log(5, tolog)
+        print("react at:", str(datetime.now()), (emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:", user, "on message:", reaction.message.content, "in:", reaction.message.channel)
 
     with open("timeouts.txt", "w") as file:
         json.dump(timeouts, file, indent=4)
 
-@client.slash_command(name="banboci", description="Timeout boci mindkét accját.",guild_ids=(601381789096738863,), dm_permission=False)
-async def pfp(interaction: discord.Interaction, minutes: float, reason: str):
-    boci1: discord.Member = interaction.guild.get_member(569937005463601152)
-    await boci1.timeout(timeout=timedelta(minutes=minutes), reason=reason)
-    boci2: discord.Member = interaction.guild.get_member(422386822350635008)
-    await boci2.timeout(timeout=timedelta(minutes=minutes), reason=reason)
-    await interaction.send(f"Timeouted both Boci accounts for {minutes} minutes, reason: {reason}")
+# @client.slash_command(name="banboci", description="Timeout boci mindkét accját.",guild_ids=(601381789096738863,), dm_permission=False)
+# async def banboci(interaction: discord.Interaction, minutes: float, reason: str):
+#     boci1: discord.Member = interaction.guild.get_member(569937005463601152)
+#     await boci1.timeout(timeout=timedelta(minutes=minutes), reason=reason)
+#     boci2: discord.Member = interaction.guild.get_member(422386822350635008)
+#     await boci2.timeout(timeout=timedelta(minutes=minutes), reason=reason)
+#     await interaction.send(f"Timeouted both Boci accounts for {minutes} minutes, reason: {reason}")
 
 
 @client.command(aliases=("angy", "angry"))
@@ -474,7 +528,7 @@ else:
     cogs = allcogs[:]
     for cog in reversed(cogs):
         if cog.endswith("cog.py"):
-            if args.__getattribute__(f"no_{cog.removesuffix('cog.py')}") or args.minimal:
+            if args.__getattribute__(f"no_{cog.removesuffix('cog.py')}"):
                 cogs.remove(cog)
 cogs.remove("testing.py") if args.no_testing else None
 

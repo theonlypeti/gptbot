@@ -37,7 +37,7 @@ class EmoteCog(commands.Cog):
         with BytesIO() as image_binary:
             img.save(image_binary, format="gif" if em.animated else "png")
             image_binary.seek(0)
-            newemoji = await self.emoteserver.create_custom_emoji(name=f"{em.name}flip", image=image_binary.read())
+            newemoji = await self.emoteserver.create_custom_emoji(name=f"{em.name}flip{orient}", image=image_binary.read())
         return newemoji
 
     def saveEmotes(self):
@@ -96,8 +96,8 @@ class EmoteCog(commands.Cog):
         viewObj.add_item(self.ReactSelect(message, self.client, self.discord_emotes))
         await interaction.send("Dont forget to click the react yourself too! Also spamming emotes might trip up the anti-spam filter.",ephemeral=True, view=viewObj)
 
-    @discord.slash_command(name="emote", description="For using special emotes") #TODO split these to subcommands, react, send and list?
-    async def emote(self, ctx,
+    @discord.slash_command(name="emote", description="For using special emotes") #TODO split these to subcommands, react, send and list? #im kinda happy with this rn
+    async def emote(self, ctx: discord.Interaction,
                     emote: str = discord.SlashOption(name="emoji",
                                                      description="An emoji name, leave blank if you want to list them all out.",
                                                      required=False, default=None),
@@ -160,7 +160,12 @@ class EmoteCog(commands.Cog):
                 text = text.replace("{", "{self.discord_emotes['")
                 text = text.replace("}", "']}")
                 text = eval(f'f"{text}"')
-                await ctx.send(f"{text}")
+                if msg:
+                    mess: discord.PartialMessage = await getMsgFromLink(self.client, msg)
+                    await mess.reply(text)
+                    await ctx.send(f"Hi, {ctx.user.display_name} wanted to tell you something..", delete_after=5)
+                else:
+                    await ctx.send(f"{text}")
                 for i in flippedemotes + flippedemotesv:
                     await self.emoteserver.delete_emoji(i)
                 for i in emotestoflip:

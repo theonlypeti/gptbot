@@ -11,7 +11,7 @@ from copy import deepcopy
 
 from utils.mentionCommand import mentionCommand
 
-sleepTimeMult = 1 #TODO move this?
+sleepTimeMult = 1
 
 white_sq = "\u25FB"
 black_sq = "\u2B1B"
@@ -151,18 +151,18 @@ class LobbyCog(commands.Cog):
 
 **stats** (*pick a user*) = Shows your stats across all the games you´ve played.""",
 
-            "lobbies": f"""To create a lobby, use the **/clovece play** command. You can choose whether to create a public or private lobby. Public lobbies can be joined by anyone using the {emoji.emojize(":inbox_tray:")} green button below the lobby. Private lobbies can only be joined using **/clovece join** with the 
+            "lobbies": f"""To create a lobby, use the {mentionCommand(self.client,'clovece play')} command. You can choose whether to create a public or private lobby. Public lobbies can be joined by anyone using the {emoji.emojize(":inbox_tray:")} green button below the lobby. Private lobbies can only be joined using {mentionCommand(self.client,'clovece join')} with the 
             **room code** given to the lobby leader. The lobby leader can add bots, kick players and start the game once everyone confirmed their readiness using the {emoji.emojize(":check_mark_button:")} checkmark button.
             Players in the lobby may customize their icon with the {emoji.emojize(":artist_palette:")} palette button.""",
 
             "icons": f"""Player icons are used in človeče games to represent players and their pawns on the game board.
                         You can use the {emoji.emojize(":artist_palette:")} palette button while in a lobby to change your icon.
                         You can get icons by using the spin tokens you receive either from winning človeče games 
-                        or claiming your daily rewards using **/clovece daily**.
-                        You can see all your collected icons using the **/clovece icons** command.
+                        or claiming your daily rewards using {mentionCommand(self.client,'clovece daily')}.
+                        You can see all your collected icons using the {mentionCommand(self.client,'clovece icons')} command.
                      """,
 
-            "spin tokens": f"""Spin tokens are used to acquire icons in človeče games. You can get spin tokens by winning človeče games or claiming your daily rewards using **/clovece daily**.
+            "spin tokens": f"""Spin tokens are used to acquire icons in človeče games. You can get spin tokens by winning človeče games or claiming your daily rewards using {mentionCommand(self.client,'clovece daily')}.
             {spinTokenIcon} **Spin token**s grant you a random icon from any category, while {premSpinTokenIcon} **Premium spin token**s let you pick the category of your choice. 
             Getting an icon you already own breaks your spin token. Collecting {spinShardIcon} **10 shards** either from games or broken spin tokens will grant you a Premium spin token.""",
 
@@ -209,7 +209,7 @@ class LobbyCog(commands.Cog):
     @commands.command()
     async def addEmojis(self, ctx, *attr): #TODO look at this #why? oh wait i get it now
         if len(attr) < 2:
-            await ctx.send(embed=discord.Embed(title="Custom Emojis",description="""Allows to add emojis to the public or private emoji roster.
+            await ctx.send(embed=discord.Embed(title="Custom Emojis", description="""Allows to add emojis to the public or private emoji roster.
         Privately submitting the emojis will only make them usable on your own server,
         while public submitting allows players who are on your server to use them in games on other servers too.
         Submitted emojis might take some time to verify, as emojis should not contain any explicit content.
@@ -226,8 +226,8 @@ class LobbyCog(commands.Cog):
             with open(root + r"/data/awaiting_review.txt","r") as file:
                 pending = json.load(file)
             if str(ctx.guild.id) in privates.keys() or str(ctx.guild.id) in public.keys() or str(ctx.guild.id) in pending.keys():
-                print("already got emotes in ") #TODO pretty print
-                await ctx.channel.send(embed=discord.Embed(title="Emotes are already in.",color=discord.Color.red()))
+                cloveceLogger.error(f"{ctx.guild.id} alredy has emotes in")
+                await ctx.channel.send(embed=discord.Embed(title="You already have custom emotes in.", color=discord.Color.red()))
                 return
             if attr[0].lower() == "private":
                     #for emoji in ctx.guild.emotes
@@ -243,38 +243,38 @@ class LobbyCog(commands.Cog):
                     json.dump(reviewemojis,file,indent=4)
         #TODO
 
-    @discord.slash_command( #TODO deprecate these two
+    @discord.slash_command( #deprecate these two #maybe not yet
         name="unlock",
         description="test",
-        guild_ids=[860527626100015154]
+        guild_ids=(860527626100015154,)
         )
-    async def unlockEmoji(self,ctx,
-        player : discord.User = discord.SlashOption(name="player",description="player to give an icon"),
-        cat:str = discord.SlashOption(name="category",description="category"),
-        emote:str = discord.SlashOption(name="emote",description="emote",required=False,default=None)
+    async def unlockEmoji(self, ctx,
+        player: discord.User = discord.SlashOption(name="player", description="player to give an icon"),
+        cat: str = discord.SlashOption(name="category", description="category"),
+        emote: str = discord.SlashOption(name="emote", description="emote", required=False, default=None)
         ):
         
         user = self.getUserFromDC(player)
-        user.addEmoji("defaults",cat,emote or choice(cat))
+        user.addEmoji("defaults", cat, emote or choice(cat))
         await ctx.send(f"{emote} unlocked")
 
     @discord.slash_command( 
         name="unlockitem",
         description="test",
-        guild_ids=[860527626100015154]
+        guild_ids=(860527626100015154,)
         )
-    async def useradditem(self,ctx,
-        player : discord.User = discord.SlashOption(name="player",description="player to give an icon"),
-        item:str  = discord.SlashOption(name="item",description="premSpinToken/spinToken/spinShards",required=True,choices=["premSpinToken","spinToken","spinShards"]),
-        amount: int = discord.SlashOption(name="amount",description="number",required=False,default=1)
+    async def useradditem(self, ctx,
+        player: discord.User = discord.SlashOption(name="player",description="player to give an item"),
+        item:str = discord.SlashOption(name="item", description="premSpinToken/spinToken/spinShards", required=True, choices=["premSpinToken", "spinToken", "spinShards"]),
+        amount: int = discord.SlashOption(name="amount", description="number", required=False, default=1)
         ):
         
         user = self.getUserFromDC(player)
         user.addItem(item,amount)
         await ctx.send("item added")
 
-    class DefaultsCategorySelectDropdown(discord.ui.Select):
-        def __init__(self,user,cog):                                                                                                                                 #i*24
+    class DefaultsCategorySelectDropdown(discord.ui.Select): #now that i know how to make paginators i could try making them here too
+        def __init__(self, user, cog):
             self.categories = user.inv["defaults"]
             self.user = user
             self.cog = cog
@@ -283,68 +283,68 @@ class LobbyCog(commands.Cog):
             #print(*options,sep="\n")
             super().__init__(options=options,placeholder="Select an emoji category")
 
-        async def callback(self,interaction):
+        async def callback(self, interaction):
             cloveceLogger.debug(self.values[0])
             if self.values[0] == "0":
                 await interaction.response.edit_message(content="Cancelled",view=None,embed=None,delete_after=5.0) #TODO make it go back to cutsom emoji select #what do you mean?
                 return
             cat,myslice = self.values[0].split(";")
             viewObj = discord.ui.View()
-            viewObj.add_item(self.IconSelectDropdown(self.user,cat,myslice,self))
+            viewObj.add_item(self.IconSelectDropdown(self.user, cat, myslice, self))
             await interaction.response.edit_message(view=viewObj)
     
         class IconSelectDropdown(discord.ui.Select):
-            def __init__(self,user,category,myslice,parentView):
+            def __init__(self, user, category, myslice, parentView):
                 myslice = int(myslice)
                 self.pw = parentView
                 self.user = user
                 #print(*user.inv["defaults"][category][myslice*24: min((myslice+1)*24,len(user.inv["defaults"][category]))],sep="\n")
                 if category != "flags":
-                    icons = [discord.SelectOption(emoji=emoji.emojize(i,language="alias"),label=i,value=i) for i in user.inv["defaults"][category][myslice*24: min((myslice+1)*24,len(user.inv["defaults"][category]))]] + [discord.SelectOption(label="Back",emoji=emoji.emojize(":left_arrow:"),value="0")]
+                    icons = [discord.SelectOption(emoji=emoji.emojize(i,language="alias"),label=i) for i in user.inv["defaults"][category][myslice*24: min((myslice+1)*24,len(user.inv["defaults"][category]))]] + [discord.SelectOption(label="Back",emoji=emoji.emojize(":left_arrow:"),value="0")]
                 else:
-                    icons = [discord.SelectOption(label=i,value=i) for i in user.inv["defaults"][category][myslice*24: min((myslice+1)*24,len(user.inv["defaults"][category]))]] + [discord.SelectOption(label="Back",emoji=emoji.emojize(":left_arrow:"),value="0")]
+                    icons = [discord.SelectOption(label=i) for i in user.inv["defaults"][category][myslice*24: min((myslice+1)*24,len(user.inv["defaults"][category]))]] + [discord.SelectOption(label="Back",emoji=emoji.emojize(":left_arrow:"),value="0")]
                     
-                super().__init__(options=icons,placeholder=f"Pick an emoji from {category}")
+                super().__init__(options=icons, placeholder=f"Pick an emoji from {category}")
 
-            async def callback(self,interaction):
+            async def callback(self, interaction):
                 if self.values[0] != "0":
                     self.user.icon = self.values[0]
                     lobby = await self.pw.cog.findLobby(self.user.inLobby)
                     await lobby.messageid.edit(embed=lobby.show())
-                    await interaction.edit(content=f"Chosen emoji: {self.values[0]}",view=None,embed=None)
+                    await interaction.edit(content=f"Chosen emoji: {self.values[0]}", view=None, embed=None)
                 else:
                     viewObj = discord.ui.View()
                     viewObj.add_item(self.pw)
                     await interaction.response.edit_message(view=viewObj)
 
-    async def printdefaults(self,user):
+    async def printdefaults(self, user):
         if user is None:
             defaultemojis = allemojis_dict
         else:
             player = self.getUserFromDC(user)
             defaultemojis = player.inv["defaults"]
-        embedVar = discord.Embed(title="Choose an icon",description="**Default emojis**")
+        embedVar = discord.Embed(title="Choose an icon", description="**Default emojis**")
         for k,v in defaultemojis.items():
             if k in unlockable_emojis_dict.keys() and v:
-                embedVar.add_field(name=k,value="".join([emoji.emojize(i) for i in v]))
-        embedVar.add_field(name="**Unlocked from achievements**",value="--------------- ",inline=False)
+                embedVar.add_field(name=k, value="".join([emoji.emojize(i) for i in v]))
+        embedVar.add_field(name="**Unlocked from achievements**", value="--------------- ", inline=False)
         for k,v in defaultemojis.items():
             if k in achi_emojis_dict.keys() and v:
-                embedVar.add_field(name=k,value="".join([emoji.emojize(i) for i in v]))
+                embedVar.add_field(name=k, value="".join([emoji.emojize(i) for i in v]))
             
         return embedVar
 
-    async def customization(self,interaction):
+    async def customization(self, interaction):
         player = self.getUserFromDC(interaction.user)
         viewObj = discord.ui.View()
         player.syncpipikachis(self.client)
 ##        with open("emojis.txt","r") as file:
 ##            emojis = json.load(file)
-        viewObj.add_item(self.DefaultsCategorySelectDropdown(player,self))
-        await interaction.send(embed=await self.printdefaults(interaction.user),view=viewObj,ephemeral=True)
+        viewObj.add_item(self.DefaultsCategorySelectDropdown(player, self))
+        await interaction.send(embed=await self.printdefaults(interaction.user), view=viewObj, ephemeral=True)
         #await self.printcustoms(user,channel) #TODO
         
-    async def printcustoms(self,user,channel):
+    async def printcustoms(self, user, channel):
         player = self.getUserFromDC(user)
         public = self.readEmojis("public_serveremojis.txt")
         private = self.readEmojis("private_serveremojis.txt")
@@ -357,7 +357,7 @@ class LobbyCog(commands.Cog):
             print(str(channel.guild.id) in private.keys())
             if str(channel.guild.id) in private.keys():#ak current guild je v privates, print this current guilds emotes
                 user_specific_emojis.update({channel.guild.name:private[str(channel.guild.id)]})
-        if len(public)>0:
+        if len(public) > 0:
             for guild in public:
                 guildobj = self.client.get_guild(int(guild))
                 if guildobj.get_member(user.id):  #ak user je na serveri, show those emotes #TODO maybe do this better? im like 90% sure this is pretty bad implementation
@@ -429,30 +429,30 @@ class LobbyCog(commands.Cog):
                         await channel.send("Unfortunatelly, your custom emoji suggestions don´t meet the criteria to be public.")
 
             ctx.channel.send("all done")
-            with open(root + r"/data/awaiting_review.txt","w") as file:
+            with open(root + r"/data/awaiting_review.txt", "w") as file:
                 file.truncate(0)
                 file.write("{}")
                 print("cleared")
-            if len(accepted)>0:
-                with open(root + r"/data/public_serveremojis.txt","r+") as file:
+            if len(accepted) > 0:
+                with open(root + r"/data/public_serveremojis.txt", "r+") as file:
                     accepted.update(json.load(file))
-                    file.truncate(0)
+                    file.truncate(0) # oh my god, what are you doing here
                     file.seek(0)
-                    json.dump(accepted,file,indent=4)
+                    json.dump(accepted, file, indent=4)
                     print("dumped")
         else:
             await ctx.channel.send("no custom emotes") #TODO pretty print
 
     class LobbyView(discord.ui.View):
-        def __init__(self,cog,lobby):
+        def __init__(self, cog, lobby):
             self.cog = cog
             self.lobby = lobby
             super().__init__(timeout=600)
 
         @discord.ui.button(style=discord.ButtonStyle.green,emoji=emoji.emojize(":inbox_tray:"))
-        async def joinbutton(self,button,ctx):
+        async def joinbutton(self, button, ctx):
             player = self.cog.getUserFromDC(ctx.user)
-            await self.lobby.addPlayer(player,ctx)
+            await self.lobby.addPlayer(player, ctx)
             cloveceLogger.debug(f"{ctx.user.name} joined")
 
         @discord.ui.button(style=discord.ButtonStyle.red,emoji=emoji.emojize(":outbox_tray:"))
@@ -614,7 +614,7 @@ class LobbyCog(commands.Cog):
             name = self.lobbyleader.display_name
             EmbedVar = discord.Embed(
                 title=name+"'s "+("Public" if not self.private else "Private")+" Lobby ("+str(len(self.players))+"/4)",
-                description=("Game already running." if self.ongoing else f"use **{mentionCommand(self.cog.client,'clovece join')} {self.code}** or click the join icon") if not self.private else f"ask the lobby leader for the code, \nthen use {mentionCommand(self.cog.client,'clovece play')} *CODE*, don't worry noone will see that.\n Make sure everyone has a unqiue icon!") #extra space deliberate, otherwise looks stupid
+                description=("Game already running." if self.ongoing else f"use **{mentionCommand(self.cog.client,'clovece join')} {self.code}** or click the join icon") if not self.private else f"ask the lobby leader for the code, \nthen use {mentionCommand(self.cog.client,'clovece join')} *CODE*, don't worry noone will see that.\n Make sure everyone has a unqiue icon!") #extra space deliberate, otherwise looks stupid
             EmbedVar.set_footer(text="{} join, {} leave, {} customize self, {} ready".format(emoji.emojize(":inbox_tray:"), emoji.emojize(":outbox_tray:"), emoji.emojize(":artist_palette:"),emoji.emojize(":check_mark_button:")))
             for i,player in enumerate(self.players,start=1):
                 EmbedVar.add_field(name=f"{i}. {player}", value="Ready?"+(emoji.emojize(":cross_mark:"), emoji.emojize(":check_mark_button:"))[bool(player.ready)],inline=False)
@@ -654,7 +654,7 @@ class LobbyCog(commands.Cog):
                         game.playerList.append(Player(player.display_name, isCPU=True if type(player) == self.cog.Bot else False, diffculty="Normal" if type(player) == self.cog.User else player.diffculty ,ikonky=player.icon,houseIcon=game.houseIcon,profile=player))
                     await game.cloveceStart(ctx.channel) #start game #if i do ctx.send it breaks after 15mins cuz interactions.
                     self.cog.savePlayers()
-                else:  #TODO should not be achievable as the start button should be disabled when game is ongoing
+                else:  #should not be achievable as the start button should be disabled when game is ongoing, maybe delete
                     await ctx.send(embed=discord.Embed(title="A game is already running.", color=discord.Color.red()), ephemeral=True)
                     cloveceLogger.warning("ongoing game")
         
@@ -673,11 +673,11 @@ class LobbyCog(commands.Cog):
                     self.players.append(player)
                     await self.readyCheck()
                 else:
-                    cloveceLogger.error("ongoing game") #TODO shouldnt be a possibility, remove buttons from lobbymsg after start
+                    cloveceLogger.error("ongoing game") #shouldnt be a possibility, remove buttons from lobbymsg after start
             else:
                 await ctx.send(embed=discord.Embed(title="Lobby is already full!", color=discord.Color.red()), ephemeral=True)
 
-        async def removePlayer(self,ctx,player) -> None:
+        async def removePlayer(self, ctx, player) -> None:
             if not self.ongoing:
                 if player in self.players:
                     self.players.remove(player)
@@ -691,9 +691,9 @@ class LobbyCog(commands.Cog):
                         self.messageid.edit(embed=self.show())
                         await self.readyCheck()
                 else:
-                    await ctx.send(embed=discord.Embed(title="You are not in this lobby.",color=discord.Color.red()),ephemeral=True)
+                    await ctx.send(embed=discord.Embed(title="You are not in this lobby.", color=discord.Color.red()), ephemeral=True)
             else:
-                print("game ongoing") #TODO print an error message; ~~actually should not be possible to achieve this so~~ actually it is possible by using slash leave
+                print("game ongoing") #TODO make the player a bot?; ~~actually should not be possible to achieve this so~~ actually it is possible by using slash leave
 
         async def disband(self):
             for player in self.players:
@@ -824,20 +824,21 @@ class LobbyCog(commands.Cog):
             pipikuser = pipikcog.getUserFromDC(self.userid)
             for achi in pipikuser.achi:
                 achiobj = pipikcog.achievements[achi]
+                achiemojisdict = {"nice": ":eggplant:", "breaking_bad": ":yum:", "dedicated": ":spiral_calendar_pad:", "megapp": ":hugging_face:"}
                 if emoji.demojize(achiobj.icon) in allemojis_dict["pipikachis"]:
-                    self.addEmoji("defaults","pipikachis",emoji.demojize(achiobj.icon))
-                elif achiobj.achiid in ("nice","breaking_bad","dedicated","megapp"):
-                    self.addEmoji("defaults","pipikachis",{"nice":":eggplant:","breaking_bad":":yum:","dedicated":":spiral_calendar_pad:","megapp":":hugging_face:"}[achiobj.achiid])
+                    self.addEmoji("defaults", "pipikachis", emoji.demojize(achiobj.icon))
+                elif achiobj.achiid in achiemojisdict:
+                    self.addEmoji("defaults","pipikachis", achiemojisdict[achiobj.achiid])
             if pipikuser.methods & 4:
-                self.addEmoji("defaults","pipikachis",":thermometer:")
+                self.addEmoji("defaults", "pipikachis", ":thermometer:")
                     
-        def addItem(self,item,amount):
+        def addItem(self, item, amount):
             if item in self.inv["items"].keys():
-                self.inv["items"][item] = max(0,self.inv["items"][item] + amount)
-            else: #should not happen but lets be safe #TODO added choices, should not be reachable now
+                self.inv["items"][item] = max(0, self.inv["items"][item] + amount)
+            else: #should not happen but lets be safe #added choices, should not be reachable now #what
                 self.inv["items"][item] = amount
            
-        def addEmoji(self,emojitype,category,emoji): #emojitype is default or custom or global maybe, category is server in that case
+        def addEmoji(self, emojitype, category, emoji): #emojitype is default or custom or global maybe, category is server in that case
             if emojitype in self.inv:
                 if category in self.inv[emojitype]:
                     if emoji not in self.inv[emojitype][category]:

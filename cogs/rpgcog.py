@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import emoji
 from random import choices, choice, randint
 from copy import deepcopy as new #very useful for equipping items
-from funcy import print_durations
+from funcy import log_durations
 from numpy import Infinity
 from utils.mapvalues import mapvalues
 
@@ -69,7 +69,7 @@ class Noise(object):
         return g[:,:,0] * x + g[:,:,1] * y
 
     @staticmethod
-    #@print_durations
+    #@log_durations(logger.debug)
     def makeGrid(size, factor, seed2):
         lin = np.linspace(0, 1, size, endpoint=False)
         x,y = np.meshgrid(lin, lin) # FIX3: I thought I had to invert x and y here but it was a mistake
@@ -77,7 +77,7 @@ class Noise(object):
         return a
 
     @staticmethod
-    #@print_durations
+    #@log_durations(logger.debug)
     def makeMap(size, factor, seed2):
         a = Noise.makeGrid(size, factor, seed2)
         grid = [[]]
@@ -423,7 +423,7 @@ class RPGGame:
 
         def use(self, attacker, target):
             logger.info(f"dealt {self.damage} dmg to {target}")
-            target.hp -= self.damage + attacker.atk #todo make a method to calculate the player.atk here
+            target.hp -= self.damage + attacker.atk #todo make a method to calculate a meaningful balanced damage value here
 
     class Armor(Equipment):
         def __init__(self,price=0,weight=1,amount=1,armor=0,enchant=None,armortype="Armor",material="Default",display_name=None):
@@ -899,13 +899,13 @@ class RPGGame:
                 else:
                     await ctx.edit(view=self.backview, embed=self.backembed)
 
-        #@print_durations
+        #@log_durations(logger.debug)
         def discoverMap(self,sight_range):
             for row in self.discovered_mask[np.clip(self.position[0]-sight_range,0,self.terkep.mapsize):np.clip(self.position[0]+sight_range+1,0,self.terkep.mapsize)]:
                 for col in range(np.clip(self.position[1]-sight_range,0,self.terkep.mapsize),np.clip(self.position[1]+sight_range+1,0,self.terkep.mapsize)):
                     row[col] = True
 
-        #@print_durations
+        #@log_durations(logger.debug)
 
         def checkLvlUp(self, view: discord.ui.View):
             for item in view.children:
@@ -976,7 +976,7 @@ class RPGGame:
     starter_shield = Shield(price=None,weight=5,amount=1,armor=5,material="Wooden",display_name="Wooden shield")
 
     class Terkep(object):
-        #@print_durations
+        #@log_durations(logger.debug)
         def __init__(self, size, seed, window):
             self.mapsize = size
             self.grid: List[List[RPGGame.Tile]] = Noise.makeMap(size, 1.5, seed)
@@ -989,7 +989,7 @@ class RPGGame:
         def __repr__(self):
             return f"Terkep(size={self.mapsize},seed={self.seed},players={self.players})"
 
-        #@print_durations
+        #@log_durations(logger.debug)
         def render(self, size, as_player):
             if size % 2:
                 raise ValueError("Render window size must be even") #why? is it easier to calc radii with even viewport?

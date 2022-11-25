@@ -20,7 +20,7 @@ class Tema(object):
         self.num = int(rows[0].text[:-1])
         self.name = rows[2].text
         self.rawlink = rows[10]
-        temaid = f"https://is.stuba.sk{rows[10].find('a').get('href')}"
+        temaid = f"https://is.stuba.sk{rows[10].find('a').get('href')}"  # why do I do it like this
         temaid = temaid[temaid.find("detail="):]
         temaid = temaid[:temaid.find(";")]
         self.link = f"https://is.stuba.sk/auth/student/zp_temata.pl?seznam=1;{temaid}"
@@ -94,16 +94,16 @@ class AisCog(commands.Cog):
                     else:
                         diff = set(oldNames).difference(newNames)
                         diffTemy: List[Tema] = [oldDict[name] for name in diff]
-                    text = ""
-                    temanums = [tema.num for tema in temy]
-                    for tema in self.temy:
+                    text = "" if diffTemy else f"Zdá sa nie sú žiadne témy."
+                    temanums = [tema.num for tema in diffTemy]
+                    for tema in diffTemy:
                         andmoretext = f"a ešte {', '.join(map(str,temanums))}"
                         if len(text) + len(tema.makeShortLink()) + len(andmoretext) < 2000:
                             text += f"{tema.makeShortLink()}\n"
                             temanums.remove(tema.num)
                         else:
+                            text += f"{andmoretext}"
                             break
-                        text += f"{andmoretext}"
                     embedVar = discord.Embed(title="Počet tém bakalárskych prác sa zmenil!", description=text, color=(discord.Color.red(), discord.Color.green())[len(self.temy) < len(c)])
                     #embedVar = discord.Embed(title="Just testing :*")
                 except Exception as e:

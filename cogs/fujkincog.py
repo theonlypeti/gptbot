@@ -3,6 +3,7 @@ from os import getenv
 from nextcord.ext import commands, tasks
 import pyowm
 
+
 class FujkinCog(commands.Cog):
     def __init__(self, client, logger: logging.Logger):
         self.client = client
@@ -25,12 +26,13 @@ class FujkinCog(commands.Cog):
                         await channel.send(f"{wind} km/h")
             else:
                 self.does_it_fujkin = False
-                self.fujkinLogger.info("nemfujkin")
+                self.fujkinLogger.info(f"nemfujkin ({wind} km/h)")
 
     @fujkin.before_loop
     async def before_fujkin(self):
         await self.client.wait_until_ready()
-        self.channels = (self.client.get_guild(601381789096738863).get_channel(607897146750140457),) #rageon
+        self.channels = (self.client.get_channel(607897146750140457),) #rageon
+
 
 def setup(client, baselogger): #bot shit
     client.add_cog(FujkinCog(client, baselogger))

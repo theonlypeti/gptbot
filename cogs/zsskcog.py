@@ -5,6 +5,7 @@ import nextcord as discord
 import os
 import json
 from bs4 import BeautifulSoup as html
+from utils.antimakkcen import antimakkcen
 
 path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe"
 root = os.getcwd()
@@ -43,10 +44,10 @@ class ZSSKCog(commands.Cog):
             async with session.get(link) as req:
                 stranka = await req.content.read()
         delay = soup.find("a", attrs={"class": "delay-bubble"})
-        if delay in (None, "meškania"):
-            delay = None
-        else:
+        if delay.contents[0].startswith("Aktuálne"):
             delay = delay.contents[0].split(" ")[2]
+        else:
+            delay = None
         soup = html(stranka, 'html.parser')
         a = soup.find_all("li", attrs={"class": "item"})
         b = soup.find_all("li", attrs={"class": "item inactive"})
@@ -79,7 +80,7 @@ class ZSSKCog(commands.Cog):
             await ctx.send(embed=discord.Embed(title="Command caller not in a voice channel."))
             return
         else:
-            link = f"https://cp.hnonline.sk/vlakbus/spojenie/vysledky/?"+(f"date={date}&" if date else "") + (f"time={time}&" if time else "") +f"f={fromcity}&fc=100003&t={tocity}&tc=1&af=true&trt=150,151,152,153"
+            link = f"https://cp.hnonline.sk/vlakbus/spojenie/vysledky/?"+(f"date={date}&" if date else "") + (f"time={time}&" if time else "") +f"f={fromcity}&fc=100003&t={tocity}&tc=100003&af=true&trt=150,151,152,153"
             self.zsskLogger.debug(f"{link},{len(link)}")
             self.tt = await self.getTimeTable(link)
             if self.tt is None:
@@ -90,7 +91,7 @@ class ZSSKCog(commands.Cog):
     @zssk.on_autocomplete("tocity")
     async def stanica_autocomplete(self,interaction, city: str):
         if city:
-            get_near_city = {i:i.replace(" ","%20") for i in soundfiles.keys() if i.casefold().startswith(city.casefold())}
+            get_near_city = {i:antimakkcen(i).replace(" ","%20") for i in soundfiles.keys() if antimakkcen(i.casefold()).startswith(antimakkcen(city.casefold()))}
             get_near_city = dict(list(get_near_city.items())[:25])
             self.zsskLogger.debug(get_near_city)
             await interaction.response.send_autocomplete(get_near_city)

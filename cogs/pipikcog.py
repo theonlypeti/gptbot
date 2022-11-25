@@ -202,7 +202,8 @@ class PipikBot(commands.Cog):
                     self.users.append(newUser)
                 else: #TODO: depreacate, should not happen
                     self.pipikLogger.debug(f"found and ignored duplicate entry with id: {newUser.id}")
-            self.pipikLogger.debug(f"{self.users} all-users")
+            # self.pipikLogger.debug(f"{self.users} all-users")
+            self.pipikLogger.debug(f"{len(self.users)} all users loaded")
 
     async def updateUserAchi(self, ctx: discord.Interaction, user: discord.Member, achi: str):
         achi: Achievement = self.achievements[achi]

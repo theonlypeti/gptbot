@@ -20,7 +20,7 @@ class ConverterCog(commands.Cog):
             async with session.get('https://raw.githubusercontent.com/fawazahmed0/currency-api/1/latest/currencies.json') as req:
                 txt = await req.text()
             self.currencylist = json.loads(txt)
-            self.converterLogger.debug(self.currencylist)
+            self.converterLogger.debug(f"{len(self.currencylist)} currencies loaded.")
 
     @discord.slash_command(name="convert", description="Convert from one currency to another")
     async def convert(self, interaction: discord.Interaction,

@@ -184,10 +184,10 @@ class TopicCog(commands.Cog):
     async def sendNoTopic(self, channel, sub):
         embedVar = discord.Embed(
             title="No new fresh posts available. Check back later, try random old posts (" + emoji.emojize(
-                ":shuffle_tracks_button:") + ") or choose a different topic!", description=" ",
+                ":shuffle_tracks_button:") + ") or choose a different topic!",
             color=discord.Colour.red())
         embedVar.set_thumbnail(url="https://cdn-0.emojis.wiki/emoji-pics/google/stop-sign-google.png")
-        await channel.send(embed=embedVar, view=self.TopicEmptyButton(self,sub=sub))
+        await channel.send(embed=embedVar, view=self.TopicEmptyButton(self, sub=sub))
 
     @discord.slash_command(description="Disallow some sensitive themes and topics from coming up when binging",guild_ids=[860527626100015154, 800196118570205216])  # TODO make it admin only
     async def topic_filters(self, ctx):
@@ -196,15 +196,15 @@ class TopicCog(commands.Cog):
         await ctx.send(embed=embedVar, view=viewObj)
 
     @discord.slash_command(name="sub", description="Retrieve a random post from a given subreddit.")
-    async def sub(self, ctx, subreddit: str = discord.SlashOption(name="subreddit",description="a subreddit name without the /r/")):
+    async def sub(self, ctx, subreddit: str = discord.SlashOption(name="subreddit", description="a subreddit name without the /r/")):
         #await ctx.response.defer()
-        if (not ctx.channel.is_nsfw() and reddit.subreddit(subreddit.strip("/r/")).over18) or ctx.user.id == 617840759466360842:
+        if (not ctx.channel.is_nsfw() and reddit.subreddit(subreddit.removeprefix("/r/")).over18) and not ctx.user.id == 617840759466360842:
             await ctx.send(embed=discord.Embed(title="That is an NSFW subreddit you are tying to send into a non-NSFW text channel.",color=discord.Color.red()))
             return
         try:
             await ctx.response.defer()
             try:
-                post = reddit.subreddit(subreddit.strip("/r/")).random()
+                post = reddit.subreddit(subreddit.removeprefix("/r/")).random()
             except Exception as e:
                 ##        except redditapi.prawcore.exceptions.NotFound:
                 ##            await ctx.channel.send("That subreddit is not found??")
@@ -219,7 +219,7 @@ class TopicCog(commands.Cog):
                 if post.is_self:
                     viewObj = discord.ui.View()
                     viewObj.add_item(discord.ui.Button(style=discord.ButtonStyle.link, url="https://redd.it/" + post.id,label="Comments", emoji=emoji.emojize(":memo:")))
-                    await ctx.send(embed=discord.Embed(title=post.title, description=(post.selftext if post.selftext else "")), view=viewObj)
+                    await ctx.send(embed=discord.Embed(title=post.title, description=(post.selftext if post.selftext else None)), view=viewObj)
                 else:
                     await ctx.send(post.url)
         except Exception as e:
@@ -390,7 +390,7 @@ class TopicCog(commands.Cog):
         def getPostFromID(self, ID):
             return reddit.submission(ID)
 
-        def basicprint(post):  # TODO what was this for?
+        def basicprint(self, post):  #what was this for?
             pass
             #return embedVar
 
