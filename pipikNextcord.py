@@ -468,7 +468,7 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                         pipikLogger.info(e)
 
     if args.logfile:
-        tolog = f"{user} reacted {(emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name)} in {reaction.channel.name} at {str(datetime.now())}"
+        tolog = f"{user} reacted {(emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name)} in {reaction.message.channel.name} at {str(datetime.now())}"
         pipikLogger.log(5, tolog)
         print("react at:", str(datetime.now()), (emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:", user, "on message:", reaction.message.content, "in:", reaction.message.channel)
 
