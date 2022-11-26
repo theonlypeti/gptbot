@@ -382,7 +382,7 @@ async def on_message(msg: nextcord.Message):
         # if ctx.guild.id == 601381789096738863:
         #     await ctx.add_reaction("<:kekw:800726027290148884>")
         if args.logfile:
-            tolog = f"{msg.author} said ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {emoji.demojize(msg.channel.name)} at {str(datetime.now())}"
+            tolog = f"{msg.author} said ['{emoji.demojize(msg.content)}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {emoji.demojize(msg.channel.name)} at {str(datetime.now())}"
             pipikLogger.log(5, tolog)
         if msg.attachments:
             for att in msg.attachments:
