@@ -1,4 +1,5 @@
 import json
+import string
 import sys
 from collections import defaultdict
 from io import BytesIO
@@ -364,7 +365,7 @@ async def on_ready():
     try:
         with open("timeouts.txt", "r") as file:
             timeouts = defaultdict(int)
-            for k,v in json.load(file).items():
+            for k, v in json.load(file).items():
                 timeouts.update({k: v})
     except IOError:
         with open("timeouts.txt", "w") as file:
@@ -382,7 +383,8 @@ async def on_message(msg: nextcord.Message):
         # if ctx.guild.id == 601381789096738863:
         #     await ctx.add_reaction("<:kekw:800726027290148884>")
         if args.logfile:
-            tolog = f"{msg.author} said ['{emoji.demojize(msg.content)}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {emoji.demojize(msg.channel.name)} at {str(datetime.now())}"
+            tolog = f"{msg.author} said ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.name} at {str(datetime.now())}"
+            tolog = emoji.demojize(antimakkcen(tolog)).encode('ascii', "ignore").decode()
             pipikLogger.log(5, tolog)
         if msg.attachments:
             for att in msg.attachments:
@@ -468,7 +470,8 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                         pipikLogger.info(e)
 
     if args.logfile:
-        tolog = f"{user} reacted {(emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name)} in {emoji.demojize(reaction.message.channel.name)} at {str(datetime.now())}"
+        tolog = f"{user} reacted [{(reaction.emoji if isinstance(reaction.emoji, str) else reaction.emoji.name)}] in {reaction.message.channel.name} at {str(datetime.now())}"
+        tolog = emoji.demojize(antimakkcen(tolog)).encode('ascii', "ignore").decode()
         pipikLogger.log(5, tolog)
         print("react at:", str(datetime.now()), (emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:", user, "on message:", reaction.message.content, "in:", reaction.message.channel)
 
