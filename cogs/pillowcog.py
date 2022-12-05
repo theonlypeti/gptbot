@@ -4,16 +4,16 @@ from math import ceil
 from typing import Union, Tuple, List
 import emoji
 import nextcord as discord
-from nextcord.ext import commands
+from nextcord.ext import commands #remove in all cogs? used for prefix cmds
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageFilter, ImageOps
 
 THUMBNAIL_SIZE = (720, 480)
 
-#TODO add quality and speed options
+#TODO add quality and speed options for the thumbnail (as in size)
 #TODO check when right click, if bot has permission to that channel
-#TODO highlighter
+#TODO highlighter effect
 #TODO use layers, use dropdowns to select them and shit
-#TODO make custom emojis
+#TODO make custom emojis for the buttons
 
 class PillowCog(commands.Cog):
     def __init__(self, client, baselogger: Logger):
@@ -153,7 +153,7 @@ class PillowCog(commands.Cog):
             self.emotename = discord.ui.TextInput(label=f"{'Emote' if mode != 'sticker' else 'Sticker'} name")
             self.add_item(self.emotename)
             self.emote = discord.ui.TextInput(label="Emoji for sticker (Win + .)")
-            if mode == "sticker":
+            if mode == "sticker":  # im lazy to make 3 separate modals
                 self.add_item(self.emote)
 
         async def callback(self, interaction: discord.Interaction):
@@ -162,7 +162,7 @@ class PillowCog(commands.Cog):
                 if self.mode == "split":
                     await interaction.response.defer()
                     th, tw = 0, 0 #target height/width
-                    while th < self.img.height: #((self.height//256)+1)*256
+                    while th < self.img.height: #ceil(self.height/256) * 256
                         th += 256
                     while tw < self.img.width:
                         tw += 256
@@ -171,10 +171,10 @@ class PillowCog(commands.Cog):
                     for h in range(0, th, 256):
                         nh = h + 256
                         for w in range(0, tw, 256):
-                            nw = w+256
+                            nw = w + 256
                             em = ni.copy()
                             pillowlogger.debug(f"{h=},{w=},{nh=},{nw=}")
-                            em = em.crop((w, h, nw, nh))
+                            em = em.crop((w, h, nw, nh)) #TODO dont copy if doesnt modify orig image
                             with BytesIO() as image_binary:
                                 em.save(image_binary, "png")
                                 image_binary.seek(0)
@@ -183,9 +183,10 @@ class PillowCog(commands.Cog):
                 elif self.mode == "sticker":
                     await interaction.response.defer()
                     emote = self.emote.value
-                    if not emoji.is_emoji(emote):
-                        await interaction.send(embed=discord.Embed(description="You need to supply an emoji.", color=discord.Color.red()))
-                        #return
+                    if not emoji.is_emoji(emote) and not emoji.is_emoji(emote := emoji.emojize(f":{emote.strip(':')}:", language="alias")):
+                        pillowlogger.debug(emote)
+                        await interaction.send(embed=discord.Embed(description="You need to supply a default emoji.", color=discord.Color.red()))
+                        return
                     em = self.img.copy()
                     em.thumbnail((320, 320))
                     with BytesIO() as image_binary:
@@ -405,7 +406,7 @@ class PillowCog(commands.Cog):
         async def finalizeflipbutton(self, button, interaction):
             await interaction.response.defer()
             self.returnView.img = self.img
-            await self.message.edit(view=self.returnView) #no need to make a new thumbnail
+            await self.message.edit(view=self.returnView) #no need to make a new thumbnail #TODO maybe cache thumbnails? i dont know if its a good idea to keep the images saved hashtag gdpr
 
     class SelectionView(discord.ui.View):
         def __init__(self, returnView, boundaries=None):
@@ -425,7 +426,7 @@ class PillowCog(commands.Cog):
             for w in range(0, copy.width, 100):
                 drawctx.line(((w, 0), (w, copy.height)), fill=(255, 120, 255), width=2 if copy.width > 400 else 1)
             for h in range(0, copy.height, 100):
-                drawctx.line(((0, h), (copy.width, h)), fill=(255, 120, 255), width=1)
+                drawctx.line(((0, h), (copy.width, h)), fill=(255, 120, 255), width=2 if copy.width > 400 else 1)
 
             #boundary lines
             if self.boundaries:
@@ -459,7 +460,7 @@ class PillowCog(commands.Cog):
             if self.boundaries:
                 try:
                     self.returnView.selection = self.cog.Selection(self.img, self.boundaries)
-                    self.returnView.children[4].disabled = False  # enabling crop button
+                    self.returnView.children[4].disabled = False  # enabling crop button #TODO redo this with custom_id so if i move the buttons this would still work
                 except ValueError as e:
                     await interaction.send(e, delete_after=10)
                     return
@@ -485,11 +486,11 @@ class PillowCog(commands.Cog):
             nw, nh = map(int, self.values[0].split(":"))
             asp, nasp = h/w, nh/nw
             pillowlogger.debug(f"{w=},{h=},,{nh=},{nw=},,{asp=},{nasp=}")
-            if asp > nasp: # crop from top/bottom
+            if asp > nasp:  # crop from top/bottom
                 nh = h/asp
                 nh *= nasp
                 nw = w
-            elif asp < nasp: #crop from sides
+            elif asp < nasp:  # crop from sides
                 nw = w/nasp
                 nw *= asp
                 nh = h

@@ -54,7 +54,7 @@ class ZSSKCog(commands.Cog):
         c = set(a).difference(set(b))
         a = [i for i in a if i in c]
         cities = [child.select("strong.name")[0].contents[0] for child in reversed(a)]
-        time = soup.find("span",attrs={"class": "departure"}).contents[-1].strip()
+        time = soup.find("span", attrs={"class": "departure"}).contents[-1].strip()
         
         return TimeTable(time, cities, delay, None)
 

@@ -5,11 +5,13 @@ from math import inf
 from typing import List
 import imageio
 import nextcord as discord
+from PIL import Image, ImageDraw, ImageFont
 from nextcord.ext import commands
 from nextcord.utils import escape_markdown
 from sympy import latex, Integral, Limit, Derivative, Rational, Symbol, Sum
 import sympy.logic.boolalg as alg
 from sympy.stats import Die, Bernoulli, P, density, FiniteRV
+from utils.azasolver import piautomat
 
 #TODO more translation tables for == and stuff
 #TODO probabilita za predpoklad P subfix A (B), či su suvisle
@@ -251,6 +253,36 @@ class SympyCog(commands.Cog):
                     result = f"{e}\n{f}"
             embedVar = discord.Embed(description=escape_markdown(f"Result of {n} * {obj} where {self.expression.value} {'if' if zapravd else ''} {self.zapravd.value}:\n----------\n{result} ") , color=ctx.user.color)
             await ctx.send(embed=embedVar)
+
+    class AzaModal(discord.ui.Modal):
+        def __init__(self):
+            super().__init__(title="Automat calculator")
+            self.pstring = discord.ui.TextInput(label="P string", required=True)
+            self.add_item(self.pstring)
+            # self.tofind = discord.ui.TextInput(label="Hladany string", required=True)
+            # self.add_item(self.tofind)
+
+        async def callback(self, ctx: discord.Interaction):
+            await ctx.response.defer()
+            pstring = self.pstring.value
+            tab = piautomat(pstring)
+            rows = tab.split("\n")
+            width = len(rows[0])
+            height = len(rows)
+            ni = Image.new("RGB", (width * 10, height * 20), (0, 0, 0, 255))
+            d = ImageDraw.Draw(ni)
+            textsize = 18
+            fnt = ImageFont.truetype('consola.ttf', size=textsize)
+            textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": 0,
+                          "fill": (255, 255, 255), "anchor": "mm"}
+            d.multiline_text((ni.width // 2, ni.height // 2), tab, **textconfig)
+            embedVar = discord.Embed(title=pstring)
+            embedVar.set_footer(text=ctx.user.name, icon_url=ctx.user.avatar.url)
+            embedVar.timestamp = datetime.now()
+            with BytesIO() as image_binary:
+                ni.save(image_binary, "png")
+                image_binary.seek(0)
+                await ctx.send(embed=embedVar, file=discord.File(fp=image_binary, filename=f'table.png'))
             
     @discord.slash_command(name="mat", description="Kalkulačky pre predmet MAT")
     async def mat(self, ctx):
@@ -292,6 +324,15 @@ class SympyCog(commands.Cog):
     @matstattools.subcommand(name="probablity", description="P(x) alebo Mn(x,n), šanca hodu n počet x kde sa splní zadaná podmienka")
     async def probability(self,ctx: discord.Interaction):
         modal = self.ProbModal()
+        await ctx.response.send_modal(modal)
+
+    @discord.slash_command(name="aza", description="Kalkulačky pre predmet AZA")
+    async def azatools(self, ctx: discord.Interaction):
+        pass
+
+    @azatools.subcommand(name="automat", description="tabulka konecneho automatu spolu s pi tabulkou")
+    async def azapitable(self, ctx: discord.Interaction):
+        modal = self.AzaModal()
         await ctx.response.send_modal(modal)
 
 def setup(client, baselogger):

@@ -4,6 +4,9 @@ import emoji
 import nextcord as discord
 from nextcord.ext import commands, tasks
 import aiohttp
+import pint
+
+#TODO use Pint
 
 class ConverterCog(commands.Cog):
     def __init__(self, client, baselogger):

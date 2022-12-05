@@ -557,7 +557,7 @@
         "methods": 63,
         "pill": null,
         "pillPopTime": "2021-10-19T19:48:47.346062",
-        "dailyDate": "2022-10-18",
+        "dailyDate": "2022-10-18T00:00:00",
         "dailyStreak": 1
     },
     {
@@ -959,5 +959,19 @@
         "pillPopTime": 0,
         "dailyStreak": 0,
         "dailyDate": "2022-08-19T00:00:00"
+    },
+    {
+        "id": 1001658711854555136,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 0,
+        "pw": 0,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": "2022-11-27T22:27:41.378514",
+        "dailyStreak": 0,
+        "dailyDate": "2022-11-26T22:27:41.378514"
     }
 ]

@@ -727,9 +727,9 @@ class LobbyCog(commands.Cog):
         return lobby
 
     @clovece.subcommand(name="join", description="Join an existing človeče lobby.")
-    async def joinlobby(self, ctx, lobbyid=discord.SlashOption(name="lobbyid", description="A lobby´s identification e.g. ABCD", required=True)):
+    async def joinlobby(self, ctx, lobbyid: str = discord.SlashOption(name="lobbyid", description="A lobby´s identification e.g. ABCD", required=True)):
         user = self.getUserFromDC(ctx.user)
-        lobby = await self.findLobby(lobbyid)
+        lobby = await self.findLobby(lobbyid.upper())
         if lobby:
             await lobby.addPlayer(user, ctx)
         else:

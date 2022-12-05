@@ -22,9 +22,6 @@ class Testing(commands.Cog):
         self.logger = baselogger.getChild(__name__)
         self.selection = None
         self.client: discord.Client = client
-        with open(r"data/karomkodasok.txt","r", encoding="UTF-8") as file:
-            self.karomkodasok = file.readlines()
-        self.logger.debug(f"{len(self.karomkodasok)} bad words loaded.")
 
     class testvw(discord.ui.View):
         def __init__(self):
@@ -158,11 +155,35 @@ class Testing(commands.Cog):
     #         image_binary.seek(0)
     #         await interaction.send(file=discord.File(image_binary, "flowers.PNG"))
 
-    @discord.user_command(name="Karomkodas")
-    async def karmokdoas(self, interaction: discord.Interaction, user: discord.User):
-        # await interaction.response.defer() #if deferred, the tts doesn't work
-        csunya = " ".join(random.choice(self.karomkodasok).strip().lower() for _ in range(5))
-        await interaction.send(content=f"{user.mention} te {csunya}!", tts=True)
+    @discord.slash_command(name="imgtest", guild_ids=TESTSERVER)
+    async def imgtest(self, interaction: discord.Interaction, img: discord.Attachment):
+        # with BytesIO() as file_binary:
+        #     await img.save(file_binary)
+        #     await interaction.send(file=discord.File(fp=file_binary, filename="img.png"))
+
+        fp = BytesIO(await img.read())
+        await interaction.send(file=discord.File(fp, "test.png"))
+
+    # @discord.message_command(name="En-/Decrypt")
+    # async def caesar(self, interaction: discord.Interaction, text: discord.Message):
+    #     if text.type == discord.MessageType.chat_input_command and text.embeds[0].title == "Message":
+    #         text = text.embeds[0].description
+    #     else:
+    #         text = text.content
+    #     await interaction.send("".join([chr(((ord(letter) - 97 + 13) % 26) + 97) if letter.isalpha() and letter.islower() else chr(((ord(letter) - 65 + 13) % 26) + 65) if letter.isalpha() and letter.isupper() else letter for letter in text]))
+
+    # @discord.slash_command(name="muv", description="semi", guild_ids=[860527626100015154, 601381789096738863])
+    # async def movebogi(self, ctx, chanel: discord.abc.GuildChannel):
+    #    await ctx.user.move_to(chanel)
+
+    # @discord.slash_command(name="muvraw", description="semi", guild_ids=[860527626100015154, 601381789096738863])
+    # async def movebogi2(self, ctx, chanel):
+    #     chanel = ctx.guild.get_channel(int(chanel))
+    #     await ctx.user.move_to(chanel)
+
+    # @discord.message_command(name="Unemojize")
+    # async def unemojize(self, interaction: discord.Interaction, message):
+    #     await interaction.response.send_message(f"`{emoji.demojize(message.content)}`", ephemeral=True)
 
 
 def setup(client, baselogger):
