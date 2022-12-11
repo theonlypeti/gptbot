@@ -2,7 +2,7 @@ import os
 import random
 from datetime import datetime, timedelta
 from io import BytesIO
-from typing import Optional
+from typing import Optional, Literal
 import nextcord as discord
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -119,22 +119,37 @@ class MiscallenousCog(commands.Cog):
     @discord.slash_command(name="time", description="/time help for more info")
     async def time(self, ctx,
                    time: str = discord.SlashOption(name="time",
-                                                   description="Y.m.d H:M or H:M or relative (minutes=30 etc...)"),
+                                                   description="Y.m.d H:M or just parts of them, or relative (minutes=30 etc...)"),
                    arg: str = discord.SlashOption(name="format", description="raw = copypasteable, full = not relative",
                                                   required=False, choices=["raw", "full", "raw+full"], default=""),
                    message: str = discord.SlashOption(name="message",
                                                       description="Your message to insert the timestamp into, use {} as a placeholder",
                                                       required=False)):
+        now = datetime.now()
         try:
             if "." in time and ":" in time:  # if date and time is given
-                timestr = datetime.strptime(time, "%Y.%m.%d %H:%M")
+                try:
+                    timestr = datetime.strptime(time, "%Y.%m.%d %H:%M")
+                except ValueError:
+                    timestr = datetime.strptime(time, "%m.%d %H:%M")
+                    timestr = timestr.replace(year=now.year)
+                    if timestr < now:
+                        timestr = timestr.replace(year=now.year + 1)
             elif "H:M" in time:
                 await ctx.send("Nono, you need to input actual TIME in there not the string H:M")
                 return
+            elif "." in time: #only date
+                try:
+                    timestr = datetime.strptime(time, "%Y.%m.%d")
+                except ValueError:
+                    timestr = datetime.strptime(time, "%m.%d")
+                    timestr = timestr.replace(year=now.year)
+                    if timestr < now:
+                        timestr = timestr.replace(year=now.year + 1)
             elif ":" in time:  # if only time is given
-                timestr = datetime.now().replace(**{"hour": int(time.split(":")[0]), "minute": int(time.split(":")[1]),"second": 0})  # i could have done strptime %H:%M but it would have given me a 1970 date
+                timestr = now.replace(**{"hour": int(time.split(":")[0]), "minute": int(time.split(":")[1]),"second": 0})  # i could have done strptime %H:%M but it would have given me a 1970 date
             elif "=" in time:  # if relative
-                timestr = datetime.now() + timedelta(**{k.strip(): int(v.strip()) for k, v in [i.split("=") for i in time.split(",")]})
+                timestr = now + timedelta(**{k.strip(): int(v.strip()) for k, v in [i.split("=") for i in time.split(",")]})
             else:  # if no time is given
                 embedVar = discord.Embed(title="Timestamper", description="Usage examples", color=ctx.user.color)
                 embedVar.add_field(name="/time 12:34", value="Today´s date with time given")
@@ -147,18 +162,51 @@ class MiscallenousCog(commands.Cog):
                 return
             style = 'F' if "full" in arg else 'R'
             israw = "raw" in arg
+            logger.debug(f"{ctx.user} used /time as {time} for {timestr}")
             mention = f"{'`' if israw else ''}{discord.utils.format_dt(timestr, style=style)}{'`' if israw else ''}"
             await ctx.send(message.format(
                 mention) if message and "{}" in message else f"{message} {mention}" if message else mention)
         except Exception as e:
             await ctx.send(e)
+            raise e
+
+    class FancyLinkModal(discord.ui.Modal):
+        def __init__(self, mode):
+            super().__init__(title="Custom link")
+            self.mode = mode
+            self.link = discord.ui.TextInput(label="Link", placeholder="https://example.com")
+            self.displaytext = discord.ui.TextInput(label="Link display text", placeholder="Click me")
+            self.hovertext = discord.ui.TextInput(label="Link hover text", placeholder="opens in new page", required=False)
+            self.context = discord.ui.TextInput(label="Surrounding text (use {} as link placeholder)", placeholder="Please head to {} link", required=False, style=discord.TextInputStyle.paragraph)
+
+            for item in (self.link, self.displaytext, self.hovertext, self.context):
+                self.add_item(item)
+
+        async def callback(self, interaction: discord.Interaction):
+            if self.hovertext.value:
+                custom = f"[__{self.displaytext.value}__]({self.link.value}\n" + '"{}"'.format(self.hovertext.value) + ")"
+            else:
+                custom = f"[__{self.displaytext.value}__]({self.link.value})"
+            await interaction.send(self.context.value.format(custom) if "{}" in self.context.value else self.context.value + custom if self.context.value else custom)
+
+    @discord.slash_command(name="makelink")
+    async def makelink(self, interaction: discord.Interaction, mode: Literal["Simple", "Complex"]):
+        if mode == "Simple":
+            await interaction.response.send_modal(self.FancyLinkModal(mode=mode))
+        else:
+            await interaction.send("WIP lol") #TODO
+    #buttons to add colored text -> dropdown for color + rainbow -> modal to inpu
+    #button for link, if added disable copying, only send to channel
+    # add select for components if add newline or not
+    #add time modal maybe with multi parse but idk how to do full or relative
+    #add fancytext unicode shit
 
     @discord.message_command(name="Mocking clown")
     async def randomcase(self, interaction: discord.Interaction, message: discord.Message):
         assert message.content
         await interaction.send("".join(random.choice([betu.casefold(), betu.upper()]) for betu in message.content) + " <:pepeclown:803763139006693416>")
 
-    @discord.user_command(name="FbAnna profilka")
+    @discord.user_command(name="FbAnna profilka", force_global=True)
     async def flowersprofilka(self, interaction: discord.Interaction, user: discord.User):
         await interaction.response.defer()
         with BytesIO() as image:
@@ -200,7 +248,7 @@ class MiscallenousCog(commands.Cog):
             await interaction.send(file=discord.File(image_binary, "flowers.PNG"))
 
     @discord.user_command(name="Stunlock", guild_ids=(601381789096738863,))
-    async def flowersprofilka(self, interaction: discord.Interaction, user: discord.User):
+    async def stunlock(self, interaction: discord.Interaction, user: discord.User):
         global stunlocked
         if stunlocked == user:
             stunlocked = None
@@ -208,23 +256,13 @@ class MiscallenousCog(commands.Cog):
             stunlocked = user
         await interaction.send(f"Stunlokced {stunlocked}", ephemeral=True)
 
-    @discord.slash_command(name="run", description="For running python code")
-    async def run(self, ctx: discord.Interaction, command: str):
-        if "@" in command and ctx.user.id != 617840759466360842:
-            await ctx.send("oi oi oi we pinging or what?")
-            return
-        if any((word in command for word in ("open(", "os.", "eval(", "exec("))) and ctx.user.id != 617840759466360842:
-            await ctx.send("oi oi oi we hackin or what?")
-            return
-        elif "redditapi" in command and ctx.user.id != 617840759466360842:
-            await ctx.send("Lol no sorry not risking anyone else doing stuff with MY reddit account xDDD")
-            return
-        try:
-            await ctx.response.defer()
-            a = eval(command)
-            await ctx.send(a)
-        except Exception as a:
-            await ctx.send(f"{a}")
+    # @client.slash_command(name="banboci", description="Timeout boci mindkét accját.",guild_ids=(601381789096738863,), dm_permission=False)
+    # async def banboci(interaction: discord.Interaction, minutes: float, reason: str):
+    #     boci1: discord.Member = interaction.guild.get_member(569937005463601152)
+    #     await boci1.timeout(timeout=timedelta(minutes=minutes), reason=reason)
+    #     boci2: discord.Member = interaction.guild.get_member(422386822350635008)
+    #     await boci2.timeout(timeout=timedelta(minutes=minutes), reason=reason)
+    #     await interaction.send(f"Timeouted both Boci accounts for {minutes} minutes, reason: {reason}")
 
 
 def setup(client, baselogger):

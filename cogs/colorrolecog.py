@@ -28,7 +28,7 @@ class ColorRoleCog(commands.Cog):
         await self.client.wait_until_ready()
         self.emoteserver: discord.Guild = self.client.get_guild(957469186798518282)
 
-    @discord.slash_command(name="mycolor", guild_ids=[860527626100015154, 601381789096738863, 409081549645152256, 552498097528242197], dm_permission=False)
+    @discord.slash_command(name="mycolor", guild_ids=[860527626100015154, 601381789096738863, 409081549645152256, 552498097528242197, 800196118570205216], dm_permission=False)
     async def mycolor(self):
         pass
 

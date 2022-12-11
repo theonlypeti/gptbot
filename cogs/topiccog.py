@@ -26,7 +26,7 @@ root = os.getcwd()
 #TODO async praw, see bottemplate
 
 class TopicCog(commands.Cog):
-    def __init__(self,client,baselogger):
+    def __init__(self, client, baselogger):
         global reddithandler, topicLogger
         self.client = client
         topicLogger = baselogger.getChild('topicLogger')
@@ -90,7 +90,7 @@ class TopicCog(commands.Cog):
         await ctx.send(embed=embedVar, view=self.TopicThemeButtons(self))
 
     class TopicNextButtons(discord.ui.View):
-        def __init__(self,cog,sub="AskReddit"):
+        def __init__(self, cog, sub="AskReddit"):
             super().__init__(timeout=None)
             self.sub = sub
             self.cog = cog
@@ -191,7 +191,7 @@ class TopicCog(commands.Cog):
 
     @discord.slash_command(description="Disallow some sensitive themes and topics from coming up when binging",guild_ids=[860527626100015154, 800196118570205216])  # TODO make it admin only
     async def topic_filters(self, ctx):
-        embedVar = discord.Embed(title="Filters",description="Selected options mean topics of those nature will be included. When done with your selection, just click off the select bar.",color=ctx.user.color)
+        embedVar = discord.Embed(title="Filters", description="Selected options mean topics of those nature will be included. When done with your selection, just click off the select bar.",color=ctx.user.color)
         viewObj = reddithandler.filtersSettings(ctx)
         await ctx.send(embed=embedVar, view=viewObj)
 
@@ -211,7 +211,7 @@ class TopicCog(commands.Cog):
                 ##        except redditapi.prawcore.exceptions.Forbidden:
                 ##            await ctx.channel.send("Forbidden: received 403 HTTP response, what kinda sub are you trying to see?!?")
                 await ctx.send(e)
-                print(e)
+                topicLogger.error(e)
             else:
                 if not post:
                     await ctx.send("That subreddit does not allow sorting by random, sorry.")
@@ -267,7 +267,7 @@ class TopicCog(commands.Cog):
     class RedditHandler(object):
         def __init__(self, cog):
             self.cog = cog
-            self.usedposts = []  # array of used titles
+            self.usedposts = []  # array of used post ids
             self.availablePosts = {}  # dict of subs and their posts
             self.filters = {}
             self.filterStrings = {}
@@ -279,7 +279,7 @@ class TopicCog(commands.Cog):
                 with open(root + "\\data\\redditfiltertoggles.txt", "r") as file:
                     self.filters = json.load(file)
             except FileNotFoundError:
-                self.filters = {"nsfw": True, "relationships": True, "serious": True ,"cliche":False}
+                self.filters = {"nsfw": True, "relationships": True, "serious": True,"cliche":False}
                 topicLogger.info("generated filtersToggles")
             with open(root + "\\data\\redditfilterstrings.txt", "r") as file:
                 for line in file.readlines():
@@ -325,7 +325,7 @@ class TopicCog(commands.Cog):
             topicLogger.debug(len(posts))
             if len(posts) < 10:
                 topicLogger.debug("getting from random")
-                if subreddit.random() != None:
+                if subreddit.random() is not None:
                     posts.append(subreddit.random())
             for post in posts:
                 post.title = post.title.replace("people of reddit", "People")
@@ -335,7 +335,7 @@ class TopicCog(commands.Cog):
                 post.title = post.title.replace("redditors", "")
                 post.title = post.title.replace("Redditors", "")
                 # print(post.title in self.usedposts,post.title,self.usedposts)
-            posts2 = [post for post in posts if post.title not in self.usedposts and not post.stickied]
+            posts2 = [post for post in posts if post.id not in self.usedposts and not post.stickied] #why not do it with ids instead #TODO
             # shuffle(posts)
             posts = sorted(posts2, key=lambda a: a.score)
             return posts
@@ -353,7 +353,7 @@ class TopicCog(commands.Cog):
             self.availablePosts[sub] = self.filterPosts(posts)
             topicLogger.debug(f"found {len(posts)} topics")
 
-        def filterPosts(self,availablePosts):  # TODO TEST FIX if multiple filters filter out the same q, the shit breaks
+        def filterPosts(self, availablePosts):  # TODO TEST FIX if multiple filters filter out the same q, the shit breaks
             # if self.filters["nsfw"]:
             # posts = [i for i in posts if i.score > 25]
             for filt in self.filters.items():
@@ -378,8 +378,9 @@ class TopicCog(commands.Cog):
                 else:
                     post = self.availablePosts[sub].pop()
                     # posts.remove(post)
-                    self.usedposts.append(post.title)
-                    print(",".join([str(len(self.availablePosts[i])) for i in self.availablePosts]) + " and " + str(len(self.usedposts)))
+                    self.usedposts.append(post.id)
+                    self.usedposts = self.usedposts[:500]
+                    topicLogger.debug(",".join([str(len(i)) for i in self.availablePosts.values()]) + f" and {len(self.usedposts)}")
                     return post
 
             except KeyError:
@@ -399,8 +400,8 @@ class TopicCog(commands.Cog):
             embedVar.set_footer(text=f"id: {post.id}" + " |{} | /topic to change topic".format(subemoji[post.subreddit.display_name]) + (" | Low score. Might be stupid?!" if post.score < 100 else " | " + str(post.score) + " points."))
             return embedVar
 
-        def comments(self, post,color=None):  # please dont judge me its so fucked up
-            if post == None:
+        def comments(self, post, color=None):  # please dont judge me its so fucked up
+            if post is None:
                 return discord.Embed(title="?", description="No question in cache.")
             else:
                 j = 0  # iterator variable, counts number of valid comments
@@ -447,5 +448,6 @@ class TopicCog(commands.Cog):
         def reset(self):
             self.availablePosts = {}
 
-def setup(client,baselogger):
-    client.add_cog(TopicCog(client,baselogger))
+
+def setup(client, baselogger):
+    client.add_cog(TopicCog(client, baselogger))

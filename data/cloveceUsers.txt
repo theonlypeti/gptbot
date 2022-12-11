@@ -1335,7 +1335,60 @@
         },
         "icon": ":white_circle:",
         "ready": false,
-        "dailyDate": "2022-11-26",
+        "dailyDate": "2022-11-26T00:00:00",
+        "inLobby": null
+    },
+    {
+        "userid": 302142965009088514,
+        "name": "Zoz\u00f3",
+        "inv": {
+            "items": {
+                "spinToken": 0,
+                "premSpinToken": 0,
+                "spinShards": 0
+            },
+            "defaults": {
+                "defaults": [
+                    ":white_circle:",
+                    ":black_circle:",
+                    ":red_circle:",
+                    ":blue_circle:",
+                    ":brown_circle:",
+                    ":purple_circle:",
+                    ":green_circle:",
+                    ":yellow_circle:",
+                    ":orange_circle:"
+                ],
+                "smileys": [],
+                "hands": [],
+                "plants": [],
+                "animals": [],
+                "foods": [],
+                "items": [],
+                "symbols": [],
+                "hearts": [],
+                "horoscope": [],
+                "flags": [],
+                "meme": [],
+                "professions": []
+            },
+            "customs": {}
+        },
+        "stats": {
+            "Steps taken": 0,
+            "Players kicked out": 0,
+            "Times kicked out": 0,
+            "First places": 0,
+            "Second places": 0,
+            "Third places": 0,
+            "Dice thrown": 0,
+            "Spins": 0,
+            "Default icons owned": 9,
+            "Custom server icons owned": "Coming Soon"
+        },
+        "icon": ":white_circle:",
+        "ready": false,
+        "dailyDate": "2022-12-09",
         "inLobby": null
     }
 ]

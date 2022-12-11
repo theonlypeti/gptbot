@@ -1,5 +1,4 @@
 {
-    "shut": "<:shut:921717171892129822>",
     "superPog": "<a:superPog:921717183724285983>",
     "doggo": "<a:doggowave:860895368337555464>",
     "peepoheart": "<:peepoheart:766681115431534654>",
@@ -106,6 +105,7 @@
     "wumpusheart": "<a:wumpusheart:987086556835758160>",
     "winetime": "<a:winetime:976119101174988900>",
     "drink": "<a:drink:976119099950256149>",
+    "pnb": "<:pnb:993850353021882469>",
     "frogomg": "<:frogomg:959063344856309831>",
     "alonso": "<:alonso:989288930220331028>",
     "wah": "<:wah:922566373761228850>",
@@ -137,5 +137,14 @@
     "boci": "<:boci:710570941737992284>",
     "dvaotazniky": "<:dvaotazniky:1040656123579089006>",
     "otaznik": "<:otaznik:1040655514880712834>",
-    "ohmygod": "<:ohmygod:1016424682095906937>"
+    "ohmygod": "<:ohmygod:1016424682095906937>",
+    "koszonjuk": "<a:koszonjuk:1049132993760989264>",
+    "amimir": "<a:amimir:1049132942926020660>",
+    "kekbrr": "<a:kekbrr:1049132905210847343>",
+    "kekvb": "<a:kekvb:1049132900844572672>",
+    "letmein": "<a:letmein:1049132897384280084>",
+    "chadtype": "<a:chadtype:1049134412656283699>",
+    "chadtype2": "<a:chadtype2:1049134402254413824>",
+    "hasbullahi": "<a:hasbullahi:1049134307765137469>",
+    "kugi": "<a:kugi:1049134282599309372>"
 }

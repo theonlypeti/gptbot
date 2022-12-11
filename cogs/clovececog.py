@@ -119,7 +119,7 @@ class LobbyCog(commands.Cog):
         if user is None:
             user = ctx.user
         player = self.getUserFromDC(user)
-        embedVar = discord.Embed(title=f"__{user.display_name}'s stats__",color=user.color)
+        embedVar = discord.Embed(title=f"__{user.name}'s stats__",color=user.color)
         for k,v in player.stats.items():
             embedVar.add_field(name=k,value=v)
         await ctx.send(embed=embedVar)
@@ -131,7 +131,7 @@ class LobbyCog(commands.Cog):
             user = ctx.user
         player = self.getUserFromDC(user)
         embedVar = await self.printdefaults(player)
-        embedVar.title = f"__{user.display_name}'s icons__"
+        embedVar.title = f"__{user.name}'s icons__"
         await ctx.send(embed=embedVar,ephemeral=True)
 
     @clovece.subcommand(name="help",description="Shows the help manual to this game and the bot.")
@@ -611,7 +611,7 @@ class LobbyCog(commands.Cog):
             return self.code+"+".join(map(str, self.players))
 
         def show(self):
-            name = self.lobbyleader.display_name
+            name = self.lobbyleader.name
             EmbedVar = discord.Embed(
                 title=name+"'s "+("Public" if not self.private else "Private")+" Lobby ("+str(len(self.players))+"/4)",
                 description=("Game already running." if self.ongoing else f"use **{mentionCommand(self.cog.client,'clovece join')} {self.code}** or click the join icon") if not self.private else f"ask the lobby leader for the code, \nthen use {mentionCommand(self.cog.client,'clovece join')} *CODE*, don't worry noone will see that.\n Make sure everyone has a unqiue icon!") #extra space deliberate, otherwise looks stupid
@@ -651,7 +651,7 @@ class LobbyCog(commands.Cog):
                     await self.readyCheck() #this is needed to update the view
                     game = CloveceGame(self) #create game
                     for player in self.players: #add players to game
-                        game.playerList.append(Player(player.display_name, isCPU=True if type(player) == self.cog.Bot else False, diffculty="Normal" if type(player) == self.cog.User else player.diffculty ,ikonky=player.icon,houseIcon=game.houseIcon,profile=player))
+                        game.playerList.append(Player(player.name, isCPU=True if type(player) == self.cog.Bot else False, diffculty="Normal" if type(player) == self.cog.User else player.diffculty ,ikonky=player.icon,houseIcon=game.houseIcon,profile=player))
                     await game.cloveceStart(ctx.channel) #start game #if i do ctx.send it breaks after 15mins cuz interactions.
                     self.cog.savePlayers()
                 else:  #should not be achievable as the start button should be disabled when game is ongoing, maybe delete
@@ -790,7 +790,7 @@ class LobbyCog(commands.Cog):
             return f"{self.name} ({self.diffculty}) | icon: {self.icon}"
         
     class User(object):
-        def __init__(self,discorduser):
+        def __init__(self, discorduser):
             if type(discorduser) == dict:
                 for k, v in discorduser.items():
                     setattr(self, k, v)

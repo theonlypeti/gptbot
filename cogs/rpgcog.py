@@ -123,7 +123,7 @@ class RPGGame:
     class Spawner:
         def __init__(self, object, chances: dict[int, float] | range):
             self.object: RPGGame.Enemy | RPGGame.Item = object
-            self.chances = chances # chances is a dict where {1:100,2:50,3:10} means theres a 100% chance to spawn 1 of the object, 50% to spawn 2 etc
+            self.chances: dict[int,int] = chances # chances is a dict where {1:100,2:50,3:10} means theres a 100% chance to spawn 1 of the object, 50% to spawn 2 etc
 
         def spawn(self):
             if isinstance(self.chances, dict):
@@ -132,18 +132,18 @@ class RPGGame:
                         if isinstance(self.object, RPGGame.Enemy):
                             return [new(self.object)] * possibility
                         else:
-                            obj = new(self.object.amount)
+                            obj = new(self.object)
                             obj.amount = possibility
-                            return obj
+                            return {obj.display_name: obj}
                 else:
                     return []
             else:
                 if isinstance(self.object, RPGGame.Enemy):
                     return [new(self.object)] * random.choice(self.chances)
                 else:
-                    obj = new(self.object.amount)
+                    obj = new(self.object)
                     obj.amount = random.choice(self.chances)
-                    return obj
+                    return {obj.display_name: obj}
 
     class SpellUpgradeSelect(discord.ui.Select):
         def __init__(self, page: int = 0, itemsOnPage=25, player=None, paginator=None):
@@ -663,11 +663,11 @@ class RPGGame:
             #homes,beach,island,desert,mountain,mount_fuji,camping
             #water, beach, plains, desert, forest, swamp ,lush forest, mountain, peaks
             self.enemies = []
-            self.loot = []
+            self.loot = {}
             self.type = "land"
             if parameter > 0.95:
                 self.possibleEnemies: List[RPGGame.Spawner] = [
-                    RPGGame.Spawner(RPGGame.Enemy("Dragon", 200, 15, 500, 500, {}), {1:1}) # finish
+                    RPGGame.Spawner(RPGGame.Enemy("Dragon", 200, 15, 500, 500, {}), {1:100}) # finish
                                                                ]
                 self.possibleLoot: List[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Item("Cobblestone", 4, 2, 1), range(2, 5))
@@ -678,7 +678,7 @@ class RPGGame:
                 self.name = "Snowy peaks"
             elif parameter > 0.8:
                 self.possibleEnemies: List[RPGGame.Spawner] = [
-                    RPGGame.Spawner(RPGGame.Enemy("Witch", 30, 8, 60, 25, {}), {1: 0.6})
+                    RPGGame.Spawner(RPGGame.Enemy("Witch", 30, 8, 60, 25, {}), {1: 60})
                 ]
                 self.possibleLoot: List[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Item("Berries", 1, 5, 1), range(2, 5))
@@ -703,7 +703,7 @@ class RPGGame:
                     self.discoverableChance = 0.6
                     self.name = "Forest"
                     self.possibleEnemies: List[RPGGame.Spawner] = [
-                        RPGGame.Spawner(RPGGame.Animal("Wolf", 15, 6, 30, 10, {}), {1: 0.2, 2:0.5, 3:0.5})
+                        RPGGame.Spawner(RPGGame.Animal("Wolf", 15, 6, 30, 10, {}), {1: 20, 2:50, 3:50})
                     ]
                     self.possibleLoot: List[RPGGame.Spawner] = [
                         RPGGame.Spawner(RPGGame.Item("Wood", 3, 4, 1), range(1, 4))
@@ -714,7 +714,7 @@ class RPGGame:
                 self.discoverableChance = 0.6
                 self.name = "Sandy beaches"
                 self.possibleEnemies: List[RPGGame.Spawner] = [
-                    RPGGame.Spawner(RPGGame.Animal("Crab", 10, 3, 20, 5, {}), {1: 0.7, 2: 0.6})
+                    RPGGame.Spawner(RPGGame.Animal("Crab", 10, 3, 20, 5, {}), {1: 70, 2: 60})
                 ]
                 self.possibleLoot: List[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Item("Sea Shells", 1, 10, 1), range(1, 3))
@@ -726,7 +726,7 @@ class RPGGame:
                 self.name = "Ocean"
                 self.type = "water"
                 self.possibleEnemies: List[RPGGame.Spawner] = [
-                    RPGGame.Spawner(RPGGame.Animal("Shark", 15, 10, 50, 0, {}), {1: 0.3})
+                    RPGGame.Spawner(RPGGame.Animal("Shark", 15, 10, 50, 0, {}), {1: 30})
                 ]
                 self.possibleLoot: List[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Item("Clam", 1, 12, 1), range(1, 2))
@@ -753,7 +753,7 @@ class RPGGame:
 
         def spawnLoot(self):
             for spawner in self.possibleLoot:
-                self.loot.extend(spawner.spawn())
+                self.loot.update(spawner.spawn())
 
     class Player(Entity):
         def __init__(self, user, terkep):
@@ -1313,7 +1313,7 @@ class RPGGame:
             return msg
 
     class Battlefield(object):
-        def __init__(self, players: list, enemies: list, loot: list, player, interaction: discord.Interaction):
+        def __init__(self, players: list, enemies: list, loot: dict, player, interaction: discord.Interaction):
             self.players: List[RPGGame.Player] = players
             self.player: RPGGame.Player = player
             self.enemies: list[RPGGame.Enemy] = enemies
@@ -1413,7 +1413,7 @@ class RPGGame:
                     entity.recalculateStats()
                 await asyncio.sleep(1)
 
-                if self.players:
+                if any([1 for player in self.players if player.hp > 0]):
                     for enemy in self.enemies:
                         if enemy.hp > 0:
                             if enemy.stunned:

@@ -86,8 +86,6 @@ if not args.minimal and not args.no_sympy:
 
 root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pipik"
 
-protocol = False
-spehmode = True
 already_checked = []
 discord_emotes = {}
 timeouts = defaultdict(int)
@@ -100,7 +98,7 @@ intents.typing = True
 client = commands.Bot(command_prefix='&', intents=intents, chunk_guilds_at_startup=True, status=discord.Status.online, activity=discord.Game(name="Booting up...")) #TODO chunk_guilds_at_startup=False might help me
 client.remove_command('help')
 
-# TODO play with this @commands.has_permissions(manage_server=True)
+# TODO play with this @commands.has_permissions(manage_server=True) only applicable to prefix commands, slash has smth else
 # TODO colored ansi text
 # TODO video.py
 # TODO json module has parse_int inside it
@@ -130,12 +128,6 @@ client.remove_command('help')
 
 
 #-------------------------------------------------#
-
-@client.command()
-async def initiatespeh(ctx):
-    global spehmode
-    spehmode = not spehmode
-    print("speh initiated")
 
 @client.event
 async def on_ready():
@@ -189,7 +181,7 @@ async def on_typing(channel: discord.TextChannel, who: discord.Member, when: dat
 @client.event
 async def on_reaction_add(reaction: discord.Reaction, user):
     if reaction.message.author.bot:
-        return
+        return reaction, user
 
     good_responses = ("Azta de vicces valaki <:hapi:889603218273878118> 👌",
                       f"Gratulálunk, ez vicces volt, {reaction.message.author.display_name}. {emoji.emojize(':clap:')} {emoji.emojize(':partying_face:')}",
@@ -225,7 +217,7 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                 timeouts[str(kapja.id)] += 1
                 pipikLogger.debug(timeouts)
 
-    if str(reaction.emoji) in (":thumbs_down:","<:2head:913874980033421332>","<:bruh:913875008697286716>","<:brainlet:766681101305118721>","<:whatchamp:913874952887873596>"):
+    elif emoji.demojize(str(reaction.emoji)) in (":thumbs_down:","<:2head:913874980033421332>","<:bruh:913875008697286716>","<:brainlet:766681101305118721>","<:whatchamp:913874952887873596>"):
         #if reaction.message.author.id in (569937005463601152, 422386822350635008): #csak bocira timeout
         if True: #mindenkire timeout
             kapja = reaction.message.author
@@ -241,7 +233,7 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                     pipikLogger.debug(timeouts)
 
 
-    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>",  "<:hapi:889603218273878118>", ":joy:"):
+    if emoji.demojize(str(reaction.emoji)) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>",  "<:hapi:889603218273878118>", ":joy:"):
         #if reaction.message.author.id == 569937005463601152:
         if True:
             if reaction.count >= 3:
@@ -263,14 +255,26 @@ async def on_reaction_add(reaction: discord.Reaction, user):
 
     with open("timeouts.txt", "w") as file:
         json.dump(timeouts, file, indent=4)
+    return reaction, user
 
-# @client.slash_command(name="banboci", description="Timeout boci mindkét accját.",guild_ids=(601381789096738863,), dm_permission=False)
-# async def banboci(interaction: discord.Interaction, minutes: float, reason: str):
-#     boci1: discord.Member = interaction.guild.get_member(569937005463601152)
-#     await boci1.timeout(timeout=timedelta(minutes=minutes), reason=reason)
-#     boci2: discord.Member = interaction.guild.get_member(422386822350635008)
-#     await boci2.timeout(timeout=timedelta(minutes=minutes), reason=reason)
-#     await interaction.send(f"Timeouted both Boci accounts for {minutes} minutes, reason: {reason}")
+
+@discord.slash_command(name="run", description="For running python code")
+async def run(ctx: discord.Interaction, command: str):
+    if "@" in command and ctx.user.id != 617840759466360842:
+        await ctx.send("oi oi oi we pinging or what?")
+        return
+    if any((word in command for word in ("open(", "os.", "eval(", "exec("))) and ctx.user.id != 617840759466360842:
+        await ctx.send("oi oi oi we hackin or what?")
+        return
+    elif "redditapi" in command and ctx.user.id != 617840759466360842:
+        await ctx.send("Lol no sorry not risking anyone else doing stuff with MY reddit account xDDD")
+        return
+    try:
+        await ctx.response.defer()
+        a = eval(command)
+        await ctx.send(a)
+    except Exception as a:
+        await ctx.send(f"{a}")
 
 
 @client.command(aliases=("angy", "angry"))
@@ -326,7 +330,7 @@ for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know
         linecount += len(f.readlines())
     client.load_extension("cogs." + file[:-3], extras={"baselogger": pipikLogger})
     if not args.debug:
-        sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.2f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
+        sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.02f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
         sys.stdout.flush()
 sys.stdout.write(f"\r{len(cogs)}/{len(allcogs)} cogs loaded.                    \n")
 sys.stdout.flush()

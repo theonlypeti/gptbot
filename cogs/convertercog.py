@@ -17,7 +17,7 @@ class ConverterCog(commands.Cog):
         #asyncio.run(self.getCurrList()) #not preferred,  RuntimeError: There is no current event loop in thread 'MainThread'. in other cogs
         self.getCurrList.start()
 
-    @tasks.loop(count=1) #ok workaround
+    @tasks.loop(count=1) #ok workaround, however count=1 loops it twice
     async def getCurrList(self):
         async with aiohttp.ClientSession() as session:
             async with session.get('https://raw.githubusercontent.com/fawazahmed0/currency-api/1/latest/currencies.json') as req:

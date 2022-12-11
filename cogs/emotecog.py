@@ -7,6 +7,8 @@ import re
 from datetime import datetime
 from io import BytesIO
 from typing import Literal
+
+import emoji
 import nextcord as discord
 from PIL import Image
 from nextcord.ext import commands
@@ -18,10 +20,11 @@ root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pip
 
 class EmoteCog(commands.Cog):
     def __init__(self, client, baselogger):
+        global emotelogger
         self.discord_emotes = dict()
         self.client = client
         self.emoteserver = None
-        self.emotelogger = baselogger.getChild("EmoteLogger")
+        emotelogger = baselogger.getChild("EmoteLogger")
         self.readEmotes()
 
     async def flipemote(self, emote, state, orient: Literal["H"] | Literal["V"]):
@@ -43,12 +46,12 @@ class EmoteCog(commands.Cog):
     def saveEmotes(self):
         with open(root + "/data/pipikemotes.txt", "w") as file:
             json.dump(self.discord_emotes, file, indent=4)
-        self.emotelogger.info("saved emotes")
+        emotelogger.info("saved emotes")
 
     def readEmotes(self):
         with open(root + "/data/pipikemotes.txt", "r") as file:
             self.discord_emotes = json.load(file)
-        self.emotelogger.debug(f"loaded {len(self.discord_emotes)} emotes")
+        emotelogger.debug(f"loaded {len(self.discord_emotes)} emotes")
 
     @commands.command()
     async def registerEmote(self, ctx, *attr):
@@ -57,7 +60,7 @@ class EmoteCog(commands.Cog):
         self.saveEmotes()
 
     @commands.command()
-    async def registerAnimatedEmotes(self, ctx, howmany):
+    async def registerAnimatedEmotes(self, ctx, howmany: int):
         howmany = int(howmany)
         for emoji in reversed(ctx.message.guild.emojis):
             if emoji.animated and howmany:
@@ -82,13 +85,24 @@ class EmoteCog(commands.Cog):
                 self.optionen.append(discord.SelectOption(label=k, value=self.emotes[k], emoji=self.emotes[k]))
             super().__init__(placeholder="Select an emote", options=self.optionen)
 
-        async def callback(self, interaction):
-            def check(reaction, user):
-                return not user.bot
+        async def callback(self, interaction: discord.Interaction):
+            emote = self.values[0]
 
-            await self.message.add_reaction(self.values[0])
-            _, _ = await self.client.wait_for('reaction_add', timeout=6.0, check=check) #reaction, user
-            await self.message.remove_reaction(self.values[0], self.client.user)
+            def mycheck(reaction: discord.Reaction, user: discord.User):
+                emotelogger.debug(f"{str(reaction.emoji)=}, {emote=}")
+                emotelogger.debug(f"{not user.bot}, {self.message == reaction.message}, {str(reaction.emoji) == emote}")
+                return not user.bot and self.message == reaction.message and str(reaction.emoji) == emote
+
+            emotelogger.debug(f"{interaction.user} used msg cmd add react with {emote} in {interaction.channel}")
+            await self.message.add_reaction(emote)
+            try:
+                _, _ = await self.client.wait_for('reaction_add', timeout=6.0, check=mycheck)
+                # a,b = await self.client.wait_for('reaction_add', timeout=6.0)
+
+            except asyncio.TimeoutError:
+                pass
+            finally:
+                await self.message.remove_reaction(emote, self.client.user)
 
     @discord.message_command(name="Add reaction")
     async def react(self, interaction, message):
@@ -98,7 +112,7 @@ class EmoteCog(commands.Cog):
 
     @discord.slash_command(name="emote", description="For using special emotes") #TODO split these to subcommands, react, send and list? #im kinda happy with this rn
     async def emote(self, ctx: discord.Interaction,
-                    emote: str = discord.SlashOption(name="emoji",
+                    emote = discord.SlashOption(name="emoji", #don't typehint this one, will not show the options automatically
                                                      description="An emoji name, leave blank if you want to list them all out.",
                                                      required=False, default=None),
                     msg: str = discord.SlashOption(name="message_link",
@@ -108,9 +122,10 @@ class EmoteCog(commands.Cog):
                                                     description="The text message to send along with any emotes, use {emotename} as placeholder.",
                                                     required=False, default=None)):
         def check(reaction, user):
-            return not user.bot and (str(reaction.emoji) in list(self.discord_emotes.values()))
+            emotelogger.debug(f"{str(reaction.emoji)=}, {emote=}")
+            return not user.bot and str(reaction.emoji) == emote
 
-        self.emotelogger.debug(f"{ctx.user}, {emote}, {datetime.now()}")
+        emotelogger.debug(f"{ctx.user}, {emote}, {datetime.now()}")
         if emote:
             if emote.endswith("+flipH"):
                 flipped = True
@@ -129,7 +144,7 @@ class EmoteCog(commands.Cog):
                 try:
                     _, _ = await self.client.wait_for('reaction_add', timeout=6.0, check=check)
                 except asyncio.TimeoutError:
-                    self.emotelogger.debug("emote timed out")
+                    emotelogger.debug("emote timed out")
                 finally:
                     await mess.remove_reaction(emote, self.client.user)
 
@@ -145,18 +160,18 @@ class EmoteCog(commands.Cog):
                 flips = [m.start() for m in re.finditer('\+flipH', text)] #ends of emotes
                 emotestoflip = [(text.rfind("{",0,i),i) for i in flips] #beginnings of toflip emotes
                 emotestoflip = set([text[i[0]+1:i[1]] for i in emotestoflip]) #capturing their names from begin:end ranges, also making a set
-                self.emotelogger.debug(msg=",".join(map(str, emotestoflip)))
+                emotelogger.debug(msg=",".join(map(str, emotestoflip)))
                 flippedemotes = [await self.flipemote(self.discord_emotes[emotetoflip], ctx.guild.me._state, orient="H") for emotetoflip in emotestoflip] #flipping, adding to server
                 self.discord_emotes.update({f"{i}+flipH": j for i, j in zip(emotestoflip, flippedemotes)}) #update the translation dict temporarily
 
                 flips = [m.start() for m in re.finditer('\+flipV', text)]  # ends of emotes
                 emotestoflipv = [(text.rfind("{", 0, i), i) for i in flips]  # beginnings of toflip emotes
                 emotestoflipv = set([text[i[0] + 1:i[1]] for i in emotestoflipv])  # capturing their names from begin:end ranges, also making a set
-                self.emotelogger.debug(msg=",".join(map(str, emotestoflipv)))
+                emotelogger.debug(msg=",".join(map(str, emotestoflipv)))
                 flippedemotesv = [await self.flipemote(self.discord_emotes[emotetoflip], ctx.guild.me._state, orient="V") for emotetoflip in emotestoflipv]  # flipping, adding to server
                 self.discord_emotes.update({f"{i}+flipV": j for i, j in zip(emotestoflipv, flippedemotesv)})
 
-                #self.emotelogger.debug(self.discord_emotes)
+                #emotelogger.debug(self.discord_emotes)
                 text = text.replace("{", "{self.discord_emotes['")
                 text = text.replace("}", "']}")
                 text = eval(f'f"{text}"')
@@ -174,7 +189,7 @@ class EmoteCog(commands.Cog):
                     del self.discord_emotes[f"{i}+flipV"]
 
             except Exception as e:
-                self.emotelogger.error(e)
+                emotelogger.error(e)
                 await ctx.send(e, ephemeral=True)
                 raise e
 
@@ -217,46 +232,19 @@ class EmoteCog(commands.Cog):
         if emote:
             get_near_emote = [text[0]+text[1]+i+"}" for i in self.discord_emotes.keys() if i.casefold().startswith(emote.casefold())]
             get_near_emote = get_near_emote[:25]
-            #self.emotelogger.debug(get_near_emote)
+            #emotelogger.debug(get_near_emote)
             await interaction.response.send_autocomplete(get_near_emote)
 
-    class FancyLinkModal(discord.ui.Modal):
-        def __init__(self, mode):
-            super().__init__(title="Custom link")
-            self.mode = mode
-            self.link = discord.ui.TextInput(label="Link", placeholder="https://example.com")
-            self.displaytext = discord.ui.TextInput(label="Link display text", placeholder="Click me")
-            self.hovertext = discord.ui.TextInput(label="Link hover text", placeholder="opens in new page", required=False)
-            self.context = discord.ui.TextInput(label="Surrounding text (use {} as link placeholder)", placeholder="Please head to {} link", required=False, style=discord.TextInputStyle.paragraph)
-
-            for item in (self.link, self.displaytext, self.hovertext, self.context):
-                self.add_item(item)
-
-        async def callback(self, interaction: discord.Interaction):
-            if self.hovertext.value:
-                custom = f"[__{self.displaytext.value}__]({self.link.value}\n" + '"{}"'.format(self.hovertext.value) + ")"
-            else:
-                custom = f"[__{self.displaytext.value}__]({self.link.value})"
-            await interaction.send(self.context.value.format(custom) if "{}" in self.context.value else self.context.value + custom if self.context.value else custom)
-
-    @discord.slash_command(name="makelink")
-    async def makelink(self, interaction: discord.Interaction, mode: Literal["Simple", "Complex"]):
-        if mode == "Simple":
-            await interaction.response.send_modal(self.FancyLinkModal(mode=mode))
-        else:
-            await interaction.send("WIP lol")
-
     class AddReactLettersModal(discord.ui.Modal):
-        def __init__(self, message: discord.Message, logger: logging.Logger):
+        def __init__(self, message: discord.Message):
             self.message = message
-            self.logger = logger
             super().__init__(title="Type a word to spell out with reacts.")
             self.word = discord.ui.TextInput(label="Word")
             self.add_item(self.word)
 
         async def callback(self, interaction):
             word = ""
-            self.logger.info(f"{interaction.user} word-reacts {self.word.value} on message {self.message.content}")
+            emotelogger.info(f"{interaction.user} word-reacts {self.word.value} on message {self.message.content}")
             myword = antimakkcen(self.word.value)
             for letter in myword.upper():
                 if letter == "A" and chr(127397 + ord("A")) in word:
@@ -282,7 +270,8 @@ class EmoteCog(commands.Cog):
 
     @discord.message_command(name="Word react")
     async def reacts(self, interaction: discord.Interaction, message: discord.Message):
-        await interaction.response.send_modal(self.AddReactLettersModal(message, self.emotelogger))
+        await interaction.response.send_modal(self.AddReactLettersModal(message))
+
 
 def setup(client, baselogger):
     client.add_cog(EmoteCog(client, baselogger))

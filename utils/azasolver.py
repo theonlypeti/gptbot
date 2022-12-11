@@ -1,3 +1,5 @@
+import math
+
 from tabulate import tabulate
 # pstring = 'ababbabbabbababbabb'
 
@@ -5,23 +7,18 @@ from tabulate import tabulate
 def pitable(pstring: str) -> list[int]:
     pi = [0]
     for i in range(2, len(pstring)+1):
+        # print("--",i)
         slice = pstring[:i]
-        # print(i,"pi")
-        # print("slice",slice)
-        maxlen = len(slice) // 2
-        # print(maxlen,"maxlen")
-        pi.append(0)
-        for char in range(maxlen):
-            # print(pi, "before")
-            # print(maxlen-char, "szar")
-            # print("char",char)
-            # print(slice[:char+1], slice[-char-1:])
-            if slice[:char+1] == slice[-char-1:]:
-                pi[-1] = char+1
-            # print(pi, "after")
-
-        # print(pi[-1],"written")
-        # print("-"*10)
+        char = pi[-1]
+        # print(slice[:char + 1],slice[-char - 1:])
+        if slice[:char + 1] == slice[-char - 1:]:
+            pi.append(char + 1)
+        else:
+            pi.append(0)
+            for char2 in range(char+1):
+                # print(slice[:char2 + 1],"aa",slice[-char2 - 1:], "sanyi")
+                if slice[:char2 + 1] == slice[-char2 - 1:]:
+                    pi[-1] = char2 + 1
     return pi
 
 
@@ -59,4 +56,6 @@ def piautomat(pstring: str) -> str:
 
 
 if __name__ == "__main__":
-    print(piautomat("boobs"))
+    print(piautomat("ababbabbabbababbabb"))
+    print(piautomat("LALLL"))
+    print(piautomat("ababa"))
