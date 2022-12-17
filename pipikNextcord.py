@@ -258,7 +258,7 @@ async def on_reaction_add(reaction: discord.Reaction, user):
     return reaction, user
 
 
-@discord.slash_command(name="run", description="For running python code")
+@client.slash_command(name="run", description="For running python code")
 async def run(ctx: discord.Interaction, command: str):
     if "@" in command and ctx.user.id != 617840759466360842:
         await ctx.send("oi oi oi we pinging or what?")

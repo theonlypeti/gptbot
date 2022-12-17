@@ -22,6 +22,8 @@ class Testing(commands.Cog):
         self.logger = baselogger.getChild(__name__)
         self.selection = None
         self.client: discord.Client = client
+        self.logger.info("I spun up")
+        print("I am a print")
 
     class testvw(discord.ui.View):
         def __init__(self):

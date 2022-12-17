@@ -1,1 +1,1 @@
-{"temperature": 2.25, "weatherUpdTime": "2022-12-11T02:02:36.107326", "sunrise": "2022-12-11T06:31:50+00:00"}
+{"temperature": -1.28, "weatherUpdTime": "2022-12-17T05:45:56.824745", "sunrise": "2022-12-17T06:36:44+00:00"}

@@ -242,7 +242,7 @@ class EmoteCog(commands.Cog):
             self.word = discord.ui.TextInput(label="Word")
             self.add_item(self.word)
 
-        async def callback(self, interaction):
+        async def callback(self, interaction): #TODO add question mark (and exclamation mark)
             word = ""
             emotelogger.info(f"{interaction.user} word-reacts {self.word.value} on message {self.message.content}")
             myword = antimakkcen(self.word.value)

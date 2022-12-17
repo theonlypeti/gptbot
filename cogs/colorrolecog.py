@@ -13,6 +13,7 @@ import emoji
 # TODO add ratelimit emoji
 # TODO maybe keep last used colors on server
 # TODO add cooldown
+# TODO nextcord.roleselect
 
 
 class ColorRoleCog(commands.Cog):
@@ -29,7 +30,7 @@ class ColorRoleCog(commands.Cog):
         self.emoteserver: discord.Guild = self.client.get_guild(957469186798518282)
 
     @discord.slash_command(name="mycolor", guild_ids=[860527626100015154, 601381789096738863, 409081549645152256, 552498097528242197, 800196118570205216], dm_permission=False)
-    async def mycolor(self):
+    async def mycolor(self, interaction):
         pass
 
     class HexModal(discord.ui.Modal):

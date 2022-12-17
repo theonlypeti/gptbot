@@ -146,5 +146,7 @@
     "chadtype": "<a:chadtype:1049134412656283699>",
     "chadtype2": "<a:chadtype2:1049134402254413824>",
     "hasbullahi": "<a:hasbullahi:1049134307765137469>",
-    "kugi": "<a:kugi:1049134282599309372>"
+    "kugi": "<a:kugi:1049134282599309372>",
+    "pog": "<:pog:825868133977555035>",
+    "chrumkaboss": "<:chrumkaboss:958114241527824405>"
 }

@@ -96,7 +96,7 @@ class MiscallenousCog(commands.Cog):
 
     # @commands.has_permissions(manage_server=True) #that wont work
     @discord.slash_command(name="pfp", description="chooses a random emote for the servers profile pic.", guild_ids=[860527626100015154, 552498097528242197], dm_permission=False)
-    async def pfp(interaction: discord.Interaction):
+    async def pfp(self, interaction: discord.Interaction):
         os.chdir("D:\\Users\\Peti.B\\Pictures\\microsoft\\emotes")
         emotes = [emote for emote in os.listdir() if not emote.endswith(".gif") or interaction.guild.premium_tier]
         await interaction.send(f"Picking from {len(emotes)} emotes...")

@@ -2,7 +2,6 @@ import re
 from datetime import datetime
 from io import BytesIO
 from math import inf
-from typing import List
 import imageio
 import nextcord as discord
 from PIL import Image, ImageDraw, ImageFont
@@ -29,13 +28,15 @@ def correctboolean(expr):
     return expr.replace("!", "~").replace("||","|").replace("&&", "&")
 
 def addbackground(url: str):
-    img = imageio.imread_v2(url)
+    img = imageio.imread(url)
     img[:, :, 3] = 255
     return img
 
 
-async def sendmsg(ctx, embedVar, img: List[imageio.core.Array]):
+async def sendmsg(ctx, embedVar, img: list[imageio.core.Array]):
     with BytesIO() as image_binary:
+        img[0]._meta.clear() #idk why this hacky shit works
+        img[1]._meta.clear()
         imageio.imsave(image_binary, img[0], "png")
         image_binary.seek(0)
         with BytesIO() as another_image:
@@ -132,6 +133,7 @@ class SympyCog(commands.Cog):
             except Exception as e:
                 sympylogger.error(e)
                 await ctx.send(embed=discord.Embed(title="Error", description=e, color=ctx.user.color))
+                raise e
 
     class DiffModal(discord.ui.Modal):
         def __init__(self):
