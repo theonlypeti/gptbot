@@ -2,7 +2,6 @@ import logging
 import os
 from datetime import datetime
 import json
-from typing import List
 import bs4
 import nextcord as discord
 from nextcord.ext import commands, tasks
@@ -86,14 +85,14 @@ class AisCog(commands.Cog):
                 try:
                     newDict = {tema.name: tema for tema in temy}
                     oldDict = {tema.name: tema for tema in self.temy}
-                    newNames: List[str] = list(newDict.keys())
-                    oldNames: List[str] = list(oldDict.keys()) #[tema.name for tema in self.temy]
+                    newNames: list[str] = list(newDict.keys())
+                    oldNames: list[str] = list(oldDict.keys()) #[tema.name for tema in self.temy]
                     if len(temy) > len(self.temy):
                         diff = set(newNames).difference(oldNames)
-                        diffTemy: List[Tema] = [newDict[name] for name in diff]
+                        diffTemy: list[Tema] = [newDict[name] for name in diff]
                     else:
                         diff = set(oldNames).difference(newNames)
-                        diffTemy: List[Tema] = [oldDict[name] for name in diff]
+                        diffTemy: list[Tema] = [oldDict[name] for name in diff]
                     text = "" if diffTemy else f"Zdá sa nie sú žiadne témy."
                     temanums = [tema.num for tema in diffTemy]
                     for tema in diffTemy:

@@ -135,7 +135,7 @@ class PipikUser(object):
         self.cd = None
         self.methods: int = 0
         self.pill = None
-        self.pillPopTime = datetime.now() # placeholder
+        self.pillPopTime = datetime.now()  # placeholder
         self.dailyStreak: int = 0
         self.dailyDate = datetime.now() - timedelta(days=1)
 
@@ -164,7 +164,7 @@ class PipikUser(object):
 
 class PipikBot(commands.Cog):
     def __init__(self, client, baselogger):
-        self.pipikLogger = baselogger.getChild("PipikBot")
+        self.logger = baselogger.getChild(f"{__name__}logger")
         self.usedcompliments = {"placeholder", }
         self.client = client
         self.temperature = 0
@@ -201,9 +201,9 @@ class PipikBot(commands.Cog):
                 if newUser not in self.users:
                     self.users.append(newUser)
                 else: #TODO: depreacate, should not happen
-                    self.pipikLogger.debug(f"found and ignored duplicate entry with id: {newUser.id}")
-            # self.pipikLogger.debug(f"{self.users} all-users")
-            self.pipikLogger.debug(f"{len(self.users)} all users loaded")
+                    self.logger.debug(f"found and ignored duplicate entry with id: {newUser.id}")
+            # self.logger.debug(f"{self.users} all-users")
+            self.logger.debug(f"{len(self.users)} all users loaded")
 
     async def updateUserAchi(self, ctx: discord.Interaction, user: discord.Member, achi: str):
         achi: Achievement = self.achievements[achi]
@@ -213,6 +213,11 @@ class PipikBot(commands.Cog):
         self.saveFile() #any action that warrants an achievement already saves the users #not true lol, in pp func theres bunch of occasions where it doesnt save
 
     def updateLeaderBoard(self, ldb, dcid, value):
+        """
+                ldb: int = guild id
+                dcid: int = user id
+                value: int = recorded achieved score
+                """
         try:
             self.leaderboards[str(ldb)]
         except KeyError:
@@ -224,6 +229,11 @@ class PipikBot(commands.Cog):
             json.dump(self.leaderboards, file, indent=4)
 
     def updateLoserBoard(self, ldb, dcid, value):
+        """
+        ldb: int = guild id
+        dcid: int = user id
+        value: int = recorded achieved score
+        """
         try:
             self.loserboards[str(ldb)]
         except KeyError:
@@ -245,27 +255,27 @@ class PipikBot(commands.Cog):
             try:
                 tempuser.dailyDate = user.dailyDate.isoformat()
             except Exception as e:
-                self.pipikLogger.error(e)
+                self.logger.error(e)
             tempusers.append(tempuser.__dict__)
         with open(root+"/data/pipikusersv3.txt", "w") as file:
             json.dump(tempusers, file, indent=4)
-        self.pipikLogger.info("saved users")
+        self.logger.info("saved users")
 
     def saveSettings(self):
         settings = {"temperature": self.temperature, "weatherUpdTime": self.weatherUpdatedTime.isoformat(), "sunrise": self.sunrise_date.isoformat()}
         with open(root+"/data/pipisettings.txt", "w") as file:
             json.dump(settings, file)
-        self.pipikLogger.debug("saved settings")
+        self.logger.debug("saved settings")
 
     def readSettings(self):
         with open(root+"/data/pipisettings.txt", "r") as file:
             settings = json.load(file)
         self.weatherUpdatedTime = datetime.fromisoformat(settings["weatherUpdTime"])
         if datetime.now() - self.weatherUpdatedTime > timedelta(hours=1):
-            self.pipikLogger.debug("updating temp")
+            self.logger.debug("updating temp")
             self.getTemp()
         else:
-            self.pipikLogger.debug("temp up to date")
+            self.logger.debug("temp up to date")
             self.temperature = settings["temperature"]
             self.sunrise_date = datetime.fromisoformat(settings["sunrise"])
             
@@ -320,10 +330,10 @@ class PipikBot(commands.Cog):
         if interaction.user.id != member.id:
             await interaction.send(f"You are now holding {member.display_name}'s pp. This will be in effect until the next measurement done by anyone on this server.", ephemeral=True)
             self.holding.update({interaction.guild.id: interaction.user})
-            self.pipikLogger.debug(f"{interaction.user} is holding in {interaction.guild}")
+            self.logger.debug(f"{interaction.user} is holding in {interaction.guild}")
         else:
             await interaction.send(f"You are now holding your own pp. Umm... I don't know what for but to be honest i don't even wanna know. \nNo effect is in place.", ephemeral=True)
-            self.pipikLogger.debug(f"{interaction.user} is holding self lolololol")
+            self.logger.debug(f"{interaction.user} is holding self lolololol")
 
     @discord.slash_command(name="help", description="Lists what all the commands do.")
     async def help(self, ctx):
@@ -367,11 +377,11 @@ class PipikBot(commands.Cog):
     async def daily(self, ctx: discord.Interaction):
         user = self.getUserFromDC(ctx.user)
         try:
-            self.pipikLogger.debug(f"user daily date {user.dailyDate}")
+            self.logger.debug(f"user daily date {user.dailyDate}")
             if type(user.dailyDate) == datetime:
                 user.dailyDate = user.dailyDate.date()
         except AttributeError as e:
-            self.pipikLogger.error(e) # TODO if does not come up, remove this #yes should not happen
+            self.logger.error(e) # TODO if does not come up, remove this #yes should not happen
             user.dailyDate = (datetime.now() - timedelta(days=1)).date()
             user.dailyStreak = 0  # kind of redundant? nvm
         finally:
@@ -395,7 +405,7 @@ class PipikBot(commands.Cog):
                 embedVar = discord.Embed(title="Daily pills", color=ctx.user.color)
                 embedVar.add_field(name="Current streak", value=user.dailyStreak)
             else:
-                self.pipikLogger.warning(f"something is wrong {user.dailyDate}, {date.today()}, {user.dailyDate - date.today()}")
+                self.logger.warning(f"something is wrong {user.dailyDate}, {date.today()}, {user.dailyDate - date.today()}")
                 return
             await ctx.send(embed=embedVar)
             user.dailyDate = datetime.now().date()
@@ -654,10 +664,10 @@ class PipikBot(commands.Cog):
         text += "\n```"
 
         if user.pill in range(0, len(pills)):
-            self.pipikLogger.debug(f"uh oh pill already in you {user.pill}")
+            self.logger.debug(f"uh oh pill already in you {user.pill}")
             takenAgo = datetime.now() - user.pillPopTime
             if takenAgo < pills[user.pill]["effectDur"] + pills[user.pill]["badEffectDur"]:
-                self.pipikLogger.debug("nem jart le")
+                self.logger.debug("nem jart le")
             else:
                 user.pill = None
 
@@ -721,7 +731,7 @@ class PipikBot(commands.Cog):
         usertocheck = user or ctx.user
         user = self.getUserFromDC(usertocheck)
 
-        temppill = False #todo make this a separate function
+        temppill = False  # todo make this a separate function
         if user.pill not in (None, "None", "none"):
             temppill = True
             takenAgo = datetime.now() - user.pillPopTime
@@ -768,12 +778,12 @@ class PipikBot(commands.Cog):
         embedMsg = discord.Embed(description=".", color=ctx.user.color)  # placeholders
         user = self.getUserFromDC(ctx.user)
         currmethods = 0  # this is for keeping track of what pp enlargement methods were used. Im gonna perform bitwise operations on this
-        self.pipikLogger.debug(f"{datetime.now() - self.weatherUpdatedTime}, weatherupdatetimer, how long ago was updated")
+        self.logger.debug(f"{datetime.now() - self.weatherUpdatedTime}, weatherupdatetimer, how long ago was updated")
         if datetime.now() - self.weatherUpdatedTime > timedelta(hours=1):
-            self.pipikLogger.debug("updating temp")
+            self.logger.debug("updating temp")
             self.getTemp()
         else:
-            self.pipikLogger.debug("temp up to date")
+            self.logger.debug("temp up to date")
 
         curve = 2
         multiplier = 100
@@ -809,7 +819,7 @@ class PipikBot(commands.Cog):
         # morning wood checker
         tz_info = self.sunrise_date.tzinfo
         sunrise = self.sunrise_date - datetime.now(tz_info)
-        self.pipikLogger.debug(f"morning wood check, {self.sunrise_date}, sunrise date (gmt) # {sunrise}, until sunrise {datetime.now(tz_info)}, current time (gmt)")
+        self.logger.debug(f"morning wood check, {self.sunrise_date}, sunrise date (gmt) # {sunrise}, until sunrise {datetime.now(tz_info)}, current time (gmt)")
         if timedelta(hours=1) > sunrise > timedelta(hours=-1):
             multiplier += 10
             curve -= 0.5
@@ -821,7 +831,7 @@ class PipikBot(commands.Cog):
         compliments = 0
         if message:
             if antimakkcen(str(message.split(" ")[0].casefold()).strip("!")) in ("ahoy", "hello", "hi", "hey", "hellou", "sup", "ahoj", "cau", "cauky"):
-                embedMsg = discord.Embed(description=f"Heya {ctx.user.display_name}! \\\(^.^)/",color=ctx.user.color)
+                embedMsg = discord.Embed(description=f"Heya {ctx.user.display_name}! \\\(^.^)/", color=ctx.user.color)
             else:
                 embedMsg = discord.Embed(description="Oh so you are trying to impress me with your sweet honeyed words...",color=ctx.user.color)
             await ctx.send(embed=embedMsg)
@@ -875,7 +885,7 @@ class PipikBot(commands.Cog):
 
         # holding checker
         try:
-            self.pipikLogger.debug(f"holdings table {self.holding} curr server {ctx.guild.id}, author {ctx.user.id}")
+            self.logger.debug(f"holdings table {self.holding} curr server {ctx.guild.id}, author {ctx.user.id}")
             #if True:
             if ctx.guild.id in self.holding and self.holding[ctx.guild.id] != ctx.user:
                 currmethods = currmethods | 1
@@ -893,14 +903,14 @@ class PipikBot(commands.Cog):
                     await self.updateUserAchi(ctx,holder, "friend_need")
             del self.holding[ctx.guild.id]
         except KeyError as e: #redundant
-            self.pipikLogger.debug(str(e) + " - in this guild noone is holding anything")
+            self.logger.debug(str(e) + " - in this guild noone is holding anything")
 
         # final calculation
         if curve < 0:
-            self.pipikLogger.warning(25 * "#" + "uh oh stinky")
+            self.logger.warning(25 * "#" + "uh oh stinky")
             curve = -curve * 0.01
         pipik = round((random.expovariate(curve) * multiplier), 3)
-        self.pipikLogger.debug(f"{ctx.user.display_name}, pipik, {pipik}, curve, {curve}, mult, {multiplier}, compl, {compliments}, temp,{self.temperature}, fap, {user.fap}, cd, {user.cd}")
+        self.logger.debug(f"{ctx.user.display_name}, pipik, {pipik}, curve, {curve}, mult, {multiplier}, compl, {compliments}, temp,{self.temperature}, fap, {user.fap}, cd, {user.cd}")
 
         # personal record checker
         if pipik > user.pb:
@@ -910,11 +920,11 @@ class PipikBot(commands.Cog):
 
         # rekord checker
         try:
-            self.pipikLogger.debug(f"this server´s leaderboard {self.leaderboards[str(ctx.guild_id)]}")
+            self.logger.debug(f"this server´s leaderboard {self.leaderboards[str(ctx.guild_id)]}")
         except KeyError:
             self.leaderboards[str(ctx.guild_id)] = []
         if len(self.leaderboards[str(ctx.guild_id)]) > 4 and len(self.loserboards[str(ctx.guild_id)]) > 4:  # if leaderboard fully populated go check if the new measurement is better,
-            if pipik > self.leaderboards[str(ctx.guild_id)][0][1] or pipik < self.loserboards[str(ctx.guild_id)][0][1]:  # otherwise just automatically populate it on the leaderboard without announing a record
+            if pipik > self.leaderboards[str(ctx.guild_id)][0][1] or pipik < self.loserboards[str(ctx.guild_id)][0][1]: # otherwise just automatically populate it on the leaderboard without announing a record
                 star = emoji.emojize(':glowing_star:')
                 await ctx.channel.send(embed=discord.Embed(title=(str(3 * star) + "Wow! {} has made a new record!" + str(3 * star)).format(ctx.user.name),description="Drumroll please... " + emoji.emojize(":drum:"), color=discord.Colour.gold()))
                 await asyncio.sleep(2)
@@ -943,22 +953,23 @@ class PipikBot(commands.Cog):
         except KeyError:
             user.methods = 0
         if currmethods == 127 and "desperate" not in user.achi:
-            await self.updateUserAchi(ctx,ctx.user, "desperate")
+            await self.updateUserAchi(ctx, ctx.user, "desperate")
         if currmethods | user.methods != user.methods:
             await self.updateUserStats(user, "methods", user.methods | currmethods)
         if user.methods == 127 and "tested" not in user.achi:
-            await self.updateUserAchi(ctx,ctx.user, "tested")
+            await self.updateUserAchi(ctx, ctx.user, "tested")
 
         # final printer
         footertext = f'{emoji.emojize(":handshake:",language="alias") if currmethods & 1 else ""}{emoji.emojize(":heart_eyes:",language="alias") if currmethods & 2 else ""}{emoji.emojize(":thermometer:",language="alias") if currmethods & 4 else ""}{emoji.emojize(":sunrise:",language="alias") if currmethods & 8 else ""}{emoji.emojize(":fist:",language="alias") if currmethods & 16 else ""}{emoji.emojize(":pill:",language="alias") if currmethods & 32 else ""}{emoji.emojize(":waning_gibbous_moon:",language="alias") if currmethods & 64 else ""}'
         embedMsg.title = f"*{ctx.user.display_name}* has **{pipik}** cm long pp!"
         embedMsg.description = str("o" + (min(4094, (int(pipik) // 10)) * "=") + "3")
-        embedMsg.set_footer(text=footertext,icon_url=ctx.user.avatar.url)
+        embedMsg.set_footer(text=footertext, icon_url=ctx.user.avatar.url)
         embedMsg.timestamp = datetime.now()
         if msg:
             await msg.edit(embed=embedMsg)
         else:
             await ctx.send(embed=embedMsg)
-    
-def setup(client,baselogger):
-    client.add_cog(PipikBot(client,baselogger))
+
+
+def setup(client, baselogger):
+    client.add_cog(PipikBot(client, baselogger))

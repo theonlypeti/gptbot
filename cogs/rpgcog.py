@@ -5,7 +5,7 @@ from collections import defaultdict
 from functools import partial
 from io import BytesIO
 from math import ceil
-from typing import Union, List, Type, Iterable, Optional
+from typing import Union, Type, Iterable, Optional
 import nextcord as discord
 from PIL import Image
 from nextcord.ext import commands
@@ -23,9 +23,13 @@ manaicon = ':comet:'
 # manaicon = ':crystal_ball:'
 weighticon = emoji.emojize(":person_lifting_weights:")
 roman_numerals = {1:"",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII",8:"VIII",9:"IX",10:"X"}
+close_icon = emoji.emojize(":x:", language="alias")
 
 
 def chance(percent: Union[int, float]) -> bool:
+    """params:
+    percent: int or float: 0 - 100 % chance of returning True
+    returns: bool"""
     return choices((True, False), weights=(percent, 100-percent))[0]
 
 
@@ -99,9 +103,12 @@ class Noise(object):
         # plt.show()
         return grid
 
+
 def addLoot(inventory, loot):
+    """Adds loot to inventory
+    Warning! Groups items together based on their display_name!"""
     if isinstance(loot, RPGGame.Item):
-        loot: List[RPGGame.Item] = [loot]
+        loot: list[RPGGame.Item] = [loot]
     elif isinstance(loot, dict):
         loot: Iterable[RPGGame.Item] = loot.values()
     for item in loot:
@@ -118,19 +125,28 @@ def removeItem(inventory, item):
         if inventory[item.display_name].amount <= 0:
             del inventory[item.display_name]
 
+
 class RPGGame:
 
     class Spawner:
+        """
+        Parameters:
+            object:
+                The Game object to spawn, be it Enemy or Item
+            chances:
+                a dict where {1:100,2:50,3:10} means there's a 100% chance to spawn 1 of the object, 50% to spawn 2 etc.
+                alternatively a range has equal chance to spawn any amount of the Item in the range
+        """
         def __init__(self, object, chances: dict[int, float] | range):
             self.object: RPGGame.Enemy | RPGGame.Item = object
-            self.chances: dict[int,int] = chances # chances is a dict where {1:100,2:50,3:10} means theres a 100% chance to spawn 1 of the object, 50% to spawn 2 etc
+            self.chances = chances # chances is a dict where {1:100,2:50,3:10} means theres a 100% chance to spawn 1 of the object, 50% to spawn 2 etc
 
         def spawn(self):
             if isinstance(self.chances, dict):
                 for possibility, percent in reversed(self.chances.items()): #bullshit error, still works
                     if chance(percent):
                         if isinstance(self.object, RPGGame.Enemy):
-                            return [new(self.object)] * possibility
+                            return [new(self.object) for _ in range(possibility)]
                         else:
                             obj = new(self.object)
                             obj.amount = possibility
@@ -148,14 +164,14 @@ class RPGGame:
     class SpellUpgradeSelect(discord.ui.Select):
         def __init__(self, page: int = 0, itemsOnPage=25, player=None, paginator=None):
             self.pagi = paginator
-            self.spelllist: List[RPGGame.Spell] = player.spells[page * itemsOnPage:(page + 1) * itemsOnPage]
+            self.spelllist: list[RPGGame.Spell] = player.spells[page * itemsOnPage:(page + 1) * itemsOnPage]
             ableToUpgrade = len(self.spelllist)  # TODO determine when to be able to upgrade, take it from player attr
             plholdertext = "Pick a spell to upgrade" if ableToUpgrade else "Cannot upgrade spells right now."
-            options = [i.toDropdown(index=n) for n, i in enumerate(self.spelllist, start=0)] or [discord.SelectOption(label="None")]
+            options = [i.toDropdown(index=n) for n, i in enumerate(self.spelllist, start=1)] or [discord.SelectOption(label="None")]
             super().__init__(options=options, row=0, custom_id="select", disabled=not ableToUpgrade, placeholder=plholdertext)
 
         async def callback(self, interaction: discord.Interaction):
-            picked = int(self.values[0])
+            picked = int(self.values[0])-1
             self.spelllist[picked].lvlup(1)
             await self.pagi.render(interaction)
 
@@ -175,7 +191,7 @@ class RPGGame:
 
         async def callback(self, interaction: discord.Interaction):
             picked = self.values[0]
-            removeItem(self.player.inventory,self.player.inventory[picked])
+            removeItem(self.player.inventory, self.player.inventory[picked])
             # self.player.inventory[picked] -= 1
             await self.pagi.render(interaction)
 
@@ -222,7 +238,7 @@ class RPGGame:
             self.player._base_agility += 1
             await self.finishlevelup(ctx)
 
-        @discord.ui.button(emoji=emoji.emojize(":x:", language="alias"), label="Back", style=discord.ButtonStyle.grey)
+        @discord.ui.button(emoji=close_icon, label="Back", style=discord.ButtonStyle.grey)
         async def backbutton(self, button, ctx):
             await RPGCog.backToMap(ctx, self.player)
 
@@ -262,8 +278,8 @@ class RPGGame:
         def __init__(self, name, manacost: str | int, effects, selfeffects=None, hpcost: str|int = 0, duration: str|int = 0, cooldown: str|int=0, lvl=1, maxlvl=10, description=''):
             self.name = name
             self._manacost = manacost
-            self.effects: List[RPGGame.Effect] = effects or []
-            self.selfeffects: List[RPGGame.Effect] = selfeffects or [] #effects that are applied to the user regardless of target, something like weakening, or siphoning
+            self.effects: list[RPGGame.Effect] = effects or []
+            self.selfeffects: list[RPGGame.Effect] = selfeffects or [] #effects that are applied to the user regardless of target, something like weakening, or siphoning
             self._hpcost = hpcost
             self._duration = duration
             self._max_cooldown = cooldown
@@ -377,7 +393,7 @@ class RPGGame:
         def __init__(self, name, hp):
             self.display_name: str = name
             self.hp: int = hp
-            self.effects: List[RPGGame.Effect] = []
+            self.effects: list[RPGGame.Effect] = []
             self.stunned: bool = False
 
         # def tickEffects(self): #i think implemented somewhere else?
@@ -431,7 +447,7 @@ class RPGGame:
         def attack(self, targets):  # TODO to be rewritten for each type of enemy, e.g. frost golem deals freeze effect
             target: RPGGame.Player = random.choice(targets)
             target.hp -= self.atk
-            return f"{self.display_name} hit {target.display_name} for {self.atk}" #barbarian archer snipes x, frost golem freezes x
+            return f"{self.display_name} hit {target.display_name} for {self.atk} damage" #barbarian archer snipes x, frost golem freezes x
 
     class Undead(Enemy):
         def __init__(self, *args, **kwargs):
@@ -499,7 +515,7 @@ class RPGGame:
 
     class Consumable(Item):
         def __init__(self, *args, effects=None, **kwargs):
-            self.effects: List[RPGGame.Effect] = effects or []
+            self.effects: list[RPGGame.Effect] = effects or []
             super().__init__(*args, **kwargs)
 
         def use(self, user, battle):
@@ -637,7 +653,7 @@ class RPGGame:
         @property
         def shorteffect(self):
             effstr = ""
-            effect = self
+            effect = self #do not delete even if it shows greyed out!!!
             for k,v in self.__dict__.items():
                 if k.endswith("effect") and not k.startswith("_"):
                     if fl := int(v["flat"]()):
@@ -666,10 +682,10 @@ class RPGGame:
             self.loot = {}
             self.type = "land"
             if parameter > 0.95:
-                self.possibleEnemies: List[RPGGame.Spawner] = [
+                self.possibleEnemies: list[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Enemy("Dragon", 200, 15, 500, 500, {}), {1:100}) # finish
                                                                ]
-                self.possibleLoot: List[RPGGame.Spawner] = [
+                self.possibleLoot: list[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Item("Cobblestone", 4, 2, 1), range(2, 5))
                 ]
                 self.icon = ":white_large_square:"
@@ -677,10 +693,10 @@ class RPGGame:
                 self.discoverableChance = 0.3
                 self.name = "Snowy peaks"
             elif parameter > 0.8:
-                self.possibleEnemies: List[RPGGame.Spawner] = [
+                self.possibleEnemies: list[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Enemy("Witch", 30, 8, 60, 25, {}), {1: 60})
                 ]
-                self.possibleLoot: List[RPGGame.Spawner] = [
+                self.possibleLoot: list[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Item("Berries", 1, 5, 1), range(2, 5))
                 ]
                 self.icon = ":brown_square:"
@@ -693,7 +709,7 @@ class RPGGame:
                     self.discoverableChance = 1
                     self.icon = ":european_castle:"
                     self.enemyChance = 0.001
-                    self.possibleEnemies: List[RPGGame.Spawner] = [
+                    self.possibleEnemies: list[RPGGame.Spawner] = [
                         RPGGame.Spawner(RPGGame.Enemy("Bandit", 20, 6, 40, 20, {}), range(2, 5))
                     ]
                     self.possibleLoot = []
@@ -702,10 +718,10 @@ class RPGGame:
                     self.enemyChance = 0.35
                     self.discoverableChance = 0.6
                     self.name = "Forest"
-                    self.possibleEnemies: List[RPGGame.Spawner] = [
+                    self.possibleEnemies: list[RPGGame.Spawner] = [
                         RPGGame.Spawner(RPGGame.Animal("Wolf", 15, 6, 30, 10, {}), {1: 20, 2:50, 3:50})
                     ]
-                    self.possibleLoot: List[RPGGame.Spawner] = [
+                    self.possibleLoot: list[RPGGame.Spawner] = [
                         RPGGame.Spawner(RPGGame.Item("Wood", 3, 4, 1), range(1, 4))
                     ]
             elif parameter > 0.2:
@@ -713,10 +729,10 @@ class RPGGame:
                 self.enemyChance = 0.2
                 self.discoverableChance = 0.6
                 self.name = "Sandy beaches"
-                self.possibleEnemies: List[RPGGame.Spawner] = [
+                self.possibleEnemies: list[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Animal("Crab", 10, 3, 20, 5, {}), {1: 70, 2: 60})
                 ]
-                self.possibleLoot: List[RPGGame.Spawner] = [
+                self.possibleLoot: list[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Item("Sea Shells", 1, 10, 1), range(1, 3))
                 ]
             else:
@@ -725,10 +741,10 @@ class RPGGame:
                 self.discoverableChance = 0.3
                 self.name = "Ocean"
                 self.type = "water"
-                self.possibleEnemies: List[RPGGame.Spawner] = [
+                self.possibleEnemies: list[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Animal("Shark", 15, 10, 50, 0, {}), {1: 30})
                 ]
-                self.possibleLoot: List[RPGGame.Spawner] = [
+                self.possibleLoot: list[RPGGame.Spawner] = [
                     RPGGame.Spawner(RPGGame.Item("Clam", 1, 12, 1), range(1, 2))
                 ]
             self.isDiscoverable = False
@@ -765,7 +781,7 @@ class RPGGame:
             self.walkicon: str = f":{gender}_walking:"
             self.swimicon: str = f":{gender}_swimming:"
             self.surficon: str = f":{gender}_surfing:"
-            self.position: List[int, int] = [randint(2, terkep.mapsize-2), randint(2, terkep.mapsize-2)] #has to be list
+            self.position: list[int, int] = [randint(2, terkep.mapsize-2), randint(2, terkep.mapsize-2)] #has to be list
             self.terkep: RPGGame.Terkep = terkep                        #the map theyre playing on
             self.terkep.players.append(self) #add the player on the map itself, for if they re playing multiplayer
             self._base_view_distance: int = 5
@@ -773,7 +789,7 @@ class RPGGame:
             self.discovered_mask = [[False for i in range(self.terkep.mapsize)] for i in range(self.terkep.mapsize)] #generate full hidden mask
             self.discovered_img = Image.new("RGBA", self.terkep.image.size,(0,0,0,255))
             self.inBattle: bool = False
-            self.team: List[RPGGame.Player] = [self]
+            self.team: list[RPGGame.Player] = [self]
             self.statistics: dict[str:int] = defaultdict(int)
 
             self.lvl: int = 1
@@ -792,7 +808,7 @@ class RPGGame:
                     "Feet": new(RPGGame.starter_boots)
                 }
             self.inventory: dict[str, RPGGame.Item] = {} #weapons, armor, potions, everything looted etc
-            self.effects: List[RPGGame.Effect] = [] #effects like poison, stun, etc
+            self.effects: list[RPGGame.Effect] = [] #effects like poison, stun, etc
             self.spells: list[RPGGame.Spell] = []
 
             self.defend = 0
@@ -985,32 +1001,40 @@ class RPGGame:
                 return
 
         class EquipSlot(discord.ui.Select):
-            def __init__(self, itemtype, itemslot, player, backembed, backview):
-                self.itemtype = itemtype
+            def __init__(self, itemtype, itemslot, player, backembed, backview, paginator, page, itemsOnPage: int = 25):
+                self.itemsOnPage = itemsOnPage
+                self.page = page
+                self.itemtype: tuple = itemtype
                 self.backembed = backembed
                 self.backview = backview
                 self.player = player
                 self.itemslot = itemslot
-                optionen = [discord.SelectOption(label="Cancel", emoji=emoji.emojize(":x:", language="alias"), value="-1")]
-                for index, item in enumerate([*self.player.inventory.values(),*self.player.spells]):  # find each item/spell in inventory/spells
-                    logger.debug(f"{self.itemtype=},{self.itemslot=},{item=},{index=}")
-                    if isinstance(item, itemtype): #that has the right type
-                        optionen.append(item.toDropdown(index))
-                super().__init__(placeholder="Select an item to equip", options=optionen)
+                self.pagi = paginator
+                self.items: list[RPGGame.Equipment] = [v for v in [*self.player.spells, *self.player.inventory.values()] if isinstance(v, self.itemtype)][page * itemsOnPage:(page + 1) * itemsOnPage]
+                hasItems = bool(self.items)
+                logger.debug(f"{page=},{itemsOnPage=},{len(self.items)}")
+                pholdertext = "Pick an item to equip" if hasItems else "No items to equip"
+                self.player: RPGGame.Player = player  # could i remove the dependency of having the player here and just use the inv from the paginator?
+                options = []
+                for n, item in enumerate(
+                        self.items,
+                        start=1): #must not start with 0!
+                    options.append(item.toDropdown(index=n))
+                super().__init__(options=options or [discord.SelectOption(label="Empty")], row=0, custom_id="select", placeholder=pholdertext, disabled= not hasItems)
 
             async def callback(self, ctx):
                 player: RPGGame.Player = self.player
-                selected = int(self.values[0])
+                selected = int(self.values[0])-1 #must not start with 0
                 if selected != -1:
                     #list(player.inventory.values())[selected],player.equipment[self.itemslot] = player.equipment[self.itemslot],list(player.inventory.values())[selected]
-                    toSlot: RPGGame.Equipment|RPGGame.Spell = [*self.player.inventory.values(), *self.player.spells][selected] #item to slot, no the slot to use
+                    toSlot: RPGGame.Equipment|RPGGame.Spell = self.items[selected] #item to slot, no the slot to use
                     if not isinstance(toSlot, RPGGame.Spell):
                         toSlot = new(toSlot)
                         toSlot.amount = 1
                     slotted = player.equipment[self.itemslot]
                     if not isinstance(slotted, RPGGame.Spell):
                         slotted: RPGGame.Equipment = new(slotted)
-                        slotted.amount = min(1, slotted.amount) #to not slot empty hands or empty armor
+                        slotted.amount = min(1, slotted.amount) #to not slot empty hands or empty armor #this takes out ONE item if you have multiple, unless the item is not slottable
                         addLoot(player.inventory, slotted)
                         removeItem(player.inventory, toSlot)
                     player.equipment[self.itemslot] = toSlot
@@ -1020,14 +1044,14 @@ class RPGGame:
             def __init__(self, func, select, inv, itemsOnPage: int = 25, kwargs=None):
                 self.mykwargs = kwargs or {}
                 self.page = 0
-                self.func = func
+                self.func = func #list inv or list spells etc
                 self.select = select
                 self.itemsOnPage = itemsOnPage
                 self.inv = inv
                 super().__init__()
                 self.update()
                 if self.select:
-                    self.add_item(select(self.page, self.itemsOnPage, paginator=self, **kwargs))
+                    self.add_item(select(page=self.page, itemsOnPage=self.itemsOnPage, paginator=self, **self.mykwargs))
 
             def update(self):
                 self.maxpages = ceil(len(self.inv) / self.itemsOnPage)
@@ -1041,7 +1065,7 @@ class RPGGame:
                 self.page = (self.page - 1) % self.maxpages
                 await self.render(interaction)
 
-            @discord.ui.button(emoji=emoji.emojize(':next_track_button:'),row=1)
+            @discord.ui.button(emoji=emoji.emojize(':next_track_button:'), row=1)
             async def forw(self, button, interaction: discord.Interaction):
                 self.page = (self.page + 1) % self.maxpages
                 await self.render(interaction)
@@ -1055,10 +1079,14 @@ class RPGGame:
                 if self.select:
                     for n,child in enumerate(self.children):
                         if child.custom_id == "select":
-                            self.children[n] = self.select(self.page, self.itemsOnPage, paginator=self, **self.mykwargs)
+                            self.children[n] = self.select(page=self.page, itemsOnPage=self.itemsOnPage, paginator=self, **self.mykwargs)
                             break
                     # logger.info(self.children)
-                await interaction.edit(embed=self.func(self.page, self.itemsOnPage), view=self)
+                if self.func:
+                    await interaction.edit(embed=self.func(self.page, self.itemsOnPage), view=self)
+                else:
+                    await interaction.edit(view=self)
+
 
         def listInv(self, page=0, numOfItems=25):
             #logger.debug(self.inventory)
@@ -1085,57 +1113,106 @@ class RPGGame:
                 self.backview: discord.ui.View = backview
                 super().__init__()
 
+            class BackToEquipment(discord.ui.Button):
+                def __init__(self, player, be, bw):
+                    self.player = player
+                    self.be = be
+                    self.bw = bw
+                    super().__init__(emoji=emoji.emojize(":left_arrow:"), custom_id="btmb")
+
+                async def callback(self, ctx: discord.Interaction):
+                    await ctx.edit(embed=self.player.showEqp(), view=self.player.EquipButtons(self.player, self.be, self.bw), attachments=[])
+
             @discord.ui.button(emoji=emoji.emojize(':womans_hat:', language="alias"))
             async def headbutton(self, button, ctx):
-                viewObj = discord.ui.View()
-                viewObj.add_item(
-                    self.player.EquipSlot([RPGGame.HeadArmor], "Head", self.player, self.backembed, self.backview))
-                await ctx.edit(view=viewObj)
+                inv = self.player.Paginator(func=None, select=self.player.EquipSlot, inv=[i for i in self.player.inventory.values() if isinstance(i, RPGGame.HeadArmor)],
+                                            kwargs={"player": self.player, "itemtype": (RPGGame.HeadArmor), "itemslot": "Head", "backembed": self.backembed, "backview": self.backview})
+                back_to_map_button = self.BackToEquipment(self.player,self.backembed,self.backview)
+                back_to_map_button.row = 2
+                inv.add_item(back_to_map_button)
+                await inv.render(ctx)
 
             @discord.ui.button(emoji=emoji.emojize(":t-shirt:", language="alias"))
             async def chestbutton(self, button, ctx):
-                viewObj = discord.ui.View()
-                viewObj.add_item(
-                    self.player.EquipSlot(RPGGame.ChestArmor, "Chest", self.player, self.backembed, self.backview))
-                await ctx.edit(view=viewObj)
+                inv = self.player.Paginator(func=None, select=self.player.EquipSlot,
+                                            inv=[i for i in self.player.inventory.values() if isinstance(i, RPGGame.ChestArmor)],
+                                            kwargs={"player": self.player, "itemtype": (RPGGame.ChestArmor),
+                                                    "itemslot": "Chest", "backembed": self.backembed,
+                                                    "backview": self.backview})
+                back_to_map_button = self.BackToEquipment(self.player, self.backembed, self.backview)
+                back_to_map_button.row = 2
+                inv.add_item(back_to_map_button)
+                await inv.render(ctx)
 
             @discord.ui.button(emoji=emoji.emojize(":jeans:", language="alias"))
             async def legsbutton(self, button, ctx):
-                viewObj = discord.ui.View()
-                viewObj.add_item(
-                    self.player.EquipSlot(RPGGame.LegsArmor, "Legs", self.player, self.backembed, self.backview))
-                await ctx.edit(view=viewObj)
+                inv = self.player.Paginator(func=None, select=self.player.EquipSlot,
+                                            inv=[i for i in self.player.inventory.values() if
+                                                 isinstance(i, RPGGame.LegsArmor)],
+                                            kwargs={"player": self.player, "itemtype": (RPGGame.LegsArmor),
+                                                    "itemslot": "Legs", "backembed": self.backembed,
+                                                    "backview": self.backview})
+                back_to_map_button = self.BackToEquipment(self.player, self.backembed, self.backview)
+                back_to_map_button.row = 2
+                inv.add_item(back_to_map_button)
+                await inv.render(ctx)
 
             @discord.ui.button(emoji=emoji.emojize(":hiking_boot:", language="alias"))
             async def shoesbutton(self, button, ctx):
-                viewObj = discord.ui.View()
-                viewObj.add_item(
-                    self.player.EquipSlot(RPGGame.FeetArmor, "Feet", self.player, self.backembed, self.backview))
-                await ctx.edit(view=viewObj)
+                inv = self.player.Paginator(func=None, select=self.player.EquipSlot,
+                                            inv=[i for i in self.player.inventory.values() if
+                                                 isinstance(i, RPGGame.FeetArmor)],
+                                            kwargs={"player": self.player, "itemtype": (RPGGame.FeetArmor),
+                                                    "itemslot": "Feet", "backembed": self.backembed,
+                                                    "backview": self.backview})
+                back_to_map_button = self.BackToEquipment(self.player, self.backembed, self.backview)
+                back_to_map_button.row = 2
+                inv.add_item(back_to_map_button)
+                await inv.render(ctx)
 
             @discord.ui.button(emoji=emoji.emojize(":gloves:", language="alias"))
             async def glovesbutton(self, button, ctx):
-                viewObj = discord.ui.View()
-                viewObj.add_item(
-                    self.player.EquipSlot(RPGGame.HandsArmor, "Hands", self.player, self.backembed, self.backview))
-                await ctx.edit(view=viewObj)
+                inv = self.player.Paginator(func=None, select=self.player.EquipSlot,
+                                            inv=[i for i in self.player.inventory.values() if
+                                                 isinstance(i, RPGGame.HandsArmor)],
+                                            kwargs={"player": self.player, "itemtype": (RPGGame.HandsArmor),
+                                                    "itemslot": "Gloves", "backembed": self.backembed,
+                                                    "backview": self.backview})
+                back_to_map_button = self.BackToEquipment(self.player, self.backembed, self.backview)
+                back_to_map_button.row = 2
+                inv.add_item(back_to_map_button)
+                await inv.render(ctx)
 
             @discord.ui.button(emoji=emoji.emojize(":left-facing_fist:", language="alias"))
             async def lefthandbutton(self, button, ctx):
-                viewObj = discord.ui.View()
-                viewObj.add_item(self.player.EquipSlot(RPGGame.HandEquippable, "Left hand", self.player, self.backembed, self.backview))
-                await ctx.edit(view=viewObj)
+                inv = self.player.Paginator(func=None, select=self.player.EquipSlot,
+                                            inv=[i for i in self.player.inventory.values() if
+                                                 isinstance(i, RPGGame.HandEquippable)],
+                                            kwargs={"player": self.player, "itemtype": (RPGGame.HandEquippable),
+                                                    "itemslot": "Left hand", "backembed": self.backembed,
+                                                    "backview": self.backview})
+                back_to_map_button = self.BackToEquipment(self.player, self.backembed, self.backview)
+                back_to_map_button.row = 2
+                inv.add_item(back_to_map_button)
+                await inv.render(ctx)
 
             @discord.ui.button(emoji=emoji.emojize(":right-facing_fist:", language="alias"))
             async def righthandbutton(self, button, ctx):
-                viewObj = discord.ui.View()
-                viewObj.add_item(self.player.EquipSlot(RPGGame.HandEquippable, "Right hand", self.player, self.backembed, self.backview))
-                await ctx.edit(view=viewObj)
+                inv = self.player.Paginator(func=None, select=self.player.EquipSlot,
+                                            inv=[i for i in self.player.inventory.values() if
+                                                 isinstance(i, RPGGame.HandEquippable)],
+                                            kwargs={"player": self.player, "itemtype": (RPGGame.HandEquippable),
+                                                    "itemslot": "Right hand", "backembed": self.backembed,
+                                                    "backview": self.backview})
+                back_to_map_button = self.BackToEquipment(self.player, self.backembed, self.backview)
+                back_to_map_button.row = 2
+                inv.add_item(back_to_map_button)
+                await inv.render(ctx)
 
-            @discord.ui.button(emoji=emoji.emojize(":x:", language="alias"))
+            @discord.ui.button(emoji=close_icon)
             async def cancelbutton(self, button, ctx):
                 #self.player.checkLvlUp(self.backview)
-                if hasattr(self.backview, "toStop"):
+                if hasattr(self.backview, "toStop"): #if in a battle, stop the current turn
                     self.backview.stop()
                 else:
                     await ctx.edit(view=self.backview, embed=self.backembed)
@@ -1221,8 +1298,8 @@ class RPGGame:
                 image_binary.seek(0)
                 return discord.File(fp=image_binary, filename=f'map.png')
 
-        async def potionChugging(self, ctx, myview):
-            potions = [i for i in self.inventory.values() if isinstance(i,RPGGame.Consumable)]
+        async def potionChugging(self, ctx, myview):  #todo paginate?
+            potions = [i for i in self.inventory.values() if isinstance(i, RPGGame.Consumable)]
             viewObj = discord.ui.View()
             viewObj.add_item(self.PotionSelectView(self, potions, myview))
             # await ctx.edit(content="\n".join((i.showeffects() for i in potions)), view=viewObj)
@@ -1232,7 +1309,7 @@ class RPGGame:
             def __init__(self, user, potions, myview):
                 self.user = user
                 self.myview = myview
-                self.potions: List[RPGGame.Consumable] = potions
+                self.potions: list[RPGGame.Consumable] = potions
                 options = [i.toDropdown(index=n) for n,i in enumerate(self.potions)]
                 logger.debug(options)
                 options.extend([discord.SelectOption(label="Cancel", value="-1")])
@@ -1254,24 +1331,24 @@ class RPGGame:
 
     class Terkep(object):
         #@print_durations
-        def __init__(self, size, seed, window):
+        def __init__(self, size: int, seed: int, window: int):
             self.mapsize = size
-            self.grid: List[List[RPGGame.Tile]] = Noise.makeMap(size, 1.5, seed)
-            self.seed: int = seed
-            self.players: List[RPGGame.Player] = []
-            self.window = window
+            self.grid: list[list[RPGGame.Tile]] = Noise.makeMap(size, 1.5, seed)
+            self.seed = seed
+            self.players: list[RPGGame.Player] = []
+            self.window = window #window size
             self.tileRespawnTimer: int = 10
-            self.visitedTiles: List[RPGGame.Tile] = [] #these tiles are not to process for n amount of turns
+            self.visitedTiles: list[RPGGame.Tile] = [] #these tiles are not to be processed for n (tileRespawnTimer) amount of turns
 
-            tiles = {"Ocean": Image.new("RGB", (10, 10), (0, 0, 255)),
+            tiles = {"Ocean": Image.new("RGB", (10, 10), (0, 0, 255)), #todo move to tile initialization
                      "Forest": Image.new("RGB", (10, 10), (0, 255, 0)),
                      "Snowy peaks": Image.new("RGB", (10, 10), (255, 255, 255)),
                      "Mountains": Image.new("RGB", (10, 10), (127, 127, 127)),
                      "Sandy beaches": Image.new("RGB", (10, 10), (200, 200, 0)),
                      "Town": Image.new("RGB", (10, 10), (200, 0, 200))
                      }
-            ni = Image.new("RGB", (self.mapsize * 10, self.mapsize * 10),(0, 0, 0))  # todo dynamic size to not make it 4k?
-            for n, tile in enumerate(self.tiles()): #todo make this on grid generation?
+            ni = Image.new("RGB", (self.mapsize * 10, self.mapsize * 10), (0, 0, 0))  # todo dynamic size to not make it 4k?
+            for n, tile in enumerate(self.tiles()): #todo make this on grid generation? idk how
                 ni.paste(tiles[tile.name], ((n % self.mapsize) * 10, (n // self.mapsize) * 10))
             self.image = ni #Image.fromarray look at?
 
@@ -1280,7 +1357,7 @@ class RPGGame:
                 for col in row:
                     yield col
 
-        def getTileAt(self, coords: List[int]):
+        def getTileAt(self, coords: list[int]):
             return self.grid[coords[0]][coords[1]]
 
         def __repr__(self):
@@ -1314,7 +1391,7 @@ class RPGGame:
 
     class Battlefield(object):
         def __init__(self, players: list, enemies: list, loot: dict, player, interaction: discord.Interaction):
-            self.players: List[RPGGame.Player] = players
+            self.players: list[RPGGame.Player] = players
             self.player: RPGGame.Player = player
             self.enemies: list[RPGGame.Enemy] = enemies
             self.interaction: discord.Interaction = interaction
@@ -1532,7 +1609,7 @@ class RPGCog(commands.Cog):
 
         @discord.ui.button(style=discord.ButtonStyle.gray, emoji=emoji.emojize(":shirt:", language="alias"))
         async def showeqpbut(self, button, interaction: discord.Interaction):
-            await interaction.edit(embed=self.player.showEqp(), view=self.player.EquipButtons(self.player, interaction.message.embeds[0], self),attachments=[])
+            await interaction.edit(embed=self.player.showEqp(), view=self.player.EquipButtons(self.player, interaction.message.embeds[0], self), attachments=[])
 
         #---------------------------row1--------------------------------------------
 
@@ -1544,8 +1621,8 @@ class RPGCog(commands.Cog):
         async def explore(self, button, interaction: discord.Interaction):
             tile = self.player.getCurrentTile()
             tile.isDiscoverable = False
-            button.disabled = True
-            await self.startfight(self.player.team, tile.enemies, tile.loot, self.player, interaction)
+            # button.disabled = True
+            await RPGGame.Battlefield(self.player.team, tile.enemies, tile.loot, self.player, interaction).battle()
 
         @discord.ui.button(style=discord.ButtonStyle.gray, emoji=emoji.emojize(":right_arrow:"), row=1)
         async def moveright(self, button, interaction):
@@ -1554,7 +1631,7 @@ class RPGCog(commands.Cog):
         @discord.ui.button(style=discord.ButtonStyle.gray, emoji=emoji.emojize(":package:", language="alias"), row=1)
         async def showinvbut(self, button, interaction):
             #await interaction.send(embed=self.player.showEqp(),view=self.player.EquipButtons())
-            inv = self.player.Paginator(self.player.listInv,RPGGame.InventoryDeleteSelect,self.player.inventory,kwargs={"player":self.player})
+            inv = self.player.Paginator(self.player.listInv, RPGGame.InventoryDeleteSelect, self.player.inventory, kwargs={"player": self.player})
             back_to_map_button = self.BackToMapButton(self.player)
             back_to_map_button.row = 2
             inv.add_item(back_to_map_button)
@@ -1577,13 +1654,13 @@ class RPGCog(commands.Cog):
         async def showlvlupbut(self, button, interaction):
             embedVar = discord.Embed(title="You have levelled up!", description=f"You have reached level **{self.player.lvl}**! You are now able to upgrade one of your attributes.", color=interaction.user.color)
             embedVar.add_field(
-                name=f"Strength {self.player.strength} {emoji.emojize(':right_arrow:')} {self.player.strength + 1}",
+                name=f"Strength {self.player.strength}" + f"{emoji.emojize(':right_arrow:')} {self.player.strength + 1}" if self.player.xp >= self.player.xpreq else "",
                 value="Strength increases your **maximum health**, **health regeneration** and **weapon attack power**")
             embedVar.add_field(
-                name=f"Intelligence {self.player.intelligence} {emoji.emojize(':right_arrow:')} {self.player.intelligence + 1}",
+                name=f"Intelligence {self.player.intelligence}" + f"{emoji.emojize(':right_arrow:')} {self.player.intelligence + 1}" if self.player.xp >= self.player.xpreq else "",
                 value="Intelligence increases your **maximum mana**, **mana regeneration** and **spell effectivity**")
             embedVar.add_field(
-                name=f"Agility {self.player.agility} {emoji.emojize(':right_arrow:')} {self.player.agility + 1}",
+                name=f"Agility {self.player.agility}" + f"{emoji.emojize(':right_arrow:')} {self.player.agility + 1}" if self.player.xp >= self.player.xpreq else "",
                 value="Agility increases your **inventory capacity**, **parry** and **hit chances** and also increases your chance of **escaping** tough fights.")
             await interaction.edit(embed=embedVar, view=RPGGame.LvlUpButtons(self.player), attachments=[])
 
@@ -1606,7 +1683,7 @@ class RPGCog(commands.Cog):
                 await interaction.edit(content=None, file=self.player.showmap()) #content is not hidden but nevermind, wont be so empty when i click on equipment edit napriklad
             pass
 
-        @discord.ui.button(style=discord.ButtonStyle.red, emoji=emoji.emojize(":x:", language="alias"), row=4)
+        @discord.ui.button(style=discord.ButtonStyle.red, emoji=close_icon, row=4)
         async def hidemapbutton(self, button, interaction):
             await interaction.response.edit_message(
                 content="Map removed to improve the the Discord app's performance with their poor emoji rendering",
@@ -1620,17 +1697,12 @@ class RPGCog(commands.Cog):
             async def callback(self, ctx: discord.Interaction):
                 await RPGCog.backToMap(ctx, self.player)
 
-        async def startfight(self, players, enemies, loot, player, interaction: discord.Interaction):
-            battle = RPGGame.Battlefield(players, enemies, loot, player, interaction)
-            #await battle.display_fight()
-            await battle.battle()
-
     @discord.slash_command(name="map", description="testing", guild_ids=[860527626100015154, 601381789096738863])
     async def makemap(self, ctx,
                       mapsize: int = discord.SlashOption(name="mapsize", description="map x and y diameter in tiles", required=False, min_value=14, max_value=700, default=56),
                       seed: int = discord.SlashOption(name="seed", description="map generator seed", required=False, min_value=0, max_value=100, default=randint(0, 100))):
         await ctx.response.defer()
-        #print(seed) #67 stripey, 51 quadrants,71 horizontal stripes, 34 veritcal stripes 56 seed, 51 circular quadrants
+        #print(seed) #67 stripey, 51 quadrants,71 horizontal stripes, 34 veritcal stripes 56 seed, 51 circular quadrants, 87 unnaturally straight
         terkep = RPGGame.Terkep(mapsize, seed, 14) #due to discord limitations, it is not possible to have a bigger view screen, as discord cuts off emojis
         player: RPGGame.Player = RPGGame.Player(ctx.user, terkep)
         pant2 = new(RPGGame.starter_pants)
@@ -1648,15 +1720,18 @@ class RPGCog(commands.Cog):
             RPGGame.Effect("Healing", duration=1, hpeffect={"flat": "20", "multiplier": 0, "set": -1}),
             RPGGame.Effect("Regeneration", duration="5",hpeffect={"flat": "3", "multiplier": 0, "set": -1})
         ])
-        addLoot(player.inventory,poti)
+        addLoot(player.inventory, poti)
         # items = [RPGGame.Item(display_name=chr(i),weight=1,price=1) for i in range(ord("a"),ord("z"))]
-        # addLoot(player.inventory,items)
-        addLoot(player.inventory,[RPGGame.Item(display_name="aa",weight=285,amount=1)])
+        items = [RPGGame.HeadArmor(display_name=chr(i),weight=1,price=1) for i in range(ord("a"),ord("z")+1)]
+        addLoot(player.inventory, items)
+        items = [RPGGame.ChestArmor(display_name=chr(i) * 2, weight=1, price=1) for i in range(ord("a"), ord("z") + 1)]
+        addLoot(player.inventory, items)
+        # addLoot(player.inventory,[RPGGame.Item(display_name="aa",weight=285,amount=1)])
         spell2 = new(spell)
         spell2.lvlup(2)
         logger.info(spell)
-        # player.spells.append(spell)
-        # player.spells.append(spell2)
+        player.spells.append(spell)
+        player.spells.append(spell2)
         # player.equipment["Right hand"] = player.spells[0]
         # player.equipment["Left hand"] = player.spells[1]
         viewObj = self.MapMoveButtons(player)

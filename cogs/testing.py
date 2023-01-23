@@ -1,13 +1,10 @@
-import asyncio
 import logging
 import os
 import random
 from io import BytesIO
-from typing import Union, Optional
 import nextcord as discord
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 from nextcord.ext import commands
-from pycaw.utils import AudioUtilities
 
 TESTSERVER = (860527626100015154,)
 
@@ -22,8 +19,6 @@ class Testing(commands.Cog):
         self.logger = baselogger.getChild(__name__)
         self.selection = None
         self.client: discord.Client = client
-        self.logger.info("I spun up")
-        print("I am a print")
 
     class testvw(discord.ui.View):
         def __init__(self):
@@ -89,8 +84,8 @@ class Testing(commands.Cog):
             return
         os.chdir(r"D:\Users\Peti.B\Pictures\microsoft\Windows\shop")
         sample = [file for file in os.listdir() if not file.endswith(".mp4")]
-        await ctx.send(files=[discord.File(random.choice(sample))])
         os.chdir(orig)
+        await ctx.send(files=[discord.File(random.choice(sample))])
 
     @fut.subcommand(name="kat", description="kat")
     async def fut4(self, ctx):
@@ -100,8 +95,8 @@ class Testing(commands.Cog):
             return
         os.chdir(r"D:\Users\Peti.B\Pictures\Mobil Backup\other\pokemons\KT")
         sample = [file for file in os.listdir() if not file.endswith(".mp4")]
-        await ctx.send(files=[discord.File(random.choice(sample))])
         os.chdir(orig)
+        await ctx.send(files=[discord.File(random.choice(sample))])
 
     @fut.subcommand(name="reddit")
     async def fut2(self, ctx):
@@ -111,15 +106,15 @@ class Testing(commands.Cog):
             return
         os.chdir(r"D:\Users\Peti.B\Pictures\microsoft\Windows\reddit")
         sample = [file for file in os.listdir() if not file.endswith(".mp4")]
-        await ctx.send(files=[discord.File(random.choice(sample))])
         os.chdir(orig)
+        await ctx.send(files=[discord.File(random.choice(sample))])
 
     async def showimg(self,
-                    interface: Union[discord.Interaction, discord.Message],
-                    img: Image,
-                    filetype: str,
-                    view: discord.ui.View = None,
-                    txt:str = None) -> discord.Message:
+                      interface: discord.Interaction | discord.Message,
+                      img: Image,
+                      filetype: str,
+                      view: discord.ui.View = None,
+                      txt:str = None) -> discord.Message:
 
         with BytesIO() as image_binary:
             if img:

@@ -847,7 +847,8 @@
             "breaking_bad",
             "morning",
             "lucky_draw",
-            "pill_popper"
+            "pill_popper",
+            "friend_need"
         ],
         "items": [
             [
@@ -906,8 +907,8 @@
         ],
         "pb": 369.945,
         "pw": 1.0,
-        "cd": "2022-07-21T10:28:24.375971",
-        "methods": 21,
+        "cd": null,
+        "methods": 85,
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 1,

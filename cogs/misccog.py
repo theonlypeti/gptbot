@@ -42,7 +42,7 @@ class MiscallenousCog(commands.Cog):
             await ctx.send(embed=embedVar)
 
     @discord.slash_command(description="Encrypt/Decrypt", name="caesar")
-    async def caesar_modal(self,ctx):
+    async def caesar_modal(self, ctx: discord.Interaction):
         modal = self.CaesarModal(title="ROT13 cypher")
         await ctx.response.send_modal(modal)
 

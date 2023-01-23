@@ -10,7 +10,7 @@ class PsCog(commands.Cog):
     def __init__(self, client, baselogger):
         global pslogger
         self.client = client
-        pslogger = baselogger.getChild("PsLogger")
+        pslogger = baselogger.getChild(f"{__name__}logger")
 
     class BroadcastCalcModal(discord.ui.Modal):
         def __init__(self):
@@ -24,7 +24,7 @@ class PsCog(commands.Cog):
                 gener = broadcasty(ip)
             except ValueError as e:
                 pslogger.error(e)
-                return interaction.send(f"Oopsie {e}")
+                return interaction.send(f"Oopsie \n{e}")
             embedVar = discord.Embed(title="Broadcast kalkulačka", description=f"pre adresu {ip}", color=interaction.user.color, timestamp=datetime.now())
             broadcaststr, idstr = "", ""
             for ip in gener:

@@ -1,16 +1,15 @@
 import asyncio
 import json
-import logging
 import os
 import random
 import re
 from datetime import datetime
 from io import BytesIO
 from typing import Literal
-
 import emoji
 import nextcord as discord
 from PIL import Image
+from utils.paginator import Paginator
 from nextcord.ext import commands
 from utils.antimakkcen import antimakkcen
 from utils.getMsgFromLink import getMsgFromLink
@@ -60,6 +59,12 @@ class EmoteCog(commands.Cog):
         self.saveEmotes()
 
     @commands.command()
+    async def unregisterEmote(self, ctx, *attr):
+        for emoji in attr:
+            del self.discord_emotes[emoji]
+        self.saveEmotes()
+
+    @commands.command()
     async def registerAnimatedEmotes(self, ctx, howmany: int):
         howmany = int(howmany)
         for emoji in reversed(ctx.message.guild.emojis):
@@ -78,10 +83,10 @@ class EmoteCog(commands.Cog):
             self.client = client
             self.emotes = emotes
             self.message = message
-            for k in ["same", "mood", "true", "kekw", "kekno", "kekfu", "kekwait", "kekcry", "kekdoubt", "tiny",
+            for k in ["mood", "pog", "kekno", "kekfu", "kekwait", "kekcry", "kekdoubt", "tiny",
                       "peepoheart", "tired", "jerrypanik", "hny", "minor_inconvenience", "doggo", "funkyjam",
                       "business", "business2", "tavozz", "concern", "amusing", "ofuk",
-                      "ohgod"]:  # populating the select component with options
+                      "ohgod", "blunder"]:  # populating the select component with options
                 self.optionen.append(discord.SelectOption(label=k, value=self.emotes[k], emoji=self.emotes[k]))
             super().__init__(placeholder="Select an emote", options=self.optionen)
 
@@ -108,9 +113,9 @@ class EmoteCog(commands.Cog):
     async def react(self, interaction, message):
         viewObj = discord.ui.View()
         viewObj.add_item(self.ReactSelect(message, self.client, self.discord_emotes))
-        await interaction.send("Dont forget to click the react yourself too! Also spamming emotes might trip up the anti-spam filter.",ephemeral=True, view=viewObj)
+        await interaction.send("Don't forget to click the react yourself too! Also spamming emotes might trip up the anti-spam filter.", ephemeral=True, view=viewObj)
 
-    @discord.slash_command(name="emote", description="For using special emotes") #TODO split these to subcommands, react, send and list? #im kinda happy with this rn
+    @discord.slash_command(name="emote", description="For using special emotes")  # TODO split these to subcommands, react, send and list? #im kinda happy with this rn
     async def emote(self, ctx: discord.Interaction,
                     emote = discord.SlashOption(name="emoji", #don't typehint this one, will not show the options automatically
                                                      description="An emoji name, leave blank if you want to list them all out.",
@@ -190,19 +195,32 @@ class EmoteCog(commands.Cog):
 
             except Exception as e:
                 emotelogger.error(e)
-                await ctx.send(e, ephemeral=True)
+                await ctx.send(str(e), ephemeral=True)
                 raise e
 
         elif not emote:
             emotestr = ";".join([f"{v} {k}" for k, v in self.discord_emotes.items()])
+            splitat = 0
+            embeds = []
             if emotestr:
-                splitat = emotestr.rfind(";", 0, 4096)
-                embedVar = discord.Embed(title="Emotes", description=emotestr[:splitat], color=ctx.user.color)
-                if len(emotestr) > 4096:
-                    for i in range(splitat, len(emotestr), 1024): #TODO do splitat here too
-                        embedVar.add_field(name=i, value=emotestr[i:min(i + 1024, len(emotestr))]) #or rpratition()
-                embedVar.set_footer(text=f"{len(emotestr)} / 6000 chars in one message")
-                await ctx.send(embed=embedVar, ephemeral=True)
+                while True:
+                    prevslice = splitat
+                    splitat = emotestr.rfind(";", prevslice, prevslice+4096)
+                    embeds.append(discord.Embed(title="Emotes", description=emotestr[prevslice:splitat], color=ctx.user.color))
+
+                    # if len(emotestr) > 4096:
+                    #     for i in range(splitat, len(emotestr), 1024): #TODO do splitat here too
+                    #         embedVar.add_field(name=i, value=emotestr[i:min(i + 1024, len(emotestr))]) #or rpratition()
+                    #embedVar.set_footer(text=f"{len(emotestr)} / 6000 chars in one message")
+
+                    if len(emotestr) - splitat <= 4096:
+                        embeds.append(discord.Embed(title="Emotes", description=emotestr[splitat:len(emotestr)], color=ctx.user.color))
+                        break
+                [embed.set_footer(text=f"page {n}/{len(embeds)}") for n, embed in enumerate(embeds, start=1)]
+
+                pagi = Paginator(func=lambda pagin: embeds[pagin.page], select=None, inv=embeds, itemsOnPage=1)
+                await pagi.render(ctx, ephemeral=True)
+                # await ctx.send(embeds=embeds, ephemeral=True)
             return
         else:
             await ctx.send("What")
@@ -223,7 +241,7 @@ class EmoteCog(commands.Cog):
             get_near_emote.append(get_near_emote[0] + "+flipV")
         await interaction.response.send_autocomplete(get_near_emote)
 
-    @emote.on_autocomplete("text") #does not really work
+    @emote.on_autocomplete("text")  # does not really work
     async def emote_autocomplete(self, interaction, text: str):
         if not text:
             return None
@@ -232,7 +250,6 @@ class EmoteCog(commands.Cog):
         if emote:
             get_near_emote = [text[0]+text[1]+i+"}" for i in self.discord_emotes.keys() if i.casefold().startswith(emote.casefold())]
             get_near_emote = get_near_emote[:25]
-            #emotelogger.debug(get_near_emote)
             await interaction.response.send_autocomplete(get_near_emote)
 
     class AddReactLettersModal(discord.ui.Modal):
@@ -242,7 +259,7 @@ class EmoteCog(commands.Cog):
             self.word = discord.ui.TextInput(label="Word")
             self.add_item(self.word)
 
-        async def callback(self, interaction): #TODO add question mark (and exclamation mark)
+        async def callback(self, interaction):  # TODO add question mark (and exclamation mark)
             word = ""
             emotelogger.info(f"{interaction.user} word-reacts {self.word.value} on message {self.message.content}")
             myword = antimakkcen(self.word.value)
@@ -257,9 +274,11 @@ class EmoteCog(commands.Cog):
                     word += chr(9410)
                 elif letter == "O" and chr(127397 + ord("O")) in word:
                     word += chr(127358)
+                elif letter == " ":
+                    word += emoji.emojize(":blue_square:")
                 else:
                     word += chr(127397 + ord(letter.upper()))
-            word = list(dict.fromkeys(antimakkcen(word))) #what the hell is this doing
+            word = list(dict.fromkeys(antimakkcen(word))) #what the hell is this doing is this just a set() but with extra steps? ACTUALLY YES set is unordered, dict is ordered!!!!
             if len(word) != len(myword):
                 await interaction.send("Word has duplicate letter, can't make out the whole word", ephemeral=True)
             else:
@@ -269,7 +288,7 @@ class EmoteCog(commands.Cog):
                 await self.message.add_reaction(letter)
 
     @discord.message_command(name="Word react")
-    async def reacts(self, interaction: discord.Interaction, message: discord.Message):
+    async def wordreact(self, interaction: discord.Interaction, message: discord.Message):
         await interaction.response.send_modal(self.AddReactLettersModal(message))
 
 

@@ -11,13 +11,10 @@ import pint
 class ConverterCog(commands.Cog):
     def __init__(self, client, baselogger):
         self.client = client
-        self.converterLogger = baselogger.getChild('converterLogger')
-        #if platform.system() == "Windows":
-        #    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        #asyncio.run(self.getCurrList()) #not preferred,  RuntimeError: There is no current event loop in thread 'MainThread'. in other cogs
+        self.converterLogger = baselogger.getChild(f"{__name__}logger")
         self.getCurrList.start()
 
-    @tasks.loop(count=1) #ok workaround, however count=1 loops it twice
+    @tasks.loop(hours=24)
     async def getCurrList(self):
         async with aiohttp.ClientSession() as session:
             async with session.get('https://raw.githubusercontent.com/fawazahmed0/currency-api/1/latest/currencies.json') as req:

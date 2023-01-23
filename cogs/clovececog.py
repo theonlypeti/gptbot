@@ -100,12 +100,12 @@ class LobbyCog(commands.Cog):
                 midnight = datetime(year=tomorrow.year, month=tomorrow.month, day=tomorrow.day, hour=0, minute=0, second=0)
                 embedVar = discord.Embed(title="Daily spin token", description="You already collected your spin token today.", color=ctx.user.color)
                 timestr = "<t:"+str(int(midnight.timestamp()))+":R>"
-                embedVar.add_field(name="Come back",value=timestr)
+                embedVar.add_field(name="Come back", value=timestr)
                 await ctx.send(embed=embedVar)
                 return
             elif (user.dailyDate - date.today()) <= timedelta(days=-1): #if picking up daily
                 embedVar = discord.Embed(title="Daily spin token", color=ctx.user.color)
-                embedVar.add_field(name="You've got:",value=f"{spinTokenIcon} **1** x **Spin token**")
+                embedVar.add_field(name="You've got:", value=f"{spinTokenIcon} **1** x **Spin token**")
                 await ctx.send(embed=embedVar,view=self.SpinButton(self))
             else:
                 cloveceLogger.error(f"something is wrong,{user.dailyDate},{date.today()},{user.dailyDate - date.today()}")
@@ -566,7 +566,7 @@ class LobbyCog(commands.Cog):
             await self.lobby.messageid.edit(embed=self.lobby.show(), view=self.cog.LobbyView(self.cog,self.lobby))
                 
     @clovece.subcommand(name="play", description="Makes a lobby for a človeče game.")
-    async def makeLobby(self,ctx,private=discord.SlashOption(name="private", description="Do you wish to create a public lobby or a private one",required=False,default="Public",choices=("Public","Private"))):
+    async def makeLobby(self, ctx: discord.Interaction, private=discord.SlashOption(name="private", description="Do you wish to create a public lobby or a private one",required=False,default="Public",choices=("Public","Private"))):
         user = self.getUserFromDC(ctx.user)
         if user.inLobby:
             await ctx.send(embed=discord.Embed(title=f"You are already in a lobby. Try {mentionCommand(self.client,'clovece leave')}", color=discord.Color.red()),ephemeral=True)

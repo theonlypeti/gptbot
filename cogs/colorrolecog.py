@@ -14,12 +14,14 @@ import emoji
 # TODO maybe keep last used colors on server
 # TODO add cooldown
 # TODO nextcord.roleselect
+# TODO make a color preview image instead of emojis
+# TODO make buttons for nudging the colors by 1 or 5 or so for each RGB
 
 
 class ColorRoleCog(commands.Cog):
     def __init__(self, client, baselogger):
         global logger
-        logger = baselogger.getChild("colorrolelogger")
+        logger = baselogger.getChild(f"{__name__}logger")
         self.colorstopick = 4
         self.client = client
         self.getemoteserver.start()  #funky workaround but works
@@ -58,9 +60,12 @@ class ColorRoleCog(commands.Cog):
             self.add_item(self.btext)
 
         async def callback(self, ctx):
-            dccolor = discord.Color.from_rgb(int(self.rtext.value), int(self.gtext.value), int(self.btext.value))
-            await self.cog.setcustomcolor(ctx, dccolor)
-            await ctx.send(embed=discord.Embed(title="Color changed", color=dccolor), ephemeral=True)
+            try:
+                dccolor = discord.Color.from_rgb(int(self.rtext.value), int(self.gtext.value), int(self.btext.value))
+                await self.cog.setcustomcolor(ctx, dccolor)
+                await ctx.send(embed=discord.Embed(title="Color changed", color=dccolor), ephemeral=True)
+            except Exception as e:
+                await ctx.send(embed=discord.Embed(title="Invalid color", description=str(e)), ephemeral=True)
 
     class MyColorSelect(discord.ui.Select):
         def __init__(self, palette, emojis, cog):
@@ -76,7 +81,7 @@ class ColorRoleCog(commands.Cog):
                 color = self.palette[int(self.values[0])]
                 dccolor = discord.Color.from_rgb(*color)
                 await self.cog.setcustomcolor(interaction, dccolor)
-                await interaction.edit(view=None, embed=discord.Embed(title="Color changed", color=dccolor))
+                await interaction.edit(view=None, embed=discord.Embed(title="Color changed", color=dccolor), delete_after=60)
             else:
                 await interaction.edit(view=None, embed=discord.Embed(title="Cancelled", color=interaction.user.color), delete_after=5)
             emotes = [e for e in self.cog.emoteserver.emojis if e.name in ["a".join(map(str, color)) for color in self.palette]]
@@ -96,8 +101,8 @@ class ColorRoleCog(commands.Cog):
             for emote in emotes:
                 await self.cog.emoteserver.delete_emoji(emote) #todo delete message too
 
-        async def interaction_check(self, interaction: discord.Interaction) -> bool:
-            return interaction.user == self.user
+        # async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        #     return interaction.user == self.user
 
     async def setcustomcolor(self, interaction: discord.Interaction, dccolor) -> bool:
         highest_role = interaction.user.roles[-1]
@@ -135,22 +140,25 @@ class ColorRoleCog(commands.Cog):
         await interaction.response.send_modal(modal)
 
     async def pickColorFromPic(self, interaction: discord.Interaction, image: discord.File):
-        color_thief = ColorThief(image.fp)
-        palette = list(set(color_thief.get_palette(color_count=self.colorstopick)))
-        emojis = []
-        if not self.emoteserver:
-            self.emoteserver = self.client.get_guild(957469186798518282)
-        assert self.emoteserver.emoji_limit - len(self.emoteserver.emojis) > self.colorstopick #TODO add if, warning and make separate emojis
-        for n, color in enumerate(palette):
-            im1 = npzeros((100, 100, 3), dtype='uint8')
-            im1[:, :] = color
-            with BytesIO() as image_binary:
-                imsave(image_binary, im1, format="png")
-                image_binary.seek(0)
-                emojis.append(await self.emoteserver.create_custom_emoji(name="a".join(map(str, color)), image=discord.File(fp=image_binary)))
-        viewObj = self.MyColorView(palette, self, interaction.user)
-        viewObj.add_item(self.MyColorSelect(palette, emojis, self))
-        await interaction.send(view=viewObj)
+        try:
+            color_thief = ColorThief(image.fp)
+            palette = list(set(color_thief.get_palette(color_count=self.colorstopick)))
+            emojis = []
+            if not self.emoteserver:
+                self.emoteserver = self.client.get_guild(957469186798518282)
+            assert self.emoteserver.emoji_limit - len(self.emoteserver.emojis) > self.colorstopick #TODO add if, warning and make separate emojis
+            for n, color in enumerate(palette):
+                im1 = npzeros((100, 100, 3), dtype='uint8')
+                im1[:, :] = color
+                with BytesIO() as image_binary:
+                    imsave(image_binary, im1, format="png")
+                    image_binary.seek(0)
+                    emojis.append(await self.emoteserver.create_custom_emoji(name="a".join(map(str, color)), image=discord.File(fp=image_binary)))
+            viewObj = self.MyColorView(palette, self, interaction.user)
+            viewObj.add_item(self.MyColorSelect(palette, emojis, self))
+            await interaction.send(view=viewObj)
+        except Exception as e:
+            await interaction.send(embed=discord.Embed(title="Error", description=str(e), color=discord.Color.red()), delete_after=60)
 
     @mycolor.subcommand(description="Lets you pick your color from any uploaded picture.")
     async def image(self, interaction, uploaded: discord.Attachment = discord.SlashOption(name="image", description="The image from which the colors are picked from.", required=True)):

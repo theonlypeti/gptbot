@@ -1,7 +1,6 @@
 from io import BytesIO
 from logging import Logger
 from math import ceil
-from typing import Union, Tuple, List
 import emoji
 import nextcord as discord
 from nextcord.ext import commands #remove in all cogs? used for prefix cmds
@@ -121,7 +120,7 @@ class PillowCog(commands.Cog):
         @discord.ui.button(label="Split as multiple emotes")
         async def splitemotesbutton(self, button, interaction: discord.Interaction):
             emotesneeded = ceil(self.img.width / 256) * ceil(self.img.height/256)
-            if interaction.guild.emoji_limit - len(interaction.guild.emojis) < emotesneeded:
+            if interaction.guild.emoji_limit - len([i for i in interaction.guild.emojis if not i.animated]) < emotesneeded:
                 await interaction.send(embed=discord.Embed(description=f"Not enough emote slots on this server. {emotesneeded} needed", color=discord.Color.red()), delete_after=15)
                 return
             modal = self.cog.NameEmoteModal(self, "split")
@@ -509,7 +508,7 @@ class PillowCog(commands.Cog):
             await self.returnView.cog.show(interaction.message, thumbnail, self.returnView.filetype, self.returnView)
 
     class SelectionMoveModal(discord.ui.Modal):
-        def __init__(self, boundaries: Tuple[int, int, int, int], returnView):
+        def __init__(self, boundaries: tuple[int, int, int, int], returnView):
             super().__init__(title="Move crop boundaries")
             self.boundaries = boundaries
             self.returnView = returnView
@@ -540,7 +539,7 @@ class PillowCog(commands.Cog):
             await self.returnView.cog.show(interaction.message, thumbnail, self.returnView.filetype, self.returnView)
 
     class SelectionExpandModal(discord.ui.Modal):
-        def __init__(self, boundaries: Tuple[int, int, int, int], view):
+        def __init__(self, boundaries: tuple[int, int, int, int], view):
             super().__init__(title="Expand/Shrink crop boundaries")
             self.boundaries = boundaries
             self.returnView = view
@@ -568,7 +567,7 @@ class PillowCog(commands.Cog):
             await self.returnView.cog.show(interaction.message, thumbnail, self.returnView.filetype, self.returnView)
 
     class SelectionMakeModal(discord.ui.Modal):
-        def __init__(self, boundaries: Tuple[int, int, int, int], view):
+        def __init__(self, boundaries: tuple[int, int, int, int], view):
             super().__init__(title="Set selection boundaries")
             self.returnView = view
             boundaries = boundaries or (0, 0, self.returnView.img.width, self.returnView.img.height)
@@ -622,7 +621,6 @@ class PillowCog(commands.Cog):
             textsize = (img.width//10) * max(mult, 0.5)
             textsize = int(max(textsize, 20)) #todo devize an algorithm to determine optimal size
             fnt = ImageFont.truetype('impact.ttf', size=textsize) #TODO font select maybe? who knows maybe when modal dropdowns are available
-            #fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeMono.ttf", 40)
 
             textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": img.width//100, "fill": (255, 255, 255), "anchor": "mm"}
             d.multiline_text((img.width/2, textsize), top, **textconfig)
@@ -635,7 +633,7 @@ class PillowCog(commands.Cog):
             await self.returnView.cog.returnMenu(self.returnView)
 
     class AttachmentSelectDropdown(discord.ui.Select):
-        def __init__(self, attachments: List[discord.Attachment], cog):
+        def __init__(self, attachments: list[discord.Attachment], cog):
             self.cog = cog
             self.attachments = attachments
             opts = [discord.SelectOption(label=i.filename, value=str(n)) for n, i in enumerate(attachments)]
@@ -696,7 +694,7 @@ class PillowCog(commands.Cog):
         copy.thumbnail(THUMBNAIL_SIZE)
         return copy
 
-    async def returnMenu(self, view: Union[SelectionView, CorrectionsView, EditorView]):
+    async def returnMenu(self, view: SelectionView | CorrectionsView | EditorView):
         ft = view.filetype
         if view.selection:
             th = self.drawSelection(view.img, view.selection)
@@ -704,7 +702,7 @@ class PillowCog(commands.Cog):
             th = self.makeThumbnail(view)
         await self.show(view.message, img=th, filetype=ft, view=view)
 
-    async def show(self, interface: Union[discord.Interaction, discord.Message], img: Image, filetype: str, view: discord.ui.View = None) -> discord.Message:
+    async def show(self, interface: discord.Interaction | discord.Message, img: Image, filetype: str, view: discord.ui.View = None) -> discord.Message:
         with BytesIO() as image_binary:
             img.save(image_binary, filetype)
             image_binary.seek(0)

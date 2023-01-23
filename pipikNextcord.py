@@ -26,6 +26,7 @@ parser = argparse.ArgumentParser(prog=f"PipikBot V{version}", description='A fan
 for cog in os.listdir("./cogs"):
     if cog.endswith("cog.py"):
         parser.add_argument(f"--no_{cog.removesuffix('cog.py')}", action="store_true", help=f"Disable {cog} extension.")
+        parser.add_argument(f"--only_{cog.removesuffix('cog.py')}", action="store_true", help=f"Enable only the {cog} extension.")
 
 parser.add_argument("--minimal", action="store_true", help="Disable most of the extensions.")
 parser.add_argument("--debug", action="store_true", help="Enable debug mode.")
@@ -95,7 +96,7 @@ intents = discord.Intents.all() #TODO remember what do i use members intent for?
 intents.presences = False
 intents.typing = True
 
-client = commands.Bot(command_prefix='&', intents=intents, chunk_guilds_at_startup=True, status=discord.Status.online, activity=discord.Game(name="Booting up...")) #TODO chunk_guilds_at_startup=False might help me
+client = commands.Bot(command_prefix='&', intents=intents, chunk_guilds_at_startup=True, status=discord.Status.offline, activity=discord.Game(name="Booting up...")) #TODO chunk_guilds_at_startup=False might help me
 client.remove_command('help')
 
 # TODO play with this @commands.has_permissions(manage_server=True) only applicable to prefix commands, slash has smth else
@@ -314,16 +315,15 @@ for file in files:
         with open(root+r"/utils/"+file, "r", encoding="UTF-8") as f:
             linecount += len(f.readlines())
 
-allcogs = [cog for cog in os.listdir("./cogs") if cog.endswith(".py")]
-if args.minimal:
-    cogs = ["testing.py"]
-else:
-    cogs = allcogs[:]
-    for cog in reversed(cogs):
-        if cog.endswith("cog.py"):
-            if args.__getattribute__(f"no_{cog.removesuffix('cog.py')}"):
-                cogs.remove(cog)
-cogs.remove("testing.py") if args.no_testing else None
+allcogs = [cog for cog in os.listdir("./cogs") if cog.endswith("cog.py")]
+cogs = ["testing.py"]
+if not args.minimal:  # if not minimal
+    if not [not cogs.append(cog) for cog in allcogs if args.__getattribute__(f"only_{cog.removesuffix('cog.py')}")]: #load all the cogs that are marked to be included with only_*
+        cogs = allcogs[:]  # if no cogs are marked to be exclusively included, load all of them
+        for cog in reversed(cogs):  # remove the cogs that are marked to be excluded with no_*
+            if args.__getattribute__(f"no_{cog.removesuffix('cog.py')}"):  # if the cog is marked to be excluded
+                cogs.remove(cog)  # remove it from the list of cogs to be loaded
+cogs.remove("testing.py") if args.no_testing else None  # remove testing.py from the list of cogs to be loaded if testing is disabled
 
 for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know how many cogs to load and so dont know how to format loading bar
     with open("./cogs/"+file, "r", encoding="UTF-8") as f:
