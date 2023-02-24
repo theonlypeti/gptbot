@@ -257,7 +257,8 @@
                     ":heart_eyes:",
                     ":stuck_out_tongue_winking_eye:",
                     ":disguised_face:",
-                    ":smirk_cat:"
+                    ":smirk_cat:",
+                    ":zany_face:"
                 ],
                 "plants": [
                     ":tulip:",
@@ -440,13 +441,13 @@
             "Second places": 0,
             "Third places": 0,
             "Dice thrown": 105,
-            "Spins": 185,
-            "Default icons owned": 154,
+            "Spins": 186,
+            "Default icons owned": 155,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":vampire:",
         "ready": false,
-        "dailyDate": "2022-08-08T00:00:00",
+        "dailyDate": "2023-01-29",
         "inLobby": null
     },
     {
@@ -1388,7 +1389,7 @@
         },
         "icon": ":white_circle:",
         "ready": false,
-        "dailyDate": "2022-12-09",
+        "dailyDate": "2022-12-09T00:00:00",
         "inLobby": null
     }
 ]

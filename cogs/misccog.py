@@ -17,7 +17,7 @@ class MiscallenousCog(commands.Cog):
         global logger
         logger = baselogger.getChild(f"{__name__}Logger")
         self.client = client
-        with open(r"data/karomkodasok.txt","r", encoding="UTF-8") as file:
+        with open(r"data/karomkodasok.txt", "r", encoding="UTF-8") as file:
             self.karomkodasok = file.readlines()
         logger.debug(f"{len(self.karomkodasok)} bad words loaded.")
 

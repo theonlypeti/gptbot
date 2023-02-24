@@ -53,6 +53,15 @@ class Paginator(discord.ui.View):
             ch.disabled = True
         await self.msg.edit(view=self)
 
+    def mergeview(self, view: discord.ui.View, row=2):
+        """Merges a discord.ui.View into this one.
+        It is intended to be used with buttons no more than 5
+        :param view: the view whose children to put into the paginator
+        :param row: which row to put the items into."""
+        for item in view.children:
+            item.row = row
+            self.add_item(item)
+
     def update(self) -> None:
         """Updates the paginator.
         This is called automatically when the buttons are pressed and the paginator is rendered.
@@ -66,9 +75,9 @@ class Paginator(discord.ui.View):
 
     # Add a back button manually with View.add_item, appropriate to the situation you are in
 
-    async def render(self, interaction: discord.Interaction, ephemeral: bool = False) -> None:
+    async def render(self, interaction: discord.Interaction | discord.TextChannel, ephemeral: bool = False, **kwargs) -> None:
         """Renders the paginator.
-        :param interaction: The interaction that triggered the paginator. Can be an interaction or a message.
+        :param interaction: The interaction that triggered the paginator. Can be an interaction or a channel.
         :param ephemeral: Whether to send the paginator as an ephemeral message."""
         self.update()
         if self.select:
@@ -76,13 +85,19 @@ class Paginator(discord.ui.View):
                 if child.custom_id == "select":
                     self.children[n] = self.select(self)
                     break
-        if interaction.message:  # if it's an interaction, ergo it is sent for the first time
+        if not isinstance(interaction, discord.TextChannel) and interaction.message:  # if it's a message, ergo it is to be edited
             if self.func:
-                await interaction.edit(embed=self.func(self), view=self)
+                await interaction.edit(embed=self.func(self), view=self, **kwargs)
             else:
-                await interaction.edit(view=self)
-        else:  # if it's a message, ergo it is to be edited
-            if self.func:
-                self.msg = await interaction.send(embed=self.func(self), view=self, ephemeral=ephemeral)
+                await interaction.edit(view=self, **kwargs)
+        else:  # if it's an interaction, ergo it is sent for the first time
+            if isinstance(interaction, discord.TextChannel):
+                if self.func:
+                    self.msg = await interaction.send(embed=self.func(self), view=self, **kwargs)
+                else:
+                    self.msg = await interaction.send(view=self, **kwargs)
             else:
-                self.msg = await interaction.send(view=self, ephemeral=ephemeral)
+                if self.func:
+                    self.msg = await interaction.send(embed=self.func(self), view=self, ephemeral=ephemeral, **kwargs)
+                else:
+                    self.msg = await interaction.send(view=self, ephemeral=ephemeral, **kwargs)

@@ -85,6 +85,7 @@ class ColorRoleCog(commands.Cog):
             else:
                 await interaction.edit(view=None, embed=discord.Embed(title="Cancelled", color=interaction.user.color), delete_after=5)
             emotes = [e for e in self.cog.emoteserver.emojis if e.name in ["a".join(map(str, color)) for color in self.palette]]
+            logger.debug(emotes)
             for emote in emotes: #todo maybe remove all emojis that match the naming scheme if sometime ago they werent deleted?
                 logger.debug(f"removing {emote}")
                 await self.cog.emoteserver.delete_emoji(emote)

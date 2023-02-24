@@ -105,7 +105,6 @@
     "wumpusheart": "<a:wumpusheart:987086556835758160>",
     "winetime": "<a:winetime:976119101174988900>",
     "drink": "<a:drink:976119099950256149>",
-    "pnb": "<:pnb:993850353021882469>",
     "frogomg": "<:frogomg:959063344856309831>",
     "wah": "<:wah:922566373761228850>",
     "sweating": "<:sweating:997846195932254218>",
@@ -153,5 +152,9 @@
     "blunder": "<:blunder:1066505202418589736>",
     "mistake": "<:mistake:1066505198551433328>",
     "bawl": "<:bawl:1066505214598848512>",
-    "wickedsmart": "<:wickedsmart:1066505205417521262>"
+    "wickedsmart": "<:wickedsmart:1066505205417521262>",
+    "huh": "<:huh:957960035688923146>",
+    "mmshrug": "<:mmshrug:1075795101051256922>",
+    "duckflirty": "<:duckflirty:957962697293594634>",
+    "duckyuwu": "<:duckyuwu:957961251093356555>"
 }

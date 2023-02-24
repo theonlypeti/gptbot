@@ -84,7 +84,7 @@ class EmoteCog(commands.Cog):
             self.emotes = emotes
             self.message = message
             for k in ["mood", "pog", "kekno", "kekfu", "kekwait", "kekcry", "kekdoubt", "tiny",
-                      "peepoheart", "tired", "jerrypanik", "hny", "minor_inconvenience", "doggo", "funkyjam",
+                      "peepoheart", "tired", "jerrypanik", "hny", "minor_inconvenience", "hapi", "funkyjam",
                       "business", "business2", "tavozz", "concern", "amusing", "ofuk",
                       "ohgod", "blunder"]:  # populating the select component with options
                 self.optionen.append(discord.SelectOption(label=k, value=self.emotes[k], emoji=self.emotes[k]))

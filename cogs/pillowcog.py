@@ -14,11 +14,12 @@ THUMBNAIL_SIZE = (720, 480)
 #TODO use layers, use dropdowns to select them and shit
 #TODO make custom emojis for the buttons
 
+
 class PillowCog(commands.Cog):
     def __init__(self, client, baselogger: Logger):
-        global pillowlogger
+        global logger
         self.client = client
-        pillowlogger = baselogger.getChild("pillowlogger")
+        logger = baselogger.getChild(f"{__name__}logger")
 
     class Selection:
         def __init__(self, img: Image, boundary: tuple):
@@ -66,7 +67,7 @@ class PillowCog(commands.Cog):
 
         @discord.ui.button(label="Corrections", style=discord.ButtonStyle.gray,emoji=emoji.emojize(':level_slider:'), disabled=False)
         async def slidersbutton(self, button, interaction: discord.Interaction):
-            await interaction.response.defer()
+            # await interaction.response.defer()
             viewObj = self.cog.CorrectionsView(self)
             await self.message.edit(view=viewObj)  # contrast, saturation, brightness, hue?, gamma?
 
@@ -172,7 +173,7 @@ class PillowCog(commands.Cog):
                         for w in range(0, tw, 256):
                             nw = w + 256
                             em = ni.copy()
-                            pillowlogger.debug(f"{h=},{w=},{nh=},{nw=}")
+                            logger.debug(f"{h=},{w=},{nh=},{nw=}")
                             em = em.crop((w, h, nw, nh)) #TODO dont copy if doesnt modify orig image
                             with BytesIO() as image_binary:
                                 em.save(image_binary, "png")
@@ -183,8 +184,8 @@ class PillowCog(commands.Cog):
                     await interaction.response.defer()
                     emote = self.emote.value
                     if not emoji.is_emoji(emote) and not emoji.is_emoji(emote := emoji.emojize(f":{emote.strip(':')}:", language="alias")):
-                        pillowlogger.debug(emote)
-                        await interaction.send(embed=discord.Embed(description="You need to supply a default emoji.", color=discord.Color.red()))
+                        logger.debug(emote)
+                        await interaction.send(embed=discord.Embed(description="You need to supply a default emoji.", color=discord.Color.red()), delete_after=15)
                         return
                     em = self.img.copy()
                     em.thumbnail((320, 320))
@@ -204,7 +205,7 @@ class PillowCog(commands.Cog):
             except discord.Forbidden:
                 await interaction.send(embed=discord.Embed(description="The bot does not have manage server or manage emojis permissions.", color=discord.Color.red()))
             except discord.HTTPException as e:
-                pillowlogger.error(f"{e}")
+                logger.error(f"{e}")
                 await interaction.send(f"{e}")
 
     class RescaleView(discord.ui.View):
@@ -484,7 +485,7 @@ class PillowCog(commands.Cog):
             w, h = self.returnView.img.size  #glossary: nw,nh=new width/height;asp,nasp= (new) aspect ratio; hdiff,wdiff = height/width difference;
             nw, nh = map(int, self.values[0].split(":"))
             asp, nasp = h/w, nh/nw
-            pillowlogger.debug(f"{w=},{h=},,{nh=},{nw=},,{asp=},{nasp=}")
+            logger.debug(f"{w=},{h=},,{nh=},{nw=},,{asp=},{nasp=}")
             if asp > nasp:  # crop from top/bottom
                 nh = h/asp
                 nh *= nasp
@@ -499,8 +500,8 @@ class PillowCog(commands.Cog):
             left = wdiff
             bottom = h - hdiff
             right = w - wdiff
-            pillowlogger.debug(f"{w=},{h=},,{nh=},{nw=},,{asp=},{nasp=}")
-            pillowlogger.debug(f"{top=},{left=},{bottom=},{right=}")
+            logger.debug(f"{w=},{h=},,{nh=},{nw=},,{asp=},{nasp=}")
+            logger.debug(f"{top=},{left=},{bottom=},{right=}")
             self.returnView.selection = ()
             boundaries = (int(left), int(top), int(right), int(bottom))
             self.returnView.boundaries = boundaries

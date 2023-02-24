@@ -868,19 +868,19 @@ class RPGGame:
             self.agility = self._base_agility
 
             for effect in reversed(self.effects):
-                if hasattr(effect,"strengtheffect"): #nope getattring the player attributes wont work
+                if hasattr(effect, "strengtheffect"): #nope getattring the player attributes wont work
                     self.strength += int(effect.strengtheffect["flat"]())
                     self.strength = float(effect.strengtheffect["multiplier"]())*self.strength
                     if se := int(effect.strengtheffect["set"]()) >= 0:
                         self.strength = se
 
-                if hasattr(effect,"intelligenceeffect"):
+                if hasattr(effect, "intelligenceeffect"):
                     self.intelligence += int(effect.intelligenceeffect["flat"]())
                     self.intelligence = float(effect.intelligenceeffect["multiplier"]())*self.intelligence
                     if ie := int(effect.intelligenceeffect["set"]()) >= 0:
                         self.intelligence = ie
 
-                if hasattr(effect,"agilityeffect"):
+                if hasattr(effect, "agilityeffect"):
                     self.agility += int(effect.agilityeffect["flat"]())
                     self.agility = float(effect.agilityeffect["multiplier"]())*self.agility
                     if ae := int(effect.agilityeffect["set"]()) >= 0:

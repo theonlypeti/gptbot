@@ -206,7 +206,8 @@ async def on_reaction_add(reaction: discord.Reaction, user):
 
     if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>", "<:hapi:889603218273878118>", ":joy:"):
         #if reaction.message.author.id in (569937005463601152, 422386822350635008):
-        if True:
+        if reaction.message.guild.id == 601381789096738863:
+        # if True:
             if user.id == reaction.message.author.id: # (569937005463601152, 422386822350635008):
                 kapja: discord.Member = reaction.message.author
                 already_checked.append(reaction.message.id)
@@ -218,9 +219,10 @@ async def on_reaction_add(reaction: discord.Reaction, user):
                 timeouts[str(kapja.id)] += 1
                 pipikLogger.debug(timeouts)
 
-    elif emoji.demojize(str(reaction.emoji)) in (":thumbs_down:","<:2head:913874980033421332>","<:bruh:913875008697286716>","<:brainlet:766681101305118721>","<:whatchamp:913874952887873596>"):
+    elif emoji.demojize(str(reaction.emoji)) in (":thumbs_down:", "<:2head:913874980033421332>", "<:bruh:913875008697286716>", "<:brainlet:766681101305118721>","<:whatchamp:913874952887873596>"):
         #if reaction.message.author.id in (569937005463601152, 422386822350635008): #csak bocira timeout
-        if True: #mindenkire timeout
+        # if True: #mindenkire timeout
+        if reaction.message.guild.id == 601381789096738863:
             kapja = reaction.message.author
             timeout = timeouts.get(str(kapja.id), 0)
             if reaction.count >= 3:
@@ -236,7 +238,8 @@ async def on_reaction_add(reaction: discord.Reaction, user):
 
     if emoji.demojize(str(reaction.emoji)) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>",  "<:hapi:889603218273878118>", ":joy:"):
         #if reaction.message.author.id == 569937005463601152:
-        if True:
+        # if True:
+        if reaction.message.guild.id == 601381789096738863:
             if reaction.count >= 3:
                 if reaction.message.id not in already_checked:
                     already_checked.append(reaction.message.id)

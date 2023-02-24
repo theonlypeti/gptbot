@@ -336,7 +336,7 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
                 if subname in self.subGenerators:
                     return self.subGenerators[subname]
 
-            subs = {"AskMen": reddit.subreddit("AskMen+AskTeenBoys"),
+            subs = {"AskMen": reddit.subreddit("AskMen+askteenboys"),
                     "AskWomen": reddit.subreddit("AskWomen+AskTeenGirls"),
                     "DAE": reddit.subreddit("DAE+doesanybodyelse+amitheonlyone")}
             if subname in subs:
@@ -347,7 +347,7 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             if not new:
                 gener = subreddit.hot()
             else:
-                gener = subreddit.new.stream()
+                gener = subreddit.new()
             self.subGenerators[subname] = gener
             return gener
 

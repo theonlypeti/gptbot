@@ -87,7 +87,8 @@ class SympyCog(commands.Cog):
             try:
                 subs = {a[0]: int(a[1]) for a in [a.strip(" ").split("=") for a in subs.split(",")]}
                 result = str(alg.simplify_logic(myexpression).subs(subs)).replace("~", "!")
-                embedVar = discord.Embed(title=f'Result of {escape_markdown(expression)}', description=escape_markdown(str(result)), color=ctx.user.color)
+                # embedVar = discord.Embed(title=f'Result of {escape_markdown(expression)}', description=escape_markdown(str(result)), color=ctx.user.color)
+                embedVar = discord.Embed(title=f'Result of {escape_markdown(expression)}', description=f"if {self.subs.value}\n{escape_markdown(str(result))}", color=ctx.user.color)
                 await ctx.send(embed=embedVar)
             except Exception as e:
                 sympylogger.error(e)
