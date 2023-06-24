@@ -456,29 +456,29 @@ class LobbyCog(commands.Cog):
             cloveceLogger.debug(f"{ctx.user.name} joined")
 
         @discord.ui.button(style=discord.ButtonStyle.red,emoji=emoji.emojize(":outbox_tray:"))
-        async def leavebutton(self,button,ctx):
+        async def leavebutton(self, button, ctx):
             player = self.cog.getUserFromDC(ctx.user)
-            await self.lobby.removePlayer(ctx,player)
+            await self.lobby.removePlayer(ctx, player)
             cloveceLogger.debug(f"{ctx.user.name} left")
 
-        @discord.ui.button(style=discord.ButtonStyle.grey,emoji=emoji.emojize(":artist_palette:"),disabled=False)
-        async def customizebutton(self,button,ctx):
+        @discord.ui.button(style=discord.ButtonStyle.grey, emoji=emoji.emojize(":artist_palette:"), disabled=False)
+        async def customizebutton(self, button, ctx):
             player = self.cog.getUserFromDC(ctx.user)
             if player.ready:
-                await ctx.send("You cannot change your icon while you are marked ready!",ephemeral=True)
+                await ctx.send("You cannot change your icon while you are marked ready!", ephemeral=True)
                 return
             if not player.inLobby:
-                await ctx.send("You are not in a lobby!",ephemeral=True)
+                await ctx.send("You are not in a lobby!", ephemeral=True)
                 return
             await self.cog.customization(ctx)
             cloveceLogger.debug(f"{ctx.user.name} clicked customize")
 
-        @discord.ui.button(style=discord.ButtonStyle.green,emoji=emoji.emojize(":check_mark_button:"))
-        async def readybutton(self,button,ctx):
+        @discord.ui.button(style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"))
+        async def readybutton(self, button, ctx):
             player = self.cog.getUserFromDC(ctx.user)
             if player.inLobby:
                 if [i.icon for i in self.lobby.players].count(player.icon) > 1:
-                    await ctx.send(embed=discord.Embed(title="Cannot ready up, someone else has the same icon as you!",color=discord.Color.red()),ephemeral=True)
+                    await ctx.send(embed=discord.Embed(title="Cannot ready up, someone else has the same icon as you!", color=discord.Color.red()),ephemeral=True)
                     player.ready = False
                     self.lobby.readyCheck()
                     return
@@ -486,30 +486,30 @@ class LobbyCog(commands.Cog):
                 await self.lobby.readyCheck()
                 cloveceLogger.debug(f"{ctx.user.name} requested ready/unready")
             else:
-                await ctx.send(embed=discord.Embed(title="You are not in this lobby.",color=discord.Color.red()),ephemeral=True)
+                await ctx.send(embed=discord.Embed(title="You are not in this lobby.", color=discord.Color.red()), ephemeral=True)
                 cloveceLogger.debug(f"{ctx.user.name} clicked ready on not joined lobby")
 
         @discord.ui.button(style=discord.ButtonStyle.blurple,emoji=emoji.emojize(":right_arrow:"),disabled=True)
-        async def startbutton(self,button,ctx):
+        async def startbutton(self, button, ctx):
             await ctx.response.defer()
             if self.lobby.lobbyleader == ctx.user:
-                await self.lobby.managemsg.edit(embed=None,view=None,content="Game started.",delete_after=5.0)
+                await self.lobby.managemsg.edit(embed=None, view=None, content="Game started.", delete_after=5.0)
                 await self.lobby.start(ctx)
             else:
-                await ctx.send(embed=discord.Embed(title="You are not the leader of this lobby.",color=discord.Color.red()),ephemeral=True)
+                await ctx.send(embed=discord.Embed(title="You are not the leader of this lobby.", color=discord.Color.red()), ephemeral=True)
                 cloveceLogger.info(f"{ctx.user.name} wanted to start game when not lobbyleader")
 
     class DiffcultyDropdown(discord.ui.Select):
-        def __init__(self,lobby,cog):
+        def __init__(self, lobby, cog):
             self.lobby = lobby
             self.cog = cog
             optionslist=[
-                discord.SelectOption(label="Easy",emoji=emoji.emojize(":green_circle:"),description="Weighted dice, reduced game end rewards."),
-                discord.SelectOption(label="Normal",emoji=emoji.emojize(":yellow_circle:"),description="Normal dice, standard opponent."),
-                discord.SelectOption(label="Hard",emoji=emoji.emojize(":red_circle:"),description="Unfair dice, opponent actually thinks before moving."),
-                discord.SelectOption(label="Cancel",value="0",emoji=emoji.emojize(":cross_mark:"))
+                discord.SelectOption(label="Easy", emoji=emoji.emojize(":green_circle:"), description="Weighted dice, reduced game end rewards."),
+                discord.SelectOption(label="Normal", emoji=emoji.emojize(":yellow_circle:"), description="Normal dice, standard opponent."),
+                discord.SelectOption(label="Hard", emoji=emoji.emojize(":red_circle:"), description="Unfair dice, opponent actually thinks before moving."),
+                discord.SelectOption(label="Cancel", value="0", emoji=emoji.emojize(":cross_mark:"))
                 ]
-            super().__init__(options=optionslist,placeholder="Select a diffculty")
+            super().__init__(options=optionslist, placeholder="Select a diffculty")
 
         async def callback(self, inter):
             diff = self.values[0]
@@ -522,9 +522,9 @@ class LobbyCog(commands.Cog):
         def __init__(self, lobby, cog):
             self.lobby = lobby
             self.cog = cog
-            optionslist=list([discord.SelectOption(label=i.name, value=str(n), emoji=emoji.emojize(i.icon,language="alias")) for n, i in enumerate(self.lobby.players[1:],start=1)])
+            optionslist=list([discord.SelectOption(label=i.name, value=str(n), emoji=emoji.emojize(i.icon, language="alias")) for n, i in enumerate(self.lobby.players[1:],start=1)])
             optionslist.append(discord.SelectOption(label="Cancel", value="-1", emoji=emoji.emojize(":cross_mark:")))
-            super().__init__(options=optionslist,placeholder="Pick a player to kick")
+            super().__init__(options=optionslist, placeholder="Pick a player to kick")
 
         async def callback(self, inter):
             result = self.values[0]
@@ -552,18 +552,18 @@ class LobbyCog(commands.Cog):
             viewObj.add_item(self.cog.DiffcultyDropdown(self.lobby, self.cog))
             await inter.edit(view=viewObj)
             
-        @discord.ui.button(label="Kick Player",style=discord.ButtonStyle.red, emoji=emoji.emojize(":boot:", language="alias"))
+        @discord.ui.button(label="Kick Player", style=discord.ButtonStyle.red, emoji=emoji.emojize(":boot:", language="alias"))
         async def kickbutton(self, button, inter):
             viewObj = discord.ui.View()
             viewObj.add_item(self.cog.KickPlayerDropdown(self.lobby,self.cog))
             await inter.edit(view=viewObj)
 
-        @discord.ui.button(label="Resend lobbymsg",style=discord.ButtonStyle.grey,emoji=emoji.emojize(":right_arrow_curving_left:"))
+        @discord.ui.button(label="Resend lobbymsg", style=discord.ButtonStyle.grey,emoji=emoji.emojize(":right_arrow_curving_left:"))
         async def resendbutton(self, button, inter):
-            await self.lobby.messageid.edit(embed=discord.Embed(title="The lobby you are looking for has moved",description="see below"),view=None,delete_after=30.0)
+            await self.lobby.messageid.edit(embed=discord.Embed(title="The lobby you are looking for has moved", description="see below"),view=None,delete_after=30.0)
             lobbymessage = await inter.channel.send(embed=discord.Embed(title="Generating lobby..."))
             self.lobby.messageid = lobbymessage
-            await self.lobby.messageid.edit(embed=self.lobby.show(), view=self.cog.LobbyView(self.cog,self.lobby))
+            await self.lobby.messageid.edit(embed=self.lobby.show(), view=self.cog.LobbyView(self.cog, self.lobby))
                 
     @clovece.subcommand(name="play", description="Makes a lobby for a človeče game.")
     async def makeLobby(self, ctx: discord.Interaction, private=discord.SlashOption(name="private", description="Do you wish to create a public lobby or a private one",required=False,default="Public",choices=("Public","Private"))):
@@ -583,9 +583,9 @@ class LobbyCog(commands.Cog):
                 description="You can add bots with the **Add bot** button\n\nYou can remove players/bots from the lobby with the **Kick player** button\n\nIf the channel is spammed over, you can resend the lobby message with the **Resend lobbymsg** button\n\nWhen everybody is ready, a start game ({}) button will appear under the lobby message.".format(emoji.emojize(":right_arrow:"))),ephemeral=True,view=self.MngmntView(newLobby,self))
             newLobby.managemsg = await ctx.original_message()
             
-            viewObj = self.LobbyView(self,newLobby) 
+            viewObj = self.LobbyView(self, newLobby)
             if private == "Private":
-                viewObj.children[0].disabled=True
+                viewObj.children[0].disabled = True
             
             await lobbymessage.edit(embed=newLobby.show(), view=viewObj)
         
@@ -614,13 +614,13 @@ class LobbyCog(commands.Cog):
             name = self.lobbyleader.name
             EmbedVar = discord.Embed(
                 title=name+"'s "+("Public" if not self.private else "Private")+" Lobby ("+str(len(self.players))+"/4)",
-                description=("Game already running." if self.ongoing else f"use **{mentionCommand(self.cog.client,'clovece join')} {self.code}** or click the join icon") if not self.private else f"ask the lobby leader for the code, \nthen use {mentionCommand(self.cog.client,'clovece join')} *CODE*, don't worry noone will see that.\n Make sure everyone has a unqiue icon!") #extra space deliberate, otherwise looks stupid
+                description=("Game already running." if self.ongoing else f"use **{mentionCommand(self.cog.client, 'clovece join')} {self.code}** or click the join icon") if not self.private else f"ask the lobby leader for the code, \nthen use {mentionCommand(self.cog.client,'clovece join')} *CODE*, don't worry noone will see that.\n Make sure everyone has a unqiue icon!") #extra space deliberate, otherwise looks stupid
             EmbedVar.set_footer(text="{} join, {} leave, {} customize self, {} ready".format(emoji.emojize(":inbox_tray:"), emoji.emojize(":outbox_tray:"), emoji.emojize(":artist_palette:"),emoji.emojize(":check_mark_button:")))
-            for i,player in enumerate(self.players,start=1):
+            for i, player in enumerate(self.players, start=1):
                 EmbedVar.add_field(name=f"{i}. {player}", value="Ready?"+(emoji.emojize(":cross_mark:"), emoji.emojize(":check_mark_button:"))[bool(player.ready)],inline=False)
-            while i<4:
+            while i < 4:
                 EmbedVar.add_field(name="[Empty]", value="Ready? "+emoji.emojize(":check_mark_button:"), inline=False)
-                i+=1
+                i += 1
             return EmbedVar
 
         async def readyCheck(self):
@@ -629,7 +629,7 @@ class LobbyCog(commands.Cog):
             viewObj = self.cog.LobbyView(self.cog, self)
             viewObj.children[0].disabled = bool(self.private)
             if not self.ongoing:
-                if all(readys) and len(readys)>1 and uniqueIcons:
+                if all(readys) and len(readys) > 1 and uniqueIcons:
                     viewObj.children[-1].disabled = False
                     cloveceLogger.debug("all players ready to go")
                     await self.messageid.edit(embed=self.show(), view=viewObj) #KEEP THIS HERE!!! NOT DUPLICATE
@@ -1234,10 +1234,10 @@ class Player(object):
         """pouzite na reset neokkupovanych policok"""
         self.domceky = [Empty(self.houseIcon) for i in range(panakAmount)] #zoznam policok domceku hraca
 
-class Panak(CloveceGame): #probably dont dediť this class
+class Panak(): #probably dont dediť this class
     """Obsahuje hraca kto panacika kontroluje, tím, ikonku na zobrazenie, akutalnu poziciu
 ci je v spawne/na poli/alebo uz v domceku"""
-    def __init__(self,owner,team,icon,game):
+    def __init__(self, owner, team, icon, game):
         self.owner = owner #nieco ako team len s player objectom, (#kebyze to nenecham na poslednu chvilu by som to spravil aj lepsie)
         self.team = team #koho hraca panacik, kebyze mam farby tak by bola farba ale nemam tak jednoducho int (alebo "a","b","c"..?? uvidim)
         self.icon = icon #akou ikonkou reprezentovat panacika na hracom poli

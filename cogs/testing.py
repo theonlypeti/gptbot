@@ -2,8 +2,13 @@ import logging
 import os
 import random
 from io import BytesIO
+from pathlib import Path
+from typing import Optional
+
 import nextcord as discord
 from PIL import Image, ImageOps, ImageDraw, ImageFont
+from nextcord import SlashOption
+from utils.getMsgFromLink import getMsgFromLink
 from nextcord.ext import commands
 
 TESTSERVER = (860527626100015154,)
@@ -84,8 +89,8 @@ class Testing(commands.Cog):
             return
         os.chdir(r"D:\Users\Peti.B\Pictures\microsoft\Windows\shop")
         sample = [file for file in os.listdir() if not file.endswith(".mp4")]
-        os.chdir(orig)
         await ctx.send(files=[discord.File(random.choice(sample))])
+        os.chdir(orig)
 
     @fut.subcommand(name="kat", description="kat")
     async def fut4(self, ctx):
@@ -95,8 +100,8 @@ class Testing(commands.Cog):
             return
         os.chdir(r"D:\Users\Peti.B\Pictures\Mobil Backup\other\pokemons\KT")
         sample = [file for file in os.listdir() if not file.endswith(".mp4")]
-        os.chdir(orig)
         await ctx.send(files=[discord.File(random.choice(sample))])
+        os.chdir(orig)
 
     @fut.subcommand(name="reddit")
     async def fut2(self, ctx):
@@ -106,15 +111,15 @@ class Testing(commands.Cog):
             return
         os.chdir(r"D:\Users\Peti.B\Pictures\microsoft\Windows\reddit")
         sample = [file for file in os.listdir() if not file.endswith(".mp4")]
-        os.chdir(orig)
         await ctx.send(files=[discord.File(random.choice(sample))])
+        os.chdir(orig)
 
     async def showimg(self,
                       interface: discord.Interaction | discord.Message,
                       img: Image,
                       filetype: str,
                       view: discord.ui.View = None,
-                      txt:str = None) -> discord.Message:
+                      txt: str = None) -> discord.Message:
 
         with BytesIO() as image_binary:
             if img:
@@ -181,6 +186,64 @@ class Testing(commands.Cog):
     # @discord.message_command(name="Unemojize")
     # async def unemojize(self, interaction: discord.Interaction, message):
     #     await interaction.response.send_message(f"`{emoji.demojize(message.content)}`", ephemeral=True)
+
+    @discord.slash_command(name="whtest2", guild_ids=TESTSERVER)
+    async def whtest2(self, interaction: discord.Interaction):
+        channel: discord.TextChannel = interaction.channel
+        whs = await channel.webhooks()
+        await interaction.send(content=", ".join([str(wh.url) for wh in whs]))
+
+    @discord.slash_command(name="chatgpt", guild_ids=TESTSERVER + (800196118570205216, 601381789096738863, 409081549645152256, 691647519771328552))
+    async def query(self, interaction: discord.Interaction, query: str):
+        from EdgeGPT.EdgeUtils import Query, Cookie
+        # import json
+        await interaction.response.defer()
+        Cookie.current_filepath = r"F:\Program Files\Python39\MyScripts\discordocska\pipik\data\bing_cookies_my.json"
+        Cookie.import_data()
+        # cookies = json.loads(open(r"../data/bing_cookies_my.json", encoding="utf-8").read())  # might omit cookies option
+        # q = Query(query, cookie_file=Path(r"F:\Program Files\Python39\MyScripts\discordocska\pipik\data\bing_cookies_my.json"))
+        q = Query(query)
+        await q.log_and_send_query(True, False)
+        embed = discord.Embed(title=query, description=q.output, color=interaction.user.color)
+        await interaction.send(embed=embed)
+
+        # whs = [0]
+        # try:
+        #     whs = await interaction.channel.webhooks()
+        # except discord.errors.Forbidden as e:
+        #     print(e)
+        #     return
+        # else:
+        #     if whs == [0]:
+        #         print("no whs")
+        #         return
+        #     else:
+        #         if not (wh := (discord.utils.find(lambda wh: wh.name == f"emotehijack{interaction.channel.id}", whs))):
+        #             wh = await interaction.channel.create_webhook(name=f"emotehijack{interaction.channel.id}")
+        #         await wh.send(content=f"{txt}", username=name, avatar_url=pfp_link, tts=False)
+        #         await interaction.send("done", ephemeral=True)
+
+
+    @discord.slash_command(name="wh", guild_ids=TESTSERVER + (800196118570205216, 601381789096738863, 409081549645152256, 691647519771328552))
+    async def whtet3(self, interaction: discord.Interaction, txt: str, name: str, pfp_link: str = None, tts: bool = False, channel: discord.TextChannel = None):
+        chann: discord.PartialMessage|discord.Interaction = await getMsgFromLink(self.client, channel) if channel else interaction
+        channel: discord.TextChannel = chann.channel
+        self.logger.debug(f"{channel.name}, {interaction.user.display_name}, {txt}")
+        whs = [0]
+        try:
+            whs = await channel.webhooks()
+        except discord.errors.Forbidden as e:
+            print(e)
+            return
+        else:
+            if whs == [0]:
+                print("no whs")
+                return
+            else:
+                if not (wh := (discord.utils.find(lambda wh: wh.name == f"emotehijack{channel.id}", whs))):
+                    wh = await channel.create_webhook(name=f"emotehijack{channel.id}")
+                await wh.send(content=f"{txt}", username=name, avatar_url=pfp_link, tts=tts)
+                await interaction.send("done", ephemeral=True)
 
 
 def setup(client, baselogger):

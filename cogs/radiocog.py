@@ -33,7 +33,7 @@ class RadioCog(commands.Cog):
         self.stations = []
         
         for station in os.listdir(maindir)[2:-3]:
-            self.stations.append(self.Station(station,emoji=station_emojis[station],desc=station_descs[station])) #TODO dont do this, initialize them only when called by join
+            self.stations.append(self.Station(station, emoji=station_emojis[station], desc=station_descs[station])) #TODO dont do this, initialize them only when called by join
         self.ads = os.listdir(maindir+"\\!Commercials")
 
     class Station(object):
@@ -81,15 +81,15 @@ class RadioCog(commands.Cog):
             del(self.songs[-1][0])
 
     class StationDropdown(discord.ui.Select):
-        def __init__(self,voice,cog):
+        def __init__(self, voice, cog):
             self.cog = cog
             self.voice = voice
-            options = [discord.SelectOption(label=station.name,description=station.desc,emoji=station.emoji,value=station.emoji) for station in self.cog.stations]
+            options = [discord.SelectOption(label=station.name, description=station.desc, emoji=station.emoji, value=station.emoji) for station in self.cog.stations]
             super().__init__(options=options)
 
-        async def callback(self,inter):
+        async def callback(self, inter):
             station = self.values[0]
-            embedVar = discord.Embed(title="You are now listening to",description=radio_icons_station[station])
+            embedVar = discord.Embed(title="You are now listening to", description=radio_icons_station[station])
             viewObj = discord.ui.View(timeout=None)
             viewObj.add_item(self.DisconnectButton())
 
@@ -101,28 +101,28 @@ class RadioCog(commands.Cog):
                 except discord.errors.NotFound:  
                 #if not emoji: #local file fallback
                     icondir ="F:/Program Files/Python39/MyScripts/discordocska/zene/radio icons/"
-                    file = discord.File(icondir+station.split(":")[1]+".png",filename="image.png")
+                    file = discord.File(icondir+station.split(":")[1]+".png", filename="image.png")
                     embedVar.set_thumbnail(url="attachment://image.png")
-                    await inter.response.edit_message(file=file,embed=embedVar,view=viewObj)
+                    await inter.response.edit_message(file=file, embed=embedVar, view=viewObj)
                 else:
                     embedVar.set_thumbnail(url=emoji.url)
-                    await inter.response.edit_message(embed=embedVar,view=viewObj)
+                    await inter.response.edit_message(embed=embedVar, view=viewObj)
             else:
                 embedVar.set_thumbnail(url=emoji.url)
-                await inter.response.edit_message(embed=embedVar,view=viewObj)
+                await inter.response.edit_message(embed=embedVar, view=viewObj)
             
             try:
                 vclient = await self.voice.connect()
             except Exception:
                 vclient = inter.guild.voice_client
-            newRadio = Radio(vclient,radio_icons_station[station],self.cog)
+            newRadio = Radio(vclient, radio_icons_station[station], self.cog)
             newRadio.announceStation()
 
         class DisconnectButton(discord.ui.Button):
             def __init__(self):
-                super().__init__(label="Disconnect",emoji=emoji.emojize(':waving_hand:'),style=discord.ButtonStyle.danger)
+                super().__init__(label="Disconnect", emoji=emoji.emojize(':waving_hand:'), style=discord.ButtonStyle.danger)
 
-            async def callback(self,ctx):
+            async def callback(self, ctx):
                 server = ctx.guild.voice_client
                 await server.disconnect(force=True)
                 self.disabled = True
@@ -150,9 +150,10 @@ class RadioCog(commands.Cog):
         #radiocog.radios.remove(self)
 
 class Radio(object):
-    def __init__(self, vclient, station, cog):
+    def __init__(self, vclient: discord.VoiceClient, station: str, cog):
+        self.radiodir: str|None = None
         self.cog = cog
-        self.played = []
+        self.played: list[str] = []
         self.vclient = vclient
         self.station = self.getStation(station)
         self.adChance = 15 #Random advertisement chance between songs
@@ -178,13 +179,13 @@ class Radio(object):
             self.played.append(song)
             if len(self.played) > self.noRepeats:
                 del self.played[0]
-            self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(song[0])),
-                     after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=song[1][0]),
-                                                  after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(song[2])),
+            self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=choice(song[0])),
+                     after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=song[1][0]),
+                                                  after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=choice(song[2])),
                                                                                     after=lambda a: self.playerloop())))
             radioLogger.debug(f"{len(inspect.stack(0))} inspect stack")
             
-            print("♪ Now playing -",song[1][0][:-9],"♪")
+            radioLogger.info("♪ Now playing -", song[1][0][:-9], "♪")
             return 
         else:
             radioLogger.warning("retrying")
@@ -192,8 +193,8 @@ class Radio(object):
 
     def djtalk(self):
         radioLogger.debug("talk")
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(self.station.djchatter)),
-                          after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=maindir+"\\silence.ogg"),
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=self.radiodir + choice(self.station.djchatter)),
+                          after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=maindir+"\\silence.ogg"),
                                                   after=lambda a: self.playSong()))
         radioLogger.debug("talk end")
 
@@ -202,8 +203,8 @@ class Radio(object):
         if len(self.station.call) < 1:
             self.playSong()
         else:
-            self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(self.station.call)),
-                              after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=maindir+"\\silence.ogg"),
+            self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=self.radiodir + choice(self.station.call)),
+                              after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=maindir+"\\silence.ogg"),
                                                                 after=lambda a: self.playSong()))
         radioLogger.debug("call end")
 
@@ -214,8 +215,8 @@ class Radio(object):
             self.djtalk()
             radioLogger.debug("nvmtalk over")
         else:
-            self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(self.station.story)),
-                              after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=maindir+"\\silence.ogg"),
+            self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=self.radiodir + choice(self.station.story)),
+                              after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=maindir+"\\silence.ogg"),
                                                       after=lambda a: self.playSong()))
             radioLogger.debug("story end")
 
@@ -224,31 +225,31 @@ class Radio(object):
         if len(self.station.stationAnnounce) < 1:
             radioLogger.debug("nvm talk")
             self.djtalk()
-            radioLogger.debug("nvmtalk over")
         else:
-            self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=choice(self.station.stationAnnounce)),
-                              after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=maindir+"\\silence.ogg"),
+            self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=self.radiodir + choice(self.station.stationAnnounce)),
+                              after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=maindir+"\\silence.ogg"),
                                                                 after=lambda a: self.playSong()))
         radioLogger.debug("announced")
         
     def doNothing(self):
         radioLogger.debug("nothing")
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=maindir+"\\silence.ogg"),
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=maindir+"\\silence.ogg"),
                                                   after=lambda a: self.playSong())
         radioLogger.debug("nothing end")
 
     def adbreak(self):
         radioLogger.debug("ad")
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=maindir+"\\!Commercials\\"+choice(self.cog.ads)),
-                          after=self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=maindir+"\\silence.ogg"),
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=maindir+"\\!Commercials\\"+choice(self.cog.ads)),
+                          after=self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=maindir+"\\silence.ogg"),
                                                   after=lambda a: self.playSong()))
 
     def playerloop(self):
         radioLogger.debug("were back in the playerloop")
-        os.chdir(maindir+"\\"+self.station.name)
-        a = (choices(("self.djtalk()","self.djcall()","self.adbreak()","self.djstory()","self.announceStation()","self.doNothing()"),weights=self.chancelist)[0])
+        self.radiodir = maindir + "\\" + self.station.name + "\\"
+        # os.chdir(maindir+"\\"+self.station.name) #TODO dont do chdir just append it to the path name
+        a = (choices((self.djtalk,self.djcall,self.adbreak,self.djstory,self.announceStation,self.doNothing), weights=self.chancelist)[0])
         radioLogger.debug(f"{a} choice")
-        eval(a)
+        a()
 
-def setup(client,baselogger):
-    client.add_cog(RadioCog(client,baselogger))
+def setup(client, baselogger):
+    client.add_cog(RadioCog(client, baselogger))

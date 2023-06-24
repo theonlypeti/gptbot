@@ -26,7 +26,7 @@ class EmoteCog(commands.Cog):
         emotelogger = baselogger.getChild("EmoteLogger")
         self.readEmotes()
 
-    async def flipemote(self, emote, state, orient: Literal["H"] | Literal["V"]):
+    async def flipemote(self, emote, state, orient: Literal["H"] | Literal["V"]):  #TODO: make this into a context manager, with flippedemote(): and then it deletes the emote
         self.emoteserver: discord.Guild = self.emoteserver or self.client.get_guild(957469186798518282)
         em = discord.PartialEmoji.from_str(emote)
         em = discord.PartialEmoji.with_state(state, name=em.name, animated=em.animated, id=em.id)
@@ -37,7 +37,7 @@ class EmoteCog(commands.Cog):
         elif orient == "V":
             img = img.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
         with BytesIO() as image_binary:
-            img.save(image_binary, format="gif" if em.animated else "png")
+            img.save(image_binary, format="gif" if em.animated else "png") #TODO make this work with animated emotes
             image_binary.seek(0)
             newemoji = await self.emoteserver.create_custom_emoji(name=f"{em.name}flip{orient}", image=image_binary.read())
         return newemoji
@@ -83,10 +83,10 @@ class EmoteCog(commands.Cog):
             self.client = client
             self.emotes = emotes
             self.message = message
-            for k in ["mood", "pog", "kekno", "kekfu", "kekwait", "kekcry", "kekdoubt", "tiny",
+            for k in ["mood", "pog", "true", "same", "mmshrug", "kekcry", "tiny",
                       "peepoheart", "tired", "jerrypanik", "hny", "minor_inconvenience", "hapi", "funkyjam",
-                      "business", "business2", "tavozz", "concern", "amusing", "ofuk",
-                      "ohgod", "blunder"]:  # populating the select component with options
+                      "business", "business2", "tavozz", "concern", "amusing"]: #,
+                      #"ohgod", "blunder"]:  # populating the select component with options
                 self.optionen.append(discord.SelectOption(label=k, value=self.emotes[k], emoji=self.emotes[k]))
             super().__init__(placeholder="Select an emote", options=self.optionen)
 
@@ -130,6 +130,7 @@ class EmoteCog(commands.Cog):
             emotelogger.debug(f"{str(reaction.emoji)=}, {emote=}")
             return not user.bot and str(reaction.emoji) == emote
 
+        channel: discord.TextChannel = ctx.channel
         emotelogger.debug(f"{ctx.user}, {emote}, {datetime.now()}")
         if emote:
             if emote.endswith("+flipH"):
@@ -142,7 +143,7 @@ class EmoteCog(commands.Cog):
                 flipped = False
                 emote = self.discord_emotes[emote]
             if msg:
-                #await ctx.response.defer() nono because i wont be able to ephemeral
+                await ctx.response.defer(ephemeral=True)
                 mess = await getMsgFromLink(self.client, msg)
                 await mess.add_reaction(emote)
                 await ctx.send("Now go react on the message", ephemeral=True)
@@ -154,13 +155,28 @@ class EmoteCog(commands.Cog):
                     await mess.remove_reaction(emote, self.client.user)
 
             else:
-                await ctx.response.defer()
-                await ctx.send(emote)
+                try:
+                    whs = await channel.webhooks()
+                except discord.errors.Forbidden:
+                    await ctx.response.defer()
+                    await ctx.send(emote)
+                else:
+                    await ctx.response.defer(ephemeral=True)
+                    if not (wh := (discord.utils.find(lambda wh: wh.name == f"emotehijack{channel.id}", whs))):
+                        wh = await channel.create_webhook(name=f"emotehijack{channel.id}")
+                    await wh.send(content=emote, username=ctx.user.display_name, avatar_url=ctx.user.avatar.url)
+                    await ctx.send(ephemeral=True, content="Done", delete_after=5)
             if flipped:
                 await self.emoteserver.delete_emoji(emote)
 
         elif text:
-            await ctx.response.defer()
+            whs = [0]
+            try:
+                whs = await channel.webhooks()
+            except discord.errors.Forbidden:
+                await ctx.response.defer()
+            else:
+                await ctx.response.defer(ephemeral=True)
             try:
                 flips = [m.start() for m in re.finditer('\+flipH', text)] #ends of emotes
                 emotestoflip = [(text.rfind("{",0,i),i) for i in flips] #beginnings of toflip emotes
@@ -182,10 +198,17 @@ class EmoteCog(commands.Cog):
                 text = eval(f'f"{text}"')
                 if msg:
                     mess: discord.PartialMessage = await getMsgFromLink(self.client, msg)
-                    await mess.reply(text)
-                    await ctx.send(f"Hi, {ctx.user.display_name} wanted to tell you something..", delete_after=5)
+                    await mess.reply(f"{ctx.user.display_name} says:\n{text}")
+                    # await ctx.send(f"Hi, {ctx.user.display_name} wanted to tell you something..", delete_after=5)
+                    await ctx.send(f"Done", delete_after=5)
                 else:
-                    await ctx.send(f"{text}")
+                    if whs == [0]:
+                        await ctx.send(f"{text}")
+                    else:
+                        if not (wh := (discord.utils.find(lambda wh: wh.name == f"emotehijack{channel.id}", whs))):
+                            wh = await channel.create_webhook(name=f"emotehijack{channel.id}")
+                        await wh.send(content=f"{text}", username=ctx.user.display_name, avatar_url=ctx.user.avatar.url)
+                        await ctx.send(ephemeral=True, content="Done", delete_after=5)
                 for i in flippedemotes + flippedemotesv:
                     await self.emoteserver.delete_emoji(i)
                 for i in emotestoflip:
@@ -268,12 +291,14 @@ class EmoteCog(commands.Cog):
                     word += chr(127344)
                 elif letter == "B" and chr(127397 + ord("B")) in word:
                     word += chr(127345)
-                if letter == "I" and chr(127397 + ord("I")) in word:
+                elif letter == "I" and chr(127397 + ord("I")) in word:
                     word += chr(8505)
-                if letter == "M" and chr(127397 + ord("M")) in word:
+                elif letter == "M" and chr(127397 + ord("M")) in word:
                     word += chr(9410)
                 elif letter == "O" and chr(127397 + ord("O")) in word:
                     word += chr(127358)
+                elif letter == "P" and chr(127397 + ord("P")) in word:
+                    word += chr(127359)
                 elif letter == " ":
                     word += emoji.emojize(":blue_square:")
                 else:

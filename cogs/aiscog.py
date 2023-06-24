@@ -46,7 +46,6 @@ class AisCog(commands.Cog):
                 json.dump([], f)
                 self.channels = []
 
-
     @tasks.loop(minutes=30)
     async def printer(self):
         headers = {
@@ -118,7 +117,7 @@ class AisCog(commands.Cog):
                 except Exception as e:
                     logging.error(e)
 
-                pagi = Paginator(func=lambda pagin: embeds[pagin.page], select=None, inv=embeds, itemsOnPage=1)
+                pagi = Paginator(func=lambda pagin: embeds[pagin.page], select=None, inv=embeds, itemsOnPage=1, timeout=None)
                 pagi.mergeview(view=self.NotificationButton())
 
                 for channelid in self.channels:
@@ -139,15 +138,19 @@ class AisCog(commands.Cog):
         @discord.ui.button(emoji=emoji.emojize(':no_bell:', language="alias"), label="Don't notify me")
         async def unsub(self, button, ctx: discord.Interaction):
             try:
-                await ctx.user.remove_roles(discord.utils.find(lambda m: m.name == 'Bakalarka notifications', ctx.user.roles))
+                if (role := (discord.utils.find(lambda m: m.name == 'Bakalarka notifications', ctx.guild.roles))) is None:
+                    role = await ctx.guild.create_role(name="Bakalarka notifications", mentionable=True, color=discord.Color.dark_red()) #redundant but for consistency
+                await ctx.user.remove_roles(role)
             except Exception as e:
                 logging.error(e)
             await ctx.send(embed=discord.Embed(description="Odteraz nebudeš dostávať pingy ak pribudnú nové témy.", color=discord.Color.red()), ephemeral=True)
 
         @discord.ui.button(emoji=emoji.emojize(':bell:', language="alias"), label="Notify me")
-        async def sub(self, button, ctx):
+        async def sub(self, button, ctx: discord.Interaction):
             try:
-                await ctx.user.add_roles([i for i in ctx.guild.roles if i.name == "Bakalarka notifications"][0])
+                if (role := (discord.utils.find(lambda m: m.name == 'Bakalarka notifications', ctx.guild.roles))) is None:
+                    role = await ctx.guild.create_role(name="Bakalarka notifications", mentionable=True, color=discord.Color.dark_red())
+                await ctx.user.add_roles(role)
             except Exception as e:
                 logging.error(e)
             await ctx.send(embed=discord.Embed(description="Odteraz budeš dostávať pingy ak pribudnú nové témy.", color=discord.Color.green()), ephemeral=True)
@@ -160,8 +163,8 @@ class AisCog(commands.Cog):
     async def bakalarka(self, interaction):
         pass
 
-    @bakalarka.subcommand(name="debug", description="Print current témy")
-    async def debugprint(self, interaction: discord.Interaction):
+    @bakalarka.subcommand(name="list", description="Print current témy")
+    async def listall(self, interaction: discord.Interaction):
         await interaction.response.defer()
         embeds = []
         text = ""
@@ -170,7 +173,7 @@ class AisCog(commands.Cog):
                 text += f"{tema.makeLink()}\n"
             else:
                 embeds.append(discord.Embed(title=f"Zoznam tém ({len(self.temy)} total)", description=text, color=interaction.user.color))
-                text = ""
+                text = f"{tema.makeLink()}\n"
 
         if text:
             embeds.append(discord.Embed(title=f"Zoznam tém ({len(self.temy)} total)", description=text, color=interaction.user.color))
@@ -180,30 +183,55 @@ class AisCog(commands.Cog):
         pagi.mergeview(view=self.NotificationButton())
         await pagi.render(interaction, ephemeral=True)
 
-    @bakalarka.subcommand(name="enable", description="Set this channel as notification channel")
-    async def setupchannel(self, interaction: discord.Interaction):
+    @bakalarka.subcommand(name="channels", description="Print channels with notifications")
+    async def listchannels(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        if interaction.channel.id in self.channels:
-            await interaction.send(embed=discord.Embed(description="Tento channel už má setupované notifikácie.", color=discord.Color.red()), ephemeral=True)
-            return
-        self.channels.append(interaction.channel.id)
-        with open(root+r"/data/ais_notif_channels.txt", "w", encoding="UTF-8") as file:
-            json.dump(self.channels, file, indent=4)
-        if (role:=(discord.utils.find(lambda m: m.name == 'Bakalarka notifications', interaction.guild.roles))) is None:
-            role = await interaction.guild.create_role(name="Bakalarka notifications", mentionable=True, color=discord.Color.dark_red())
-        await interaction.send(embed=discord.Embed(description=f"Notifikácie pre témy bakalárskych prác boli nastavené v tomto kanáli.\nPridajte si rolu {role.mention} gombíkmi, aby ste dostávali pingy.", color=discord.Color.dark_red()), view=self.NotificationButton())
+        embeds = []
+        channels = []
+        for chan in self.channels:
+            channel: discord.TextChannel = self.client.get_channel(chan)
+            if channel.guild.id == interaction.guild.id:
+                channels.append(channel)
+
+        [embeds.append(discord.Embed(title=f"Notifikačné kanály pre {interaction.guild.name}", description=i)) for i in ["\n".join(map(lambda a:a.mention, channels[i:i + 10])) for i in range(0, len(channels), 10)]]
+        # [embed.set_footer(text=f"page {1}/{1}") for embed in embeds] #not worth the hassle
+        # nor setting up deletes
+
+        [embed.set_footer(text=f"Klikni na kanál a použi /bakalarka disable pre vypnutie notifikácií v tom kanáli.") for embed in embeds]
+        pagi = Paginator(func=lambda pagin: embeds[pagin.page], select=None, inv=embeds, itemsOnPage=1)
+        pagi.mergeview(view=self.NotificationButton())
+        await pagi.render(interaction, ephemeral=True)
+
+    @bakalarka.subcommand(name="enable", description="Set this channel as notification channel")
+    async def setupchannel(self, interaction: discord.Interaction, channel: discord.TextChannel = None):
+        await interaction.response.defer()
+        channel: discord.TextChannel = channel or interaction.channel
+        try:
+            if channel.id in self.channels:
+                await interaction.send(embed=discord.Embed(description="Tento channel už má setupované notifikácie.", color=discord.Color.red()), ephemeral=True)
+                return
+            self.channels.append(channel.id)
+            with open(root+r"/data/ais_notif_channels.txt", "w", encoding="UTF-8") as file:
+                json.dump(self.channels, file, indent=4)
+            if (role:=(discord.utils.find(lambda m: m.name == 'Bakalarka notifications', interaction.guild.roles))) is None:
+                role = await interaction.guild.create_role(name="Bakalarka notifications", mentionable=True, color=discord.Color.dark_red())
+            await interaction.send(embed=discord.Embed(description=f"Notifikácie pre témy bakalárskych prác boli nastavené v kanáli {channel.name}.\nPridajte si rolu {role.mention} gombíkmi, aby ste dostávali pingy.", color=discord.Color.dark_red()), view=self.NotificationButton())
+        except Exception as e:
+            await interaction.send(embed=discord.Embed(description=f"{e}", color=discord.Color.red()))
+            raise e
 
     @bakalarka.subcommand(name="disable", description="Remove this channel as notification channel")
-    async def removechannel(self, interaction: discord.Interaction):
+    async def removechannel(self, interaction: discord.Interaction, channel: discord.TextChannel = None):
         await interaction.response.defer()
-        if interaction.channel.id not in self.channels:
-            await interaction.send(embed=discord.Embed(description="Tento channel nemá nastavené notifikácie.", color=discord.Color.red()),ephemeral=True)
+        channel: discord.TextChannel = channel or interaction.channel
+        if channel.id not in self.channels:
+            await interaction.send(embed=discord.Embed(description=f"{channel.name} nemá nastavené notifikácie.", color=discord.Color.red()), ephemeral=True)
             return
-        self.channels.remove(interaction.channel.id)
+        self.channels.remove(channel.id)
         with open(root+r"/data/ais_notif_channels.txt", "w", encoding="UTF-8") as file:
             json.dump(self.channels, file, indent=4)
         viewObj = self.RemoveRoleView(interaction.user)
-        await interaction.send(embed=discord.Embed(description="Notifikácie pre témy bakalárskych prác boli odstránené v tomto kanáli.",color=discord.Color.dark_red()),view=viewObj)
+        await interaction.send(embed=discord.Embed(description=f"Notifikácie pre témy bakalárskych prác boli odstránené v kanáli {channel.name}.",color=discord.Color.dark_red()), view=viewObj)
 
     class RemoveRoleView(discord.ui.View):
         def __init__(self, user: discord.User):
@@ -214,19 +242,19 @@ class AisCog(commands.Cog):
             return interaction.user == self.original_user
 
         @discord.ui.button(emoji=emoji.emojize(':wastebasket:', language="alias"), label="Vymaž aj rolu", style=discord.ButtonStyle.danger)
-        async def deleterole(self, button, interaction: discord.Interaction):
+        async def deleterole(self, button, interaction: discord.Interaction): #TODO when ill save all channels for a server ill do this automatically
             try:
                 if (role := discord.utils.find(lambda m: m.name == 'Bakalarka notifications', interaction.guild.roles)) is not None:
                     await role.delete(reason=f"{interaction.user.name}#{interaction.user.discriminator} disabled notification channel {interaction.channel.name} for bakalarka temy")
                 await interaction.message.edit(view=None)
             except Exception as e:
                 logging.error(e)
-                await interaction.send(str(e))
+                await interaction.send(embed=discord.Embed(description=f"{e}", color=discord.Color.red()))
 
         @discord.ui.button(emoji=emoji.emojize(':check_mark_button:', language="alias"), label="Iba presúvam channel")
         async def keeprole(self, button, interaction: discord.Interaction):
             await interaction.message.edit(view=None)
 
 
-def setup(client, baselogger): #bot shit
+def setup(client, baselogger):  # bot shit
     client.add_cog(AisCog(client, baselogger))

@@ -1,5 +1,4 @@
 import os
-import random
 from asyncpraw.models import ListingGenerator
 from nextcord.ext import commands
 import asyncpraw
@@ -8,6 +7,8 @@ import json
 import emoji
 from dotenv import load_dotenv
 load_dotenv(r"./credentials/reddit.env")
+
+#AITA? maybe a multiselect for multiple subreddits
 
 reddit = asyncpraw.Reddit(client_id=os.getenv("REDDIT_CLIENT_ID"),
                      client_secret=os.getenv("REDDIT_CLIENT_SECRET"),
@@ -200,7 +201,9 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
     async def sub(self, ctx: discord.Interaction, subreddit: str = discord.SlashOption(name="subreddit",
                                                                                        description="a subreddit name without the /r/")):
         await ctx.response.defer()
-        if not ctx.channel.is_nsfw() and await reddit.subreddit(subreddit.strip("/r/")).over18:
+        sub = await reddit.subreddit(subreddit.strip("/r/"))
+        await sub.load()
+        if not ctx.channel.is_nsfw() and sub.over18:
             await ctx.send(embed=discord.Embed(
                 title="That is an NSFW subreddit you are tying to send into a non-NSFW text channel.",
                 color=discord.Color.red()))
@@ -240,17 +243,17 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
     @discord.slash_command(name="cat", description="Send a random cat pic")
     async def cat(self, ctx):
         await ctx.response.defer()
-        subs = "absolutelynotmeow_irl,Catsinasock,kittyhasaquestion,catloaf,thisismylifemeow,MEOW_IRL,noodlebones,bottlebrush,notmycat,Blep,CatsOnCats,PetAfterVet,CuddlePuddle,CatsAndPlants,curledfeetsies,teefies,tuckedinkitties,catfaceplant,CatsAndDogsBFF,squishypuppers,airplaneears,shouldercats,PeanutWhiskers,catbellies,CatCircles,catfaceplant,catsonglass,ragdolls,fatSquirrelHate,SupermodelCats,Catswhoyell,IllegallySmolCats,aww,AnimalsBeingBros,peoplefuckingdying,thecatdimension,TouchThaFishy,FancyFeet,cuddleroll,DrillCats,CatsWhoYell,catsareliquid,blurrypicturesofcats,spreadytoes,sorryoccupied,politecats,blackpussy,KittyTailWrap,thecattrapisworkings,khajiithaswares,catgrabs,stolendogbeds,bridgecats,standardissuecats,catswhoquack,catpranks,catsarealiens,dagadtmacskak,fatcat,fromKittenToCat,illegallySmolCats,MaineCoon,noodlebones,politecats,scrungycats,shouldercats,sorryoccupied,stolendogbeds,stuffOnCats,thinkcat,disneyeyes,cuddlykitties,wet_pussy,girlswithhugepussies,catsinboxes,catsonmeth,catsstandingup,catsstaringatthings,catsvsthemselves,catswhoblep,catswithjobs,catswithmustaches,OneOrangeBraincell".split(",")
+        # subs = "absolutelynotmeow_irl,Catsinasock,kittyhasaquestion,catloaf,thisismylifemeow,MEOW_IRL,noodlebones,bottlebrush,notmycat,Blep,CatsOnCats,PetAfterVet,CuddlePuddle,CatsAndPlants,curledfeetsies,teefies,tuckedinkitties,catfaceplant,CatsAndDogsBFF,squishypuppers,airplaneears,shouldercats,PeanutWhiskers,catbellies,CatCircles,catfaceplant,catsonglass,ragdolls,fatSquirrelHate,SupermodelCats,Catswhoyell,IllegallySmolCats,aww,AnimalsBeingBros,peoplefuckingdying,thecatdimension,TouchThaFishy,FancyFeet,cuddleroll,DrillCats,CatsWhoYell,catsareliquid,blurrypicturesofcats,spreadytoes,sorryoccupied,politecats,blackpussy,KittyTailWrap,thecattrapisworkings,khajiithaswares,catgrabs,stolendogbeds,bridgecats,standardissuecats,catswhoquack,catpranks,catsarealiens,dagadtmacskak,fatcat,fromKittenToCat,illegallySmolCats,MaineCoon,noodlebones,politecats,scrungycats,shouldercats,sorryoccupied,stolendogbeds,stuffOnCats,thinkcat,disneyeyes,cuddlykitties,wet_pussy,girlswithhugepussies,catsinboxes,catsonmeth,catsstandingup,catsstaringatthings,catsvsthemselves,catswhoblep,catswithjobs,catswithmustaches,OneOrangeBraincell".split(",")
+        subs = await reddit.subreddit('absolutelynotmeow_irl+Catsinasock+kittyhasaquestion+catloaf+thisismylifemeow+MEOW_IRL+noodlebones+bottlebrush+notmycat+Blep+CatsOnCats+PetAfterVet+CuddlePuddle+CatsAndPlants+curledfeetsies+teefies+tuckedinkitties+catfaceplant+CatsAndDogsBFF+squishypuppers+airplaneears+shouldercats+PeanutWhiskers+catbellies+CatCircles+catfaceplant+catsonglass+ragdolls+fatSquirrelHate+SupermodelCats+Catswhoyell+IllegallySmolCats+aww+AnimalsBeingBros+peoplefuckingdying+thecatdimension+TouchThaFishy+FancyFeet+cuddleroll+DrillCats+CatsWhoYell+catsareliquid+blurrypicturesofcats+spreadytoes+sorryoccupied+politecats+blackpussy+KittyTailWrap+thecattrapisworkings+khajiithaswares+catgrabs+stolendogbeds+bridgecats+standardissuecats+catswhoquack+catpranks+catsarealiens+dagadtmacskak+fatcat+fromKittenToCat+illegallySmolCats+MaineCoon+noodlebones+politecats+scrungycats+shouldercats+sorryoccupied+stolendogbeds+stuffOnCats+thinkcat+disneyeyes+cuddlykitties+wet_pussy+girlswithhugepussies+catsinboxes+catsonmeth+catsstandingup+catsstaringatthings+catsvsthemselves+catswhoblep+catswithjobs+catswithmustaches+OneOrangeBraincell')
         while True:
-            post = [i for i in reddit.subreddit(random.choice(subs)).hot(limit=20)]
-            random.shuffle(post)
-            for i in post:
-                if i.url.startswith("https://i"):
-                    await ctx.send(i.url)
-                    return
+            post = await subs.random()
+            if post.url.startswith("https://i"):
+                await ctx.send(post.url)
+                return
 
     @discord.slash_command(name="bored", description="Word games to play with friends in a chat")
     async def bored(self, ctx: discord.Interaction):
+        await ctx.response.defer()
         try:
             sub = await reddit.subreddit("ThreadGames")
             post = await sub.random()
@@ -260,6 +263,44 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
                 viewObj.add_item(discord.ui.Button(
                     style=discord.ButtonStyle.link, url="https://redd.it/" + post.id, label="Comments", emoji=emoji.emojize(":memo:")))
                 await ctx.send(embed=discord.Embed(title=post.title, description=(post.selftext[:4096] if post.selftext else "")), view=viewObj)
+            else:
+                await ctx.send(post.url)
+        except Exception as e:
+            await ctx.send(f"{e}")
+            raise e
+
+    @discord.slash_command(name="beans", description="beeeeeeeeeeeeeeeaaaaaaaaaans")
+    async def beans(self, ctx: discord.Interaction):
+        await ctx.response.defer()
+        try:
+            sub = await reddit.subreddit("jellybeantoes")
+            post = await sub.random()
+
+            if post.is_self:
+                viewObj = discord.ui.View()
+                viewObj.add_item(discord.ui.Button(
+                    style=discord.ButtonStyle.link, url="https://redd.it/" + post.id, label="Comments",
+                    emoji=emoji.emojize(":memo:")))
+                await ctx.send(
+                    embed=discord.Embed(title=post.title, description=(post.selftext[:4096] if post.selftext else "")),
+                    view=viewObj)
+            else:
+                await ctx.send(post.url)
+        except Exception as e:
+            await ctx.send(f"{e}")
+            raise e
+
+    @discord.slash_command(name="joke", description="Give me a joke!")
+    async def jokes(self, ctx: discord.Interaction):
+        await ctx.response.defer()
+        try:
+            # sub = await reddit.subreddit("3amjokes+cleandadjokes+dadjokes+TwoSentenceComedy+cleanjokes")
+            sub = await reddit.subreddit("3amjokes+cleandadjokes+dadjokes+cleanjokes")
+            post = await sub.random()
+
+            if post.is_self:
+                await ctx.send(
+                    embed=discord.Embed(title=post.title, description=(f"||{post.selftext[:4092]}||" if post.selftext else "")))
             else:
                 await ctx.send(post.url)
         except Exception as e:

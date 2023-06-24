@@ -3,6 +3,7 @@ import random
 from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Optional, Literal
+import emoji
 import nextcord as discord
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -10,6 +11,8 @@ from nextcord.ext import commands
 from pipikNextcord import root
 from pycaw.utils import AudioUtilities
 from utils.bf import bf
+
+stunlocked = None
 
 
 class MiscallenousCog(commands.Cog):
@@ -195,16 +198,21 @@ class MiscallenousCog(commands.Cog):
             await interaction.response.send_modal(self.FancyLinkModal(mode=mode))
         else:
             await interaction.send("WIP lol") #TODO
-    #buttons to add colored text -> dropdown for color + rainbow -> modal to inpu
-    #button for link, if added disable copying, only send to channel
+    # buttons to add colored text -> dropdown for color + rainbow -> modal to inpu
+    # button for link, if added disable copying, only send to channel
     # add select for components if add newline or not
-    #add time modal maybe with multi parse but idk how to do full or relative
-    #add fancytext unicode shit
+    # add time modal maybe with multi parse but idk how to do full or relative
+    # add fancytext unicode shit
 
     @discord.message_command(name="Mocking clown")
     async def randomcase(self, interaction: discord.Interaction, message: discord.Message):
         assert message.content
         await interaction.send("".join(random.choice([betu.casefold(), betu.upper()]) for betu in message.content) + " <:pepeclown:803763139006693416>")
+
+    @discord.message_command(name="Louder for the ppl in the back")
+    async def shout(self, interaction: discord.Interaction, message: discord.Message):
+        assert message.content
+        await interaction.send("# " + message.content)
 
     @discord.user_command(name="FbAnna profilka", force_global=True)
     async def flowersprofilka(self, interaction: discord.Interaction, user: discord.User):
@@ -263,6 +271,63 @@ class MiscallenousCog(commands.Cog):
     #     boci2: discord.Member = interaction.guild.get_member(422386822350635008)
     #     await boci2.timeout(timeout=timedelta(minutes=minutes), reason=reason)
     #     await interaction.send(f"Timeouted both Boci accounts for {minutes} minutes, reason: {reason}")
+
+    @discord.slash_command(name="csgo")
+    async def csgo(self, interaction: discord.Interaction, how_many_needed: int = discord.SlashOption(choices=[1,2,3,4])):
+        # "({self.link.value}\n" + '"{}"'.format(self.hovertext.value) + ")"
+        title = f"[__Launch!__](steam://rungameid/730\n" + '"{}"'.format('Launch CSGO') + ")"
+        embedVar = discord.Embed(title=f"{interaction.user.display_name} is LFG for CSGO",
+                              description=f"{how_many_needed} needed!\n{title}")
+        embedVar.add_field(name=interaction.user.display_name, value=f"I'm ready! {emoji.emojize(':check_mark_button:')}")
+        viewObj = discord.ui.View(timeout=None)
+        viewObj.add_item(self.Whenimcoming(interaction))
+        await interaction.send(discord.utils.find(lambda a: any(i in a.name.lower() for i in ("csgo", "pangtok", "szieszgo")), interaction.guild.roles).mention,embed=embedVar, view=viewObj)
+
+    class Whenimcoming(discord.ui.StringSelect):
+        def __init__(self, inter: discord.Interaction):
+            super().__init__()
+            self.inter = inter
+            self.options = [discord.SelectOption(label="I'm ready!", emoji=emoji.emojize(":check_mark_button:"))] + [discord.SelectOption(label=f"im here in {i} mins", value=str(i), emoji=emoji.emojize(f":{ {1: 'one', 2: 'two', 3: 'three', 4: 'six'}[n] }_o’clock:")) for n,i in enumerate((5,10,15,30),start=1)]
+            self.options += [discord.SelectOption(label="Later", emoji=emoji.emojize(":sunset:")), discord.SelectOption(label="I don't play CSGO", emoji=emoji.emojize(":no_bell:", language="alias"))]
+
+        async def callback(self, interaction: discord.Interaction) -> None:
+            val = self.values[0]
+            self.msg: discord.Message = await self.inter.original_message()
+            embed: discord.Embed = self.msg.embeds[0]
+            readys = int(embed.description[0])
+            ppl = [i.name for i in embed.fields]
+            if interaction.user.display_name in ppl:
+                person: int = ppl.index(interaction.user.display_name)
+                embed.remove_field(person)
+                readys += 1
+            if val.isdigit() or val == "I'm ready!":
+
+                now = datetime.now()
+                readys -= 1
+
+                if val.isdigit():
+                    timestr = now + timedelta(minutes=int(val))
+                    embed.add_field(name=interaction.user.display_name, value="in " + discord.utils.format_dt(timestr, style="R"), inline=False)
+                else:
+                    embed.add_field(name=interaction.user.display_name, value=f"{val} {emoji.emojize(':check_mark_button:')}", inline=False)
+
+            elif val == "Later":
+                embed.add_field(name=interaction.user.display_name, value=f"{val} {emoji.emojize(':cross_mark:')}", inline=False)
+            elif val == "I don't play CSGO":
+                await interaction.user.remove_roles(discord.utils.find(lambda a: any(i in a.name.lower() for i in ("csgo", "pangtok", "szieszgo")), interaction.guild.roles), reason="Removed by themselves.")
+            else:
+                pass
+
+            title = f"[__Launch!__](steam://rungameid/730\n" + '"{}"'.format('Launch CSGO') + ")"
+            embed.description = f"{max(0,readys)} needed!\n{title}"
+            await self.msg.edit(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_typing(self, channel: discord.TextChannel, who: discord.Member, when: datetime):
+        if stunlocked:
+            if who.id == stunlocked.id:
+                await who.timeout(timedelta(seconds=15), reason="Te csak ne írjál")
+                await channel.send(f"Te csak ne írjál semmit, {who.display_name}.")
 
 
 def setup(client, baselogger):

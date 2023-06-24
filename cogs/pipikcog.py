@@ -212,7 +212,7 @@ class PipikBot(commands.Cog):
         user.achi.append(achi.achiid)
         self.saveFile() #any action that warrants an achievement already saves the users #not true lol, in pp func theres bunch of occasions where it doesnt save
 
-    def updateLeaderBoard(self, ldb, dcid, value):
+    def updateLeaderBoard(self, ldb: int, dcid: int, value: int) -> None:
         """
                 ldb: int = guild id
                 dcid: int = user id
@@ -228,7 +228,7 @@ class PipikBot(commands.Cog):
         with open(root+"/data/pipikv3top.txt", "w") as file:
             json.dump(self.leaderboards, file, indent=4)
 
-    def updateLoserBoard(self, ldb, dcid, value):
+    def updateLoserBoard(self, ldb: int, dcid: int, value: int) -> None:
         """
         ldb: int = guild id
         dcid: int = user id
@@ -279,7 +279,7 @@ class PipikBot(commands.Cog):
             self.temperature = settings["temperature"]
             self.sunrise_date = datetime.fromisoformat(settings["sunrise"])
             
-    def getUserFromDC(self, dcUser: Union[discord.Member, discord.User, int, PipikUser]):
+    def getUserFromDC(self, dcUser: Union[discord.Member, discord.User, int, PipikUser]): #TODO terrible, redo
         if isinstance(dcUser, int):
             lookingfor = dcUser
         elif isinstance(dcUser, PipikUser):
@@ -300,7 +300,7 @@ class PipikBot(commands.Cog):
         setattr(user, parameter, amount)
         self.saveFile()
 
-    async def addPill(self, ctx, colorEm, user, pill, amount=0):  # This is some special bullshit
+    async def addPill(self, ctx, colorEm, user, pill, amount=0):  # This is some special bullshit #TODO redo?
         if amount != 0:
             for item in user.items:
                 if item[0] == pill:

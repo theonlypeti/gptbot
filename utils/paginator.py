@@ -21,12 +21,12 @@ class Paginator(discord.ui.View):
     :param kwargs: See above.
 
     Add a back button manually with View.add_item, appropriate to the situation you are in."""
-    def __init__(self, func, select, inv, itemsOnPage: int = 25, timeout: int = 180, kwargs=None):
+    def __init__(self, func: Callable[..., discord.Embed] | None, select: Callable[..., discord.ui.Select] | None, inv, itemsOnPage: int = 25, timeout: int|None = None, kwargs=None):
         self.mykwargs = kwargs or set()
         self.page: int = 0
         self.maxpages: int = 0  # to be rewritten on update
-        self.func: Callable[..., discord.Embed] | None = func
-        self.select: Callable[..., discord.ui.Select] | None = select
+        self.func = func
+        self.select = select
         self.itemsOnPage: int = itemsOnPage
         self.inv: Sequence = inv
         self.msg: discord.Message | None = None
@@ -77,7 +77,7 @@ class Paginator(discord.ui.View):
 
     async def render(self, interaction: discord.Interaction | discord.TextChannel, ephemeral: bool = False, **kwargs) -> None:
         """Renders the paginator.
-        :param interaction: The interaction that triggered the paginator. Can be an interaction or a channel.
+        :param interaction: The interaction that triggered the paginator. Can be an interaction or a channel to send the message to.
         :param ephemeral: Whether to send the paginator as an ephemeral message."""
         self.update()
         if self.select:
@@ -101,3 +101,10 @@ class Paginator(discord.ui.View):
                     self.msg = await interaction.send(embed=self.func(self), view=self, ephemeral=ephemeral, **kwargs)
                 else:
                     self.msg = await interaction.send(view=self, ephemeral=ephemeral, **kwargs)
+
+# Example usage:
+# @discord.slash_command()
+# async def command(self, interaction: discord.Interaction):
+#     embeds = [discord.Embed(title=f"Page {i+1}", description=f"Page {i+1} of 5", color=discord.Color.random()) for i in range(5)]
+#     pagi = Paginator(func=lambda pagin: pagin.inv[pagin.page], select=None, inv=embeds, itemsOnPage=1)
+#     await pagi.render(interaction, ephemeral=True)
