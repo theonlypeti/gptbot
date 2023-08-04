@@ -6,7 +6,7 @@ from typing import Coroutine
 import nextcord as discord
 import random
 import nextcord.ext.commands
-import numpy as np
+from numpy import clip
 from nextcord.ext import commands
 from datetime import datetime, timedelta
 from utils.antimakkcen import antimakkcen
@@ -14,13 +14,13 @@ import emoji
 import os
 import argparse
 import time as time_module
-import logging
 from dotenv import load_dotenv
-import coloredlogs
 from PIL import Image, ImageDraw, ImageFont
 from sympy import Sum
 from utils.mentionCommand import mentionCommand
 from utils.getMsgFromLink import getMsgFromLink
+from utils import mylogger
+
 
 start = time_module.perf_counter()
 version = 3.8
@@ -41,56 +41,18 @@ parser.add_argument("--logfile", action="store_true", help="Turns on logging to 
 parser.add_argument("--no_linecount", action="store_true", help="Turns off line counting.")
 args = parser.parse_args()
 
-pipikLogger = logging.getLogger("Base")
+mylogger.main(args) #initializing the logger
+from utils.mylogger import baselogger as pipikLogger
 
-#FORMAT = "[{asctime}][{filename}][{lineno:4}][{funcName}][{levelname}] {message}"
-#formatter = logging.Formatter(FORMAT, style="{")  #this is for default logger
-
-fmt = "[ %(asctime)s %(filename)s %(lineno)d %(funcName)s %(levelname)s ] %(message)s"
-coloredlogs.DEFAULT_FIELD_STYLES = {'asctime': {'color': 'green'}, 'lineno': {'color': 'magenta'}, 'levelname': {'bold': True, 'color': 'black'}, 'filename': {'color': 'blue'},'funcname': {'color': 'cyan'}}
-coloredlogs.DEFAULT_LEVEL_STYLES = {'critical': {'bold': True, 'color': 'red'}, 'debug': {'bold': True, 'color': 'black'}, 'error': {'color': 'red'}, 'info': {'color': 'green'}, 'notice': {'color': 'magenta'}, 'spam': {'color': 'green', 'faint': True}, 'success': {'bold': True, 'color': 'green'}, 'verbose': {'color': 'blue'}, 'warning': {'color': 'yellow'}}
-
-#std = logging.StreamHandler()
-#std.setFormatter(formatter)
-#fl = logging.FileHandler("pipikLog.txt")
-#fl.setFormatter(formatter)
 if args.logfile:
     pipikLogger.setLevel(5)
-if args.debug:
-    # pipikLogger.setLevel(logging.DEBUG)
-    #std.setLevel(logging.DEBUG)
-    #fl.setLevel(logging.INFO)
-    coloredlogs.install(level='DEBUG', logger=pipikLogger, fmt=fmt)
-else:
-    # pipikLogger.setLevel(logging.INFO)
-    #std.setLevel(logging.INFO)
-    #fl.setLevel(logging.INFO)
-    coloredlogs.install(level='INFO', logger=pipikLogger, fmt=fmt)
-    # coloredlogs.install(level=5, logger=pipikLogger, fmt=fmt)
-#pipikLogger.addHandler(std)
-#pipikLogger.addHandler(fl)
-
-if args.logfile: #if you need a text file
-    FORMAT = "[{asctime}][{filename}][{lineno:4}][{funcName}][{levelname}] {message}"
-    formatter = logging.Formatter(FORMAT, style="{")  #this is for default logger
-    filename = f"./logs/bot_log_{datetime.now().strftime('%m-%d-%H-%M-%S')}.txt"
-    os.makedirs(r"./logs", exist_ok=True)
-    with open(filename, "w") as f:
-        pass
-    fl = logging.FileHandler(filename)
-    fl.setFormatter(formatter)
-    fl.setLevel(5)
-    logging.addLevelName(5, "Message")
-    fl.addFilter(lambda rec: rec.levelno < 10)
-    pipikLogger.addHandler(fl)
-
 
 if not args.minimal and not args.no_sympy:
-    import MyScripts.matstatMn
-    prikazy = list(filter(lambda a: not a.startswith("_"), dir(MyScripts.matstatMn)))
+    import utils.matstatMn
+    prikazy = list(filter(lambda a: not a.startswith("_"), dir(utils.matstatMn)))
     [prikazy.remove(i) for i in ("lru_cache", "graf", "plt", "prod", "kocka", "minca", "napoveda")]
 
-    from MyScripts.matstatMn import *
+    from utils.matstatMn import *
 
 root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pipik"
 
@@ -161,7 +123,7 @@ async def on_ready():
     readus()
     pipikLogger.debug(timeouts)
 
-def writeus():
+def writeus(): #TODO move this to misc
     with open(r"data/us.txt", "w") as file:
         json.dump(list(us), file, indent=4)
 
@@ -172,7 +134,7 @@ def readus():
     try:
         with open(r"data/us.txt", "r") as file:
             us = set(json.load(file))
-            pipikLogger.info(f"Read {len(us)} us from file")
+            pipikLogger.debug(f"Read {len(us)} us from file")
     except IOError as e:
         pipikLogger.error(e)
         with open(r"data/us.txt", "w") as file:
@@ -203,16 +165,21 @@ async def on_message(msg: nextcord.Message):
         await msg.channel.send("bitch what the fok **/ban**")
     else:
         if msg.guild:
+            # if msg.guild.id in (691647519771328552,):
+            #     tolog = f"{msg.author} sent: ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel} at {str(datetime.now())}"
+            #     tolog = emoji.demojize(antimakkcen(tolog)).encode('ascii', "ignore").decode()
+            #     pipikLogger.info(tolog)
+
             if msg.guild.id not in (800196118570205216,):
                 words = msg.content.split(" ")
                 for word in words:
                     if (word.lower().endswith("us") or word.lower().endswith("usz")) and len(word) > 4 and word.lower() not in us:
                         us.add(word.lower())
                         writeus()
-                        img = Image.open(r"data/amogus.png")
+                        img = Image.open(r"data/amogus.png") #TODO extract this writing thing to a func?
                         d = ImageDraw.Draw(img)
                         textsize = img.width * (1 / (len(word)))
-                        textsize = int(np.clip(textsize, 25, 60))
+                        textsize = int(clip(textsize, 25, 60))
                         fnt = ImageFont.truetype('impact.ttf', size=textsize)
 
                         newquestion = ""
@@ -259,18 +226,6 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.Member):
                       "Mekkora komedista <:hapi:889603218273878118>"
                       )
     global already_checked, timeouts
-
-    try:
-        print(str(reaction.emoji))
-        if str(reaction.emoji) in ("<:cmuk:819898290820481024>", "<:gabipog:934383410850447400>", "<:kriszithink:962464431554564156>"):
-            if str(reaction.emoji) == "<:cmuk:819898290820481024>":
-                await user.add_roles(discord.utils.get(user.guild.roles, id=1099412951498231828))
-            elif str(reaction.emoji) == "<:gabipog:934383410850447400>":
-                await user.add_roles(discord.utils.get(user.guild.roles, id=1099412735017623593))
-            else:
-                await user.add_roles(discord.utils.get(user.guild.roles, id=807297324262359130))
-    except Exception as e:
-        await reaction.message.channel.send(str(e))
 
     if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>", "<:hapi:889603218273878118>", ":joy:", "<:kekw:1101064898391314462>",":rofl:"):
         #if reaction.message.author.id in (569937005463601152, 422386822350635008):
@@ -419,7 +374,7 @@ if not args.minimal and not args.no_sympy: #TODO does not take into consideratio
     files = utils + [r"../pipikNextcord.py"]
     linecount = 197  # matstatMn is added manually cuz i have a million commented lines after if __name__ == __main__
 else:
-    files = (r"../pipikNextcord.py",)
+    files = (r"../pipikNextcord.py",) # TODO somehow make sure i can rename the file and it still works __file__ is not working
     linecount = 0
 for file in files:
     if file.endswith(".py"):
@@ -449,7 +404,7 @@ sys.stdout.write(f"\r{len(cogs)}/{cogcount} cogs loaded.".ljust(50)+"\n")
 sys.stdout.flush()
 os.chdir(root)
 
-client.run(os.getenv("MAIN_DC_TOKEN"))  # bogibot
+client.run(os.getenv("MAIN_DC_TOKEN"))
 
 # 277129587776 reduced perms
 # https://discord.com/api/oauth2/authorize?client_id=618079591965392896&permissions=543652576368&scope=bot%20applications.commands bogibot

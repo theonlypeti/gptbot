@@ -410,8 +410,10 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
                     if self.filterPost(post):
                         break
 
-                post.title = post.title.replace("of reddit", "")
-                post.title = post.title.replace("of Reddit", "")
+                post.title = post.title.replace("of reddit ", "")
+                post.title = post.title.replace("of reddit,", "")
+                post.title = post.title.replace("of Reddit ", "")
+                post.title = post.title.replace("of Reddit,", "")
                 post.title = post.title.replace("redditors", "people")
                 post.title = post.title.replace("Redditors", "People")
                 post.title = post.title.replace("DAE", "Does anyone else")

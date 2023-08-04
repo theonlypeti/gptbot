@@ -177,9 +177,10 @@ class AisCog(commands.Cog):
 
         if text:
             embeds.append(discord.Embed(title=f"Zoznam tém ({len(self.temy)} total)", description=text, color=interaction.user.color))
+        else:
+            embeds = [discord.Embed(description="Zdá sa nie sú žiadne témy", color=interaction.user.color)]
         [embed.set_footer(text="Ak sa pýta stiahnuť súbor, je to ok, ais je starý bugnutý, nestiahne nič, otvorí stránku normálne.") for embed in embeds]
-
-        pagi = Paginator(func=lambda pagin: embeds[pagin.page], select=None, inv=embeds, itemsOnPage=1)
+        pagi = Paginator(func=lambda pagin: pagin.inv[pagin.page], select=None, inv=embeds, itemsOnPage=1)
         pagi.mergeview(view=self.NotificationButton())
         await pagi.render(interaction, ephemeral=True)
 

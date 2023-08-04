@@ -80,10 +80,10 @@ class LobbyCog(commands.Cog):
             button.disabled = True
             await interaction.edit(view=self)
             user=self.cog.getUserFromDC(interaction.user)
-            await user.spin(interaction,self.cog)
+            await user.spin(interaction, self.cog)
     
-    @clovece.subcommand(name="daily",description="Claim your daily spin today!")
-    async def claimdaily(self,ctx):
+    @clovece.subcommand(name="daily", description="Claim your daily spin today!")
+    async def claimdaily(self, ctx: discord.Interaction):
         user = self.getUserFromDC(ctx.user)
         try:
             cloveceLogger.debug(f"user daily date, {user.dailyDate}, {type(user.dailyDate)}")
@@ -132,9 +132,9 @@ class LobbyCog(commands.Cog):
         player = self.getUserFromDC(user)
         embedVar = await self.printdefaults(player)
         embedVar.title = f"__{user.name}'s icons__"
-        await ctx.send(embed=embedVar,ephemeral=True)
+        await ctx.send(embed=embedVar, ephemeral=True)
 
-    @clovece.subcommand(name="help",description="Shows the help manual to this game and the bot.")
+    @clovece.subcommand(name="help", description="Shows the help manual to this game and the bot.")
     async def helpclovece(self,ctx):
         helptext = {
             "commands": """**play** (*public*/*private*) = Makes a lobby for 4 players max. Private lobbies can be joined only via room code.
@@ -459,6 +459,7 @@ class LobbyCog(commands.Cog):
         async def leavebutton(self, button, ctx):
             player = self.cog.getUserFromDC(ctx.user)
             await self.lobby.removePlayer(ctx, player)
+            await self.lobby.managemsg.edit(view=self.cog.MngmntView(self.lobby, self.cog))  # removing the player from the kick dropdown
             cloveceLogger.debug(f"{ctx.user.name} left")
 
         @discord.ui.button(style=discord.ButtonStyle.grey, emoji=emoji.emojize(":artist_palette:"), disabled=False)
@@ -790,8 +791,8 @@ class LobbyCog(commands.Cog):
             return f"{self.name} ({self.diffculty}) | icon: {self.icon}"
         
     class User(object):
-        def __init__(self, discorduser):
-            if type(discorduser) == dict:
+        def __init__(self, discorduser: discord.member.Member | discord.User | dict):
+            if isinstance(discorduser, dict):
                 for k, v in discorduser.items():
                     setattr(self, k, v)
             else:

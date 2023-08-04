@@ -139,16 +139,64 @@ class Testing(commands.Cog):
                 raise NotImplementedError("interface must be either discord.Interaction or discord.Message")
         return msg
 
-    # @discord.slash_command(name="flowers", description="viragok")
-    # async def flowers(self, interaction: discord.Interaction, num: int):
+    @discord.message_command(name="flowersss", guild_ids=(601381789096738863,691647519771328552))
+    async def flowersprofilka(self, interaction: discord.Interaction, msg: discord.Message):
+        await interaction.response.defer()
+        with BytesIO() as image:
+            await msg.attachments[0].save(image)
+            # await user.display_avatar.save(image)
+            img = Image.open(image)
+            for i in range(56):
+                mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
+                mappa = r"D:\Users\Peti.B\Downloads\viragok/" + random.choice(mappak)
+                virag = mappa + "/" + random.choice(os.listdir(mappa))
+                with open(virag, "rb") as file:
+                    virag = Image.open(file)
+                    size = img.width // 8
+                    virag.thumbnail((size, size))
+                    img.paste(virag, (random.choice([i for i in range(-size // 3, int(img.width - (size * 1))) if
+                                                     i not in range(size * 1, img.width - size * 3)]),
+                                      random.randint(0, img.height - size * 2)), virag)
+
+            for i in range(24):
+                mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
+                mappa = r"D:\Users\Peti.B\Downloads\viragok/" + random.choice(mappak)
+                virag = mappa + "/" + random.choice(os.listdir(mappa))
+                with open(virag, "rb") as file:
+                    virag = Image.open(file)
+                    size = img.width // 8
+                    virag.thumbnail((size, size))
+                    img.paste(virag,
+                              (random.randint(0, img.width), random.randint(img.height - size * 2, img.height - size)),
+                              virag)
+
+            d = ImageDraw.Draw(img)
+            fnt = ImageFont.truetype('FREESCPT.TTF', size=size)
+
+            textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": img.width // 100,
+                          "fill": (255, 255, 255), "anchor": "mm"}
+
+            # szoveg = random.choice(("Jó éjszakát mindenkinek", "Kellemes ünnepeket", "Áldott hétvégét kívánok", "Meghalt a Jóska xd"))
+            szoveg = random.choice(("Dobrú noc vám prajem!", "Pozehnaný víkend vám prajem!", "Kávicka pohodicka",
+                                    "Príjemné popoludnie prajem!"))
+            d.multiline_text((img.width / 2, img.height - size), szoveg, **textconfig)
+
+        with BytesIO() as image_binary:
+            img.save(image_binary, "PNG")
+            image_binary.seek(0)
+            await interaction.send(file=discord.File(image_binary, "flowers.PNG"))
+
+    # @discord.message_command(name="flowers", description="viragok")
+    # async def flowerss(self, interaction: discord.Interaction, msg: discord.Message):
+    #     # async def caesar(self, interaction: discord.Interaction, text: discord.Message):
     #     await interaction.response.defer()
+    #     img =
     #     img = Image.new("RGBA", (3072, 2048), (0, 0, 0, 0))
     #     for i in range(num):
     #         mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
     #         mappa = r"D:\Users\Peti.B\Downloads\viragok/" + random.choice(mappak)
     #         virag = mappa + "/" + random.choice(os.listdir(mappa))
     #         with open(virag, "rb") as file:
-    #             print(i)
     #             virag = Image.open(file)
     #             img.paste(virag, (random.randint(0, img.width), random.randint(0, img.height)), virag)
     #
@@ -198,11 +246,11 @@ class Testing(commands.Cog):
         from EdgeGPT.EdgeUtils import Query, Cookie
         # import json
         await interaction.response.defer()
-        Cookie.current_filepath = r"F:\Program Files\Python39\MyScripts\discordocska\pipik\data\bing_cookies_my.json"
+        Cookie.current_filepath = r"C:\Users\booth\PycharmProjects\ppbot\data\bing_cookies_my.json"
         Cookie.import_data()
         # cookies = json.loads(open(r"../data/bing_cookies_my.json", encoding="utf-8").read())  # might omit cookies option
-        # q = Query(query, cookie_file=Path(r"F:\Program Files\Python39\MyScripts\discordocska\pipik\data\bing_cookies_my.json"))
-        q = Query(query)
+        q = Query(query, cookie_files={Path(r"C:\Users\booth\PycharmProjects\ppbot\data\bing_cookies_my.json")})
+        # q = Query(query)
         await q.log_and_send_query(True, False)
         embed = discord.Embed(title=query, description=q.output, color=interaction.user.color)
         await interaction.send(embed=embed)
@@ -245,6 +293,11 @@ class Testing(commands.Cog):
                 await wh.send(content=f"{txt}", username=name, avatar_url=pfp_link, tts=tts)
                 await interaction.send("done", ephemeral=True)
 
-
+    @discord.slash_command(name="sp", guild_ids=TESTSERVER)
+    async def cmon(self, interaction):
+        ch: discord.TextChannel = self.client.get_guild(800196118570205216).channels[20]
+        msgs: list[discord.Message] = await ch.history().flatten()
+        msgs.reverse()
+        print("\n".join([f"[{msg.created_at}]{msg.author.name} = {msg.content} ({len(msg.attachments)})" for msg in msgs]))
 def setup(client, baselogger):
     client.add_cog(Testing(client, baselogger))

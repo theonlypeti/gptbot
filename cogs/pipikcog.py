@@ -3,7 +3,7 @@ import json
 import os
 import random
 from copy import deepcopy
-from typing import Dict, Union
+from typing import Union
 import emoji
 import nextcord as discord
 import pyowm
@@ -167,13 +167,13 @@ class PipikBot(commands.Cog):
         self.logger = baselogger.getChild(f"{__name__}logger")
         self.usedcompliments = {"placeholder", }
         self.client = client
-        self.temperature = 0
-        self.holding: Dict[int, discord.Member] = dict()
+        self.temperature: int = 0
+        self.holding: dict[int, discord.Member] = dict()
         self.weatherUpdatedTime = datetime.now()
         self.leaderboards = {}
         self.loserboards = {}
         self.sunrise_date = datetime.now()  # just a placeholder, it gets actually rewritten
-        self.users = []
+        self.users: list[PipikUser] = []
         self.achievements = {i[0]: Achievement(i) for i in default_achievements}
         
         try:
