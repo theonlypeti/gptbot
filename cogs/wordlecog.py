@@ -2,6 +2,7 @@ import random
 import nextcord as discord
 from nextcord.ext import commands
 
+
 class Wordlecog(commands.Cog):
     def __init__(self, client, baselogger):
         self.wordleLogger = baselogger.getChild('wordleLogger')

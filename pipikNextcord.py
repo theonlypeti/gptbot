@@ -82,7 +82,7 @@ client.remove_command('help')
 # TODO make an actual lobby extension
 # TODO merge caesar, clownize, t9 ize into one context command
 # TODO maybe make some mafia type game but rebrand it to some discord admins and mods vs spammers and use right click user commands
-# TODO play with this  if interaction.user.guild_permissions.administrator:
+# TODO play with this  if interaction.user.guild_permissions.administrator
 # TODO play with ClientCog and its application_commands property
 # TODO webhooks can send ephemeral messages
 # TODO command maker for users, and like on message command maker
@@ -113,12 +113,12 @@ async def on_ready():
     await client.change_presence(activity=game)
     #print("\n".join(i.name for i in client.get_application_commands()))
     try:
-        with open("timeouts.txt", "r") as file:
+        with open(r"data/timeouts.txt", "r") as file:
             timeouts = defaultdict(int)
             for k, v in json.load(file).items():
                 timeouts.update({k: v})
     except IOError:
-        with open("timeouts.txt", "w") as file:
+        with open(r"data/timeouts.txt", "w") as file:
             json.dump({}, file, indent=4)
     readus()
     pipikLogger.debug(timeouts)
@@ -229,7 +229,7 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.Member):
 
     if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>", "<:hapi:889603218273878118>", ":joy:", "<:kekw:1101064898391314462>",":rofl:"):
         #if reaction.message.author.id in (569937005463601152, 422386822350635008):
-        if reaction.message.guild.id in (601381789096738863, 691647519771328552):
+        if reaction.message.guild.id in (691647519771328552,):
         # if True:
             if user.id == reaction.message.author.id: # (569937005463601152, 422386822350635008):
                 kapja: discord.Member = reaction.message.author
@@ -262,7 +262,7 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.Member):
     if emoji.demojize(str(reaction.emoji)) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>", "<:hapi:889603218273878118>", ":joy:", "<:kekw:1101064898391314462>",":rofl:"):
         #if reaction.message.author.id == 569937005463601152:
         # if True:
-        if reaction.message.guild.id in (601381789096738863, 691647519771328552):
+        if reaction.message.guild.id in (691647519771328552, ):
             if reaction.count >= 3:
                 if reaction.message.id not in already_checked:
                     already_checked.append(reaction.message.id)

@@ -7,7 +7,7 @@ import json
 from bs4 import BeautifulSoup as html
 from utils.antimakkcen import antimakkcen
 
-path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe"
+path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe" #TODO now this is bad
 root = os.getcwd()
 maindir = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\R3"
 os.chdir(maindir)
@@ -16,6 +16,7 @@ with open("vonatdb.json", "r") as file:
     soundfiles = json.load(file)
 os.chdir(root)
 
+
 class TimeTable(object):
     def __init__(self, time, cities, meska, vlaktype):
         self.time = time
@@ -23,11 +24,12 @@ class TimeTable(object):
         self.delay = meska
         self.vlaktype = vlaktype
 
+
 class ZSSKCog(commands.Cog):
     def __init__(self, client, baselogger):
         self.client = client
         self.tt = None
-        self.zsskLogger = baselogger.getChild("ZsskLogger")
+        self.zsskLogger = baselogger.getChild(f"{__name__}Logger")
 
     async def getTimeTable(self, link): #dont judge pls
         async with aiohttp.ClientSession() as session:

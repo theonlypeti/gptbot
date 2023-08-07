@@ -1,4 +1,6 @@
 import os
+
+import praw
 from asyncpraw.models import ListingGenerator
 from nextcord.ext import commands
 import asyncpraw
@@ -18,9 +20,9 @@ reddit = asyncpraw.Reddit(client_id=os.getenv("REDDIT_CLIENT_ID"),
 
 emoji_buttons = (emoji.emojize(":red_question_mark:"), emoji.emojize(":men’s_room:"), emoji.emojize(":men’s_room:"),
                  emoji.emojize(":women’s_room:"), emoji.emojize(":women’s_room:"),
-                 emoji.emojize(":person_raising_hand:"), emoji.emojize(":person_raising_hand:"), emoji.emojize(":person_raising_hand:"),
+                 emoji.emojize(":person_raising_hand:"), emoji.emojize(":person_raising_hand:"), emoji.emojize(":person_raising_hand:"), emoji.emojize(":person_raising_hand:"),
                  emoji.emojize(":no_one_under_eighteen:")) #note, dont delete!
-subs = ("AskReddit", "AskMen", "askteenboys", "AskWomen", "AskTeenGirls", "DAE", "DoesAnybodyElse", "amitheonlyone", "AskRedditAfterDark")
+subs = ("AskReddit", "AskMen", "askteenboys", "AskWomen", "AskTeenGirls", "DAE", "DoesAnybodyElse", "amitheonlyone","AmItheAsshole", "AskRedditAfterDark")
 subemoji = {k: v for k, v in zip(subs, emoji_buttons)}
 emoji_buttons = (emoji.emojize(":red_question_mark:"), emoji.emojize(":men’s_room:"), emoji.emojize(":women’s_room:"), emoji.emojize(":person_raising_hand:"), emoji.emojize(":no_one_under_eighteen:"))
 root = os.getcwd()
@@ -143,11 +145,14 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             reddithandler.reset(self.subname)
 
     async def nexttopic(self, channel, sub, requester):
-        embedVar = await reddithandler.prettyprint(await reddithandler.submission(sub), requester)
+        subm: asyncpraw.reddit.Submission = await reddithandler.submission(sub)
+        embedVar = await reddithandler.prettyprint(subm, requester)
         if embedVar is None:
             await self.sendNoTopic(channel, sub)
         else:
             viewObj = self.TopicNextButtons(self, sub=sub)
+            viewObj.add_item(
+                discord.ui.Button(style=discord.ButtonStyle.link, label="Open", url="https://redd.it/" + subm.id))
             viewObj.children[2].disabled = (sub == "AskWomen")
             await channel.send(embed=embedVar, view=viewObj)
 
@@ -158,7 +163,10 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             await self.sendNoTopic(channel, sub)
         else:
             embedVar = await reddithandler.prettyprint(ques, requester) #it should tho
-            await channel.send(embed=embedVar, view=self.TopicNextButtons(self, sub=sub))
+            viewObj = self.TopicNextButtons(self, sub=sub)
+            viewObj.add_item(
+                discord.ui.Button(style=discord.ButtonStyle.link, label="Open", url="https://redd.it/" + ques.id))
+            await channel.send(embed=embedVar, view=viewObj)
 
     class TopicEmptyButton(discord.ui.View):
         def __init__(self, cog, sub="None"):
@@ -329,6 +337,7 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             self.filterStrings: dict[str, list[str]] = {}
             self.num_of_comments = 4
             self.max_comment_length = 1024 - 16
+            self.max_desc_length = 4090
 
         def openFilters(self):
             try:
@@ -379,7 +388,8 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
 
             subs = {"AskMen": reddit.subreddit("AskMen+askteenboys"),
                     "AskWomen": reddit.subreddit("AskWomen+AskTeenGirls"),
-                    "DAE": reddit.subreddit("DAE+doesanybodyelse+amitheonlyone")}
+                    # "DAE": reddit.subreddit("DAE+doesanybodyelse+amitheonlyone")}
+                    "DAE": reddit.subreddit("AmItheAsshole")}
             if subname in subs:
                 subreddit = await subs[subname]
             else:
@@ -436,7 +446,8 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             #return embedVar
 
         async def prettyprint(self, post: asyncpraw.reddit.Submission, *attr):
-            embedVar = discord.Embed(title=post.title if post.title and len(post.title) <= 256 else "\u200b", description=post.title if post.title and len(post.title) > 256 else (post.selftext[:min(self.max_comment_length, len(post.selftext))] + ("... " if len(post.selftext) > self.max_comment_length else "")) if (post.selftext and len(post.selftext) <= 1000) else "\u200b", color=attr[0].color if attr else discord.Colour.random())
+            # embedVar = discord.Embed(title=post.title if post.title and len(post.title) <= 256 else "\u200b", description=post.title if post.title and len(post.title) > 256 else (post.selftext[:self.max_desc_length] + ("... " if len(post.selftext) > self.max_comment_length else "")) if (post.selftext and len(post.selftext) <= self.max_desc_length) else "\u200b", color=attr[0].color if attr else discord.Colour.random())
+            embedVar = discord.Embed(title=post.title if post.title and len(post.title) <= 256 else "\u200b", description=post.title if post.title and len(post.title) > 256 else (post.selftext[:self.max_desc_length] + ("... " if len(post.selftext) > self.max_comment_length else "")) if post.selftext else "\u200b", color=attr[0].color if attr else discord.Colour.random())
             embedVar.set_footer(text=f"id: {post.id}" + " |{} | /topic to change topic".format(subemoji[post.subreddit.display_name]) + (" | Low score. Might be stupid?!" if post.score < 100 else " | " + str(post.score) + " points."))
             return embedVar
 

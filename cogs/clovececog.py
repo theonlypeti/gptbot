@@ -8,8 +8,9 @@ from datetime import datetime, date, timedelta
 import emoji
 from random import randint, choice, choices, shuffle
 from copy import deepcopy
-
 from utils.mentionCommand import mentionCommand
+
+#TODO redo emoji selection to paginators
 
 sleepTimeMult = 1
 
@@ -115,13 +116,13 @@ class LobbyCog(commands.Cog):
             self.savePlayers()
 
     @clovece.subcommand(name="stats",description="Shows your stats across all the games you´ve played.")
-    async def showstats(self,ctx,user:discord.User=discord.SlashOption(name="user",description="See someone else´s profile.",required=False,default=None)):
+    async def showstats(self,ctx,user:discord.User=discord.SlashOption(name="user", description="See someone else´s profile.",required=False,default=None)):
         if user is None:
             user = ctx.user
         player = self.getUserFromDC(user)
-        embedVar = discord.Embed(title=f"__{user.name}'s stats__",color=user.color)
+        embedVar = discord.Embed(title=f"__{user.name}'s stats__", color=user.color)
         for k,v in player.stats.items():
-            embedVar.add_field(name=k,value=v)
+            embedVar.add_field(name=k, value=v)
         await ctx.send(embed=embedVar)
 
     @clovece.subcommand(name="icons", description="Shows your or an user's collected icons.")
@@ -569,6 +570,7 @@ class LobbyCog(commands.Cog):
     @clovece.subcommand(name="play", description="Makes a lobby for a človeče game.")
     async def makeLobby(self, ctx: discord.Interaction, private=discord.SlashOption(name="private", description="Do you wish to create a public lobby or a private one",required=False,default="Public",choices=("Public","Private"))):
         user = self.getUserFromDC(ctx.user)
+        user.name = self.client.get_user(ctx.user.id).name #truly stupid workaround
         if user.inLobby:
             await ctx.send(embed=discord.Embed(title=f"You are already in a lobby. Try {mentionCommand(self.client,'clovece leave')}", color=discord.Color.red()),ephemeral=True)
             return
@@ -820,7 +822,7 @@ class LobbyCog(commands.Cog):
         def __str__(self):
             return self.name+" | icon: "+self.icon
 
-        def syncpipikachis(self,client):
+        def syncpipikachis(self, client):
             pipikcog = client.cogs["PipikBot"]
             pipikuser = pipikcog.getUserFromDC(self.userid)
             for achi in pipikuser.achi:
