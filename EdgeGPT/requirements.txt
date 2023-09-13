@@ -1,7 +1,0 @@
-aiohttp
-BingImageCreator
-certifi
-httpx
-prompt_toolkit
-requests
-rich

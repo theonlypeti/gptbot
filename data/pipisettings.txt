@@ -1,1 +1,1 @@
-{"temperature": 15.97, "weatherUpdTime": "2023-08-06T10:38:26.405818", "sunrise": "2023-08-06T03:33:11+00:00"}
+{"temperature": 27.79, "weatherUpdTime": "2023-09-13T18:18:39.114139", "sunrise": "2023-09-13T04:25:12+00:00"}

@@ -387,7 +387,7 @@ class LobbyCog(commands.Cog):
             print("no custom emotes") #TODO pretty print
 
     @commands.command()
-    async def verifyawaiting(self,ctx): #TODO REDO THIS WITH BUTTONS
+    async def verifyawaiting(self, ctx): #TODO REDO THIS WITH BUTTONS
         if ctx.author.id != 617840759466360842:
             return
         accepted = {}

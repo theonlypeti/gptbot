@@ -47,7 +47,7 @@ class ConverterCog(commands.Cog):
     @convert.on_autocomplete("to")
     async def currencyautocomplete(self, interaction: discord.Interaction, currency: str):
         if currency:
-            currs = {item[0]: item[1] for item in tuple((v, k) for k, v in self.currencylist.items() if currency.casefold().strip() in f"{k.casefold()} {v.casefold()}")[:25]}
+            currs = {item[0] or item[1]: item[1] for item in tuple((v, k) for k, v in self.currencylist.items() if currency.casefold().strip() in f"{k.casefold()} {v.casefold()}")[:25]}
             await interaction.response.send_autocomplete(currs)
 
 

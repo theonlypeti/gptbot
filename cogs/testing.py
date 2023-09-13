@@ -1,17 +1,22 @@
 import logging
 import os
 import random
+import traceback
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
-
+import time as time_module
+from bs4 import BeautifulSoup as html
+import aiohttp
 import nextcord as discord
+from nextcord.ext import tasks
 from PIL import Image, ImageOps, ImageDraw, ImageFont
-from nextcord import SlashOption
+from EdgeGPT.EdgeGPT import ConversationStyle
 from utils.getMsgFromLink import getMsgFromLink
 from nextcord.ext import commands
+from textwrap import wrap
 
 TESTSERVER = (860527626100015154,)
+root = os.getcwd()
 
 class Selection:
     def __init__(self, img: Image, boundary: tuple):
@@ -24,6 +29,20 @@ class Testing(commands.Cog):
         self.logger = baselogger.getChild(__name__)
         self.selection = None
         self.client: discord.Client = client
+        # self.wiki.start()
+
+    @tasks.loop(minutes=1)
+    async def wiki(self):
+        self.logger.debug("ran")
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://en.wikipedia.org/wiki/Special:Random') as req:
+                link = req.url
+        await self.client.get_channel(790588807770669126).send(link)
+
+    @wiki.before_loop  # i could comment this out but then it would look not pretty how my bootup time shot up by 5s haha
+    async def before_wiki(self):
+        self.logger.debug('getting wiki')
+        await self.client.wait_until_ready()
 
     class testvw(discord.ui.View):
         def __init__(self):
@@ -75,44 +94,6 @@ class Testing(commands.Cog):
     # @discord.slash_command(name="modaltesting", description="testing", guild_ids=TESTSERVER)
     # async def modaltesting(self, ctx):
     #     await ctx.response.send_modal(self.TextInputModal())
-
-
-    @discord.slash_command(name="pick", description="pick",guild_ids=TESTSERVER)
-    async def fut(self, ctx):
-        pass
-
-    @fut.subcommand(name="shop", description="shop")
-    async def fut3(self, ctx):
-        await ctx.response.defer()
-        orig = os.getcwd()
-        if ctx.user.id != 617840759466360842:
-            return
-        os.chdir(r"D:\Users\Peti.B\Pictures\microsoft\Windows\shop")
-        sample = [file for file in os.listdir() if not file.endswith(".mp4")]
-        await ctx.send(files=[discord.File(random.choice(sample))])
-        os.chdir(orig)
-
-    @fut.subcommand(name="kat", description="kat")
-    async def fut4(self, ctx):
-        await ctx.response.defer()
-        orig = os.getcwd()
-        if ctx.user.id != 617840759466360842:
-            return
-        os.chdir(r"D:\Users\Peti.B\Pictures\Mobil Backup\other\pokemons\KT")
-        sample = [file for file in os.listdir() if not file.endswith(".mp4")]
-        await ctx.send(files=[discord.File(random.choice(sample))])
-        os.chdir(orig)
-
-    @fut.subcommand(name="reddit")
-    async def fut2(self, ctx):
-        await ctx.response.defer()
-        orig = os.getcwd()
-        if ctx.user.id != 617840759466360842:
-            return
-        os.chdir(r"D:\Users\Peti.B\Pictures\microsoft\Windows\reddit")
-        sample = [file for file in os.listdir() if not file.endswith(".mp4")]
-        await ctx.send(files=[discord.File(random.choice(sample))])
-        os.chdir(orig)
 
     async def showimg(self,
                       interface: discord.Interaction | discord.Message,
@@ -241,36 +222,31 @@ class Testing(commands.Cog):
         whs = await channel.webhooks()
         await interaction.send(content=", ".join([str(wh.url) for wh in whs]))
 
-    @discord.slash_command(name="chatgpt", guild_ids=TESTSERVER + (800196118570205216, 601381789096738863, 409081549645152256, 691647519771328552))
-    async def query(self, interaction: discord.Interaction, query: str):
+
+    @discord.slash_command(name="chatgpt")
+    async def query(self, interaction: discord.Interaction, query: str, model: str =discord.SlashOption(name="model", description="What model to use when responding", choices=("Creative", "Balanced", "Precise"),default="Balanced", required=False)):
         from EdgeGPT.EdgeUtils import Query, Cookie
         # import json
         await interaction.response.defer()
-        Cookie.current_filepath = r"C:\Users\booth\PycharmProjects\ppbot\data\bing_cookies_my.json"
+        # Cookie.current_filepath = r"./data/cookies/bing_cookies_bp.json"
+        Cookie.dir_path = r"./data/cookies"
+        print(os.listdir(Cookie.dir_path))
         Cookie.import_data()
-        # cookies = json.loads(open(r"../data/bing_cookies_my.json", encoding="utf-8").read())  # might omit cookies option
-        q = Query(query, cookie_files={Path(r"C:\Users\booth\PycharmProjects\ppbot\data\bing_cookies_my.json")})
-        # q = Query(query)
-        await q.log_and_send_query(True, False)
-        embed = discord.Embed(title=query, description=q.output, color=interaction.user.color)
-        await interaction.send(embed=embed)
-
-        # whs = [0]
-        # try:
-        #     whs = await interaction.channel.webhooks()
-        # except discord.errors.Forbidden as e:
-        #     print(e)
-        #     return
-        # else:
-        #     if whs == [0]:
-        #         print("no whs")
-        #         return
-        #     else:
-        #         if not (wh := (discord.utils.find(lambda wh: wh.name == f"emotehijack{interaction.channel.id}", whs))):
-        #             wh = await interaction.channel.create_webhook(name=f"emotehijack{interaction.channel.id}")
-        #         await wh.send(content=f"{txt}", username=name, avatar_url=pfp_link, tts=False)
-        #         await interaction.send("done", ephemeral=True)
-
+        print(model.lower())
+        try:
+            # cookies = json.loads(open(r"../data/bing_cookies_my.json", encoding="utf-8").read())  # might omit cookies option
+            q = Query(query)
+            # q = Query(query, cookie_files={Path(r"/data/cookies/bing_cookies_my.json")}, style=model.lower())
+            # q = Query(query)
+            await q.log_and_send_query(True, False)
+        except Exception as e:
+            embed = discord.Embed(title=query, description=e, color=discord.Color.red())
+            await interaction.send(embed=embed, delete_after=180)
+            return
+        text = q.output
+        for text in wrap(text, 4000):
+            embed = discord.Embed(title=query, description=text, color=interaction.user.color)
+            await interaction.send(embed=embed)
 
     @discord.slash_command(name="wh", guild_ids=TESTSERVER + (800196118570205216, 601381789096738863, 409081549645152256, 691647519771328552))
     async def whtet3(self, interaction: discord.Interaction, txt: str, name: str, pfp_link: str = None, tts: bool = False, channel: discord.TextChannel = None):
@@ -293,11 +269,5 @@ class Testing(commands.Cog):
                 await wh.send(content=f"{txt}", username=name, avatar_url=pfp_link, tts=tts)
                 await interaction.send("done", ephemeral=True)
 
-    @discord.slash_command(name="sp", guild_ids=TESTSERVER)
-    async def cmon(self, interaction):
-        ch: discord.TextChannel = self.client.get_guild(800196118570205216).channels[20]
-        msgs: list[discord.Message] = await ch.history().flatten()
-        msgs.reverse()
-        print("\n".join([f"[{msg.created_at}]{msg.author.name} = {msg.content} ({len(msg.attachments)})" for msg in msgs]))
 def setup(client, baselogger):
     client.add_cog(Testing(client, baselogger))
