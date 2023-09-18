@@ -47,10 +47,10 @@ async def sendmsg(ctx, embedVar, img: list[imageio.core.Array]):
 
 
 class SympyCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         self.client = client
         global sympylogger
-        sympylogger = baselogger.getChild("SympyLogger")
+        sympylogger = client.logger.getChild("SympyLogger")
 
     class SimplifyModal(discord.ui.Modal):
         def __init__(self):
@@ -338,5 +338,5 @@ class SympyCog(commands.Cog):
         modal = self.AzaModal()
         await ctx.response.send_modal(modal)
 
-def setup(client, baselogger):
-    client.add_cog(SympyCog(client, baselogger))
+def setup(client):
+    client.add_cog(SympyCog(client))

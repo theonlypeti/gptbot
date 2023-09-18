@@ -16,9 +16,9 @@ stunlocked = None
 
 
 class MiscallenousCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         global logger
-        logger = baselogger.getChild(f"{__name__}Logger")
+        logger = client.logger.getChild(f"{__name__}Logger")
         self.client = client
         with open(r"data/karomkodasok.txt", "r", encoding="UTF-8") as file:
             self.karomkodasok = file.readlines()
@@ -187,9 +187,9 @@ class MiscallenousCog(commands.Cog):
 
         async def callback(self, interaction: discord.Interaction):
             if self.hovertext.value:
-                custom = f"[__{self.displaytext.value}__]({self.link.value}\n" + '"{}"'.format(self.hovertext.value) + ")"
+                custom = f"\u200b[__{self.displaytext.value}__]({self.link.value}\n" + '"{}"'.format(self.hovertext.value) + ")"
             else:
-                custom = f"[__{self.displaytext.value}__]({self.link.value})"
+                custom = f"\u200b[__{self.displaytext.value}__]({self.link.value})"
             await interaction.send(self.context.value.format(custom) if "{}" in self.context.value else self.context.value + custom if self.context.value else custom)
 
     @discord.slash_command(name="makelink")
@@ -330,5 +330,5 @@ class MiscallenousCog(commands.Cog):
                 await channel.send(f"Te csak ne írjál semmit, {who.display_name}.")
 
 
-def setup(client, baselogger):
-    client.add_cog(MiscallenousCog(client, baselogger))
+def setup(client):
+    client.add_cog(MiscallenousCog(client))

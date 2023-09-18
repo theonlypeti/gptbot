@@ -5,10 +5,10 @@ import pyowm
 
 
 class FujkinCog(commands.Cog):
-    def __init__(self, client, logger: logging.Logger):
+    def __init__(self, client):
         self.client = client
         self.fujkin.start()
-        self.fujkinLogger = logger.getChild("FujkinLogger")
+        self.fujkinLogger = client.logger.getChild("FujkinLogger")
         self.does_it_fujkin = False
 
     @tasks.loop(minutes=30)
@@ -35,5 +35,5 @@ class FujkinCog(commands.Cog):
         self.channels = (self.client.get_channel(897298417431240714),) #rageon
 
 
-def setup(client, baselogger): #bot shit
-    client.add_cog(FujkinCog(client, baselogger))
+def setup(client): #bot shit
+    client.add_cog(FujkinCog(client))

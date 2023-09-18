@@ -19,9 +19,9 @@ import emoji
 
 
 class ColorRoleCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         global logger
-        logger = baselogger.getChild(f"{__name__}logger")
+        logger = client.logger.getChild(f"{__name__}logger")
         self.colorstopick = 4
         self.client = client
         self.getemoteserver.start()  #funky workaround but works
@@ -190,5 +190,5 @@ class ColorRoleCog(commands.Cog):
         embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}", icon_url=interaction.user.avatar.url)
         await interaction.send(embed=embedVar)
 
-def setup(client, baselogger): #TODO maybe add some logging messages
-    client.add_cog(ColorRoleCog(client, baselogger))
+def setup(client): #TODO maybe add some logging messages
+    client.add_cog(ColorRoleCog(client))

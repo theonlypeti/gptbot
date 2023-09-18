@@ -25,11 +25,11 @@ Radio X - Funk, Disco
 SF-UR - House""".split("\n")}
 
 class RadioCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         global radioLogger
         #self.radios = []
         self.client = client
-        radioLogger = baselogger.getChild("radioLogger")
+        radioLogger = client.logger.getChild("radioLogger")
         self.stations = []
         
         for station in os.listdir(maindir)[2:-3]:
@@ -251,5 +251,5 @@ class Radio(object):
         radioLogger.debug(f"{a} choice")
         a()
 
-def setup(client, baselogger):
-    client.add_cog(RadioCog(client, baselogger))
+def setup(client):
+    client.add_cog(RadioCog(client))

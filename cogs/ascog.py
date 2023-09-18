@@ -18,7 +18,7 @@ rady = AsFunc(title="Rády", label="Permutácia s rádom", placeholder="(1,2,3)^
 
 
 class AsCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         pass
 
     class AsModal(discord.ui.Modal):
@@ -61,5 +61,5 @@ class AsCog(commands.Cog):
         await interaction.response.send_modal(modal)
 
 
-def setup(client, baselogger):
-    client.add_cog(AsCog(client, baselogger))
+def setup(client):
+    client.add_cog(AsCog(client))

@@ -16,10 +16,10 @@ THUMBNAIL_SIZE = (720, 480)
 
 
 class PillowCog(commands.Cog):
-    def __init__(self, client, baselogger: Logger):
+    def __init__(self, client):
         global logger
         self.client = client
-        logger = baselogger.getChild(f"{__name__}logger")
+        logger = client.logger.getChild(f"{__name__}logger")
 
     class Selection:
         def __init__(self, img: Image, boundary: tuple):
@@ -718,5 +718,5 @@ class PillowCog(commands.Cog):
             return msg
 
 
-def setup(client, baselogger):
-    client.add_cog(PillowCog(client, baselogger))
+def setup(client):
+    client.add_cog(PillowCog(client))

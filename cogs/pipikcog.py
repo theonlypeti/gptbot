@@ -3,7 +3,7 @@ import json
 import os
 import random
 from copy import deepcopy
-from typing import Union
+from typing import Union, Sequence
 import emoji
 import nextcord as discord
 import pyowm
@@ -162,9 +162,10 @@ class PipikUser(object):
             del (self.items[which])
         cog.saveFile()
 
+
 class PipikBot(commands.Cog):
-    def __init__(self, client, baselogger):
-        self.logger = baselogger.getChild(f"{__name__}logger")
+    def __init__(self, client):
+        self.logger = client.logger.getChild(f"{__name__}logger")
         self.usedcompliments = {"placeholder", }
         self.client = client
         self.temperature: int = 0
@@ -173,7 +174,7 @@ class PipikBot(commands.Cog):
         self.leaderboards = {}
         self.loserboards = {}
         self.sunrise_date = datetime.now()  # just a placeholder, it gets actually rewritten
-        self.users: list[PipikUser] = []
+        self.users: Sequence[PipikUser] = []
         self.achievements = {i[0]: Achievement(i) for i in default_achievements}
         
         try:
@@ -359,10 +360,16 @@ class PipikBot(commands.Cog):
     └ leave = to kick it.
     time = Make discord timestamps
     cat = Random cat pic for when you feel down
+    beans = Random pet toe beans pic when you feel down
     sub <subreddit name> = Random post from a subreddit
     bored = Recommends a random thread game to play in a text chat
     clovece = Play a game of clovece
     mycolor (if enabled on server) = Set your custom role color
+    chatgpt = Initiate a chat with an AI chatbot
+    convert = Converts between two any currencies, real or crypto
+    imageditor = Image editor in discord
+    emote = use nitro emotes without subscription
+    bakalarka = Set up notifications for FEI bachelor theses
     mat = Solve maths problems
     ps = Calculate IP adresses
     run = Execute python commands
@@ -613,7 +620,7 @@ class PipikBot(commands.Cog):
     class PillsButtonsCraft(discord.ui.Button):
         def __init__(self, user, cog):
             self.user = user
-            self.cog = cog
+            self.cog: PipikBot = cog
             canCraft = any((i[1] >= 10 for i in user.items))
             super().__init__(label="Craft", disabled=not canCraft, style=discord.ButtonStyle.gray, emoji=emoji.emojize(":hammer:"))
 
@@ -621,10 +628,6 @@ class PipikBot(commands.Cog):
             if interaction.user.id != self.user.id:
                 await interaction.send(f"This is not your inventory, use {mentionCommand(self.cog.client,'pills')} to see your pills.", ephemeral=True)
                 return
-            #self.style = discord.ButtonStyle.green
-            #for child in self.view.children:
-            #    child.disabled = True
-            #await interaction.response.edit_message(view=self.view)
 
             viewObj = discord.ui.View()
             viewObj.add_item(self.cog.PillCraftDropdown(self.user, self.cog))
@@ -643,7 +646,7 @@ class PipikBot(commands.Cog):
                 if self.values[0] == "-1":
                     await interaction.response.edit_message(content="Cancelled.", embed=None, view=None, delete_after=5.0)
                 else:
-                    await interaction.response.edit_message(content=None, embed=discord.Embed(title=f"You took a {pills[int(self.values[0])]['name']}",description="Now go measure your pp before it wears out!",color=interaction.user.color),view=None)
+                    await interaction.response.edit_message(content=None, embed=discord.Embed(title=f"You took a {pills[int(self.values[0])]['name']}", description="Now go measure your pp before it wears out!",color=interaction.user.color),view=None)
                     if "pill_popper" not in self.user.achi:
                         await self.cog.updateUserAchi(interaction, interaction.user, "pill_popper") #moved this above takepill so achi adding happens before savefile gets called
                     await self.user.takePill(int(self.values[0]), self.cog)
@@ -971,5 +974,5 @@ class PipikBot(commands.Cog):
             await ctx.send(embed=embedMsg)
 
 
-def setup(client, baselogger):
-    client.add_cog(PipikBot(client, baselogger))
+def setup(client):
+    client.add_cog(PipikBot(client))

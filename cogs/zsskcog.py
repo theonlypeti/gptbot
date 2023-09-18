@@ -26,10 +26,10 @@ class TimeTable(object):
 
 
 class ZSSKCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         self.client = client
         self.tt = None
-        self.zsskLogger = baselogger.getChild(f"{__name__}Logger")
+        self.zsskLogger = client.logger.getChild(f"{__name__}Logger")
 
     async def getTimeTable(self, link): #dont judge pls
         async with aiohttp.ClientSession() as session:
@@ -179,5 +179,5 @@ class ZSSKCog(commands.Cog):
         mypath = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\ZNELKY"
         self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=mypath + "\\END.WAV"))
 
-def setup(client,baselogger):
-    client.add_cog(ZSSKCog(client,baselogger))
+def setup(client):
+    client.add_cog(ZSSKCog(client))

@@ -9,9 +9,9 @@ import pint
 #TODO use Pint
 
 class ConverterCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         self.client = client
-        self.converterLogger = baselogger.getChild(f"{__name__}logger")
+        self.converterLogger = client.logger.getChild(f"{__name__}logger")
         self.getCurrList.start()
 
     @tasks.loop(hours=24)
@@ -51,5 +51,5 @@ class ConverterCog(commands.Cog):
             await interaction.response.send_autocomplete(currs)
 
 
-def setup(client, baselogger):
-    client.add_cog(ConverterCog(client, baselogger))
+def setup(client):
+    client.add_cog(ConverterCog(client))

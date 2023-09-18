@@ -28,10 +28,10 @@ emoji_buttons = (emoji.emojize(":red_question_mark:"), emoji.emojize(":men’s_r
 root = os.getcwd()
 
 class TopicCog(commands.Cog): #TODO make reddithandler not global, and have multiple handlers for multiple guilds
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         global reddithandler, logger
         self.client = client
-        logger = baselogger.getChild('topicLogger')
+        logger = client.logger.getChild('topicLogger')
         reddithandler = self.RedditHandler(self)
         reddithandler.openFilters()
 
@@ -500,5 +500,5 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             del self.subGenerators[sub]
 
 
-def setup(client, baselogger):
-    client.add_cog(TopicCog(client, baselogger))
+def setup(client):
+    client.add_cog(TopicCog(client))

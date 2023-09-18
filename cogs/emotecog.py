@@ -18,12 +18,12 @@ root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pip
 
 
 class EmoteCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         global emotelogger
         self.discord_emotes = dict()
         self.client = client
         self.emoteserver = None
-        emotelogger = baselogger.getChild("EmoteLogger")
+        emotelogger = client.logger.getChild("EmoteLogger")
         self.readEmotes()
 
     async def flipemote(self, emote, state, orient: Literal["H"] | Literal["V"]):  #TODO: make this into a context manager, with flippedemote(): and then it deletes the emote
@@ -317,5 +317,5 @@ class EmoteCog(commands.Cog):
         await interaction.response.send_modal(self.AddReactLettersModal(message))
 
 
-def setup(client, baselogger):
-    client.add_cog(EmoteCog(client, baselogger))
+def setup(client):
+    client.add_cog(EmoteCog(client))

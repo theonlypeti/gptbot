@@ -1,22 +1,15 @@
 import logging
 import os
 import random
-import traceback
 from io import BytesIO
-from pathlib import Path
-import time as time_module
-from bs4 import BeautifulSoup as html
-import aiohttp
 import nextcord as discord
-from nextcord.ext import tasks
 from PIL import Image, ImageOps, ImageDraw, ImageFont
-from EdgeGPT.EdgeGPT import ConversationStyle
 from utils.getMsgFromLink import getMsgFromLink
 from nextcord.ext import commands
-from textwrap import wrap
 
 TESTSERVER = (860527626100015154,)
 root = os.getcwd()
+
 
 class Selection:
     def __init__(self, img: Image, boundary: tuple):
@@ -25,24 +18,10 @@ class Selection:
         self.boundary = boundary
 
 class Testing(commands.Cog):
-    def __init__(self, client, baselogger: logging.Logger):
-        self.logger = baselogger.getChild(__name__)
+    def __init__(self, client):
+        self.logger = client.logger.getChild(__name__)
         self.selection = None
         self.client: discord.Client = client
-        # self.wiki.start()
-
-    @tasks.loop(minutes=1)
-    async def wiki(self):
-        self.logger.debug("ran")
-        async with aiohttp.ClientSession() as session:
-            async with session.get('https://en.wikipedia.org/wiki/Special:Random') as req:
-                link = req.url
-        await self.client.get_channel(790588807770669126).send(link)
-
-    @wiki.before_loop  # i could comment this out but then it would look not pretty how my bootup time shot up by 5s haha
-    async def before_wiki(self):
-        self.logger.debug('getting wiki')
-        await self.client.wait_until_ready()
 
     class testvw(discord.ui.View):
         def __init__(self):
@@ -223,31 +202,6 @@ class Testing(commands.Cog):
         await interaction.send(content=", ".join([str(wh.url) for wh in whs]))
 
 
-    @discord.slash_command(name="chatgpt")
-    async def query(self, interaction: discord.Interaction, query: str, model: str =discord.SlashOption(name="model", description="What model to use when responding", choices=("Creative", "Balanced", "Precise"),default="Balanced", required=False)):
-        from EdgeGPT.EdgeUtils import Query, Cookie
-        # import json
-        await interaction.response.defer()
-        # Cookie.current_filepath = r"./data/cookies/bing_cookies_bp.json"
-        Cookie.dir_path = r"./data/cookies"
-        print(os.listdir(Cookie.dir_path))
-        Cookie.import_data()
-        print(model.lower())
-        try:
-            # cookies = json.loads(open(r"../data/bing_cookies_my.json", encoding="utf-8").read())  # might omit cookies option
-            q = Query(query)
-            # q = Query(query, cookie_files={Path(r"/data/cookies/bing_cookies_my.json")}, style=model.lower())
-            # q = Query(query)
-            await q.log_and_send_query(True, False)
-        except Exception as e:
-            embed = discord.Embed(title=query, description=e, color=discord.Color.red())
-            await interaction.send(embed=embed, delete_after=180)
-            return
-        text = q.output
-        for text in wrap(text, 4000):
-            embed = discord.Embed(title=query, description=text, color=interaction.user.color)
-            await interaction.send(embed=embed)
-
     @discord.slash_command(name="wh", guild_ids=TESTSERVER + (800196118570205216, 601381789096738863, 409081549645152256, 691647519771328552))
     async def whtet3(self, interaction: discord.Interaction, txt: str, name: str, pfp_link: str = None, tts: bool = False, channel: discord.TextChannel = None):
         chann: discord.PartialMessage|discord.Interaction = await getMsgFromLink(self.client, channel) if channel else interaction
@@ -269,5 +223,6 @@ class Testing(commands.Cog):
                 await wh.send(content=f"{txt}", username=name, avatar_url=pfp_link, tts=tts)
                 await interaction.send("done", ephemeral=True)
 
-def setup(client, baselogger):
-    client.add_cog(Testing(client, baselogger))
+
+def setup(client):
+    client.add_cog(Testing(client))

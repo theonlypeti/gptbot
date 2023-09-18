@@ -6,8 +6,8 @@ import emoji
 root = os.getcwd()
 
 class GifCog(commands.Cog):
-    def __init__(self, client, baselogger):
-        self.gifLogger = baselogger.getChild("GifLogger")
+    def __init__(self, client):
+        self.gifLogger = client.logger.getChild("GifLogger")
         self.client = client
         self.db = self.loadGifs()
 
@@ -145,5 +145,5 @@ class GifCog(commands.Cog):
     #     viewObj.add_item(self.GifLoadFolderSelect(ctx,msg,self.db[str(ctx.user.id)]))
     #     await ctx.send(view=viewObj,ephemeral=True)
 
-def setup(client,baselogger):
-    client.add_cog(GifCog(client, baselogger))
+def setup(client):
+    client.add_cog(GifCog(client))

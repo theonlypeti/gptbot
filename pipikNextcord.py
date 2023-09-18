@@ -16,14 +16,13 @@ import argparse
 import time as time_module
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
-from sympy import Sum
 from utils.mentionCommand import mentionCommand
 from utils.getMsgFromLink import getMsgFromLink
 from utils import mylogger
 
 
 start = time_module.perf_counter()
-version = 3.8
+version = 3.9
 load_dotenv(r"./credentials/main.env")
 
 parser = argparse.ArgumentParser(prog=f"PipikBot V{version}", description='A fancy discord bot.', epilog="Written by theonlypeti.")
@@ -68,6 +67,7 @@ intents.typing = True
 #bot = commands.Bot(intents=intents, chunk_guilds_at_startup=False, member_cache_flags=nextcord.MemberCacheFlags.none())
 client = commands.Bot(command_prefix='&', intents=intents, chunk_guilds_at_startup=True, status=discord.Status.offline, activity=discord.Game(name="Booting up...")) #TODO chunk_guilds_at_startup=False might help me
 client.remove_command('help')
+client.logger = pipikLogger
 
 # TODO play with this @commands.has_permissions(manage_server=True) only applicable to prefix commands, slash has smth else
 # TODO colored ansi text
@@ -84,11 +84,11 @@ client.remove_command('help')
 # TODO maybe make some mafia type game but rebrand it to some discord admins and mods vs spammers and use right click user commands
 # TODO play with this  if interaction.user.guild_permissions.administrator
 # TODO play with ClientCog and its application_commands property
-# TODO webhooks can send ephemeral messages
 # TODO command maker for users, and like on message command maker
 # TODO replace every list typehint with Sequence or MutableSequence or smth or Iterable
 # TODO a database abstraction for myself
 # TODO selectmenu for bp temy to open their desc and availability in a embed, then the pagi arrows would cycle through the bp temy one by one + button for english
+# TODO move baselogger into client, and each every subsequent use in cogs
 
 #T9 = ({key * i: letter for i, key, letter in zip([(num % 3) + 1 for num in range(0, 26)], [str(q // 3) for q in range(6, 30)],sorted({chr(a) for a in range(ord("A"), ord("Z") + 1)} - {"S", "Z"}))} | {"7777": "S", "9999": "Z","0": " "})
 #T9rev = {v: k for k, v in T9.items()}
@@ -109,9 +109,12 @@ async def on_ready():
     global timeouts, us
     print(f"Signed in at {datetime.now()}")
     pipikLogger.info(f"{time_module.perf_counter() - start} Bootup time")
-    game = discord.Game(f"{linecount} lines of code; V{version}! Use /help")  # dont even try to move this believe me ive tried
+    game = discord.CustomActivity(
+        name="Custom Status",
+        state=f"{linecount} lines of code; V{version}!"
+    )
+    # game = discord.Game(f"{linecount} lines of code; V{version}! Use /help")  # dont even try to move this believe me ive tried
     await client.change_presence(activity=game)
-    #print("\n".join(i.name for i in client.get_application_commands()))
     try:
         with open(r"data/timeouts.txt", "r") as file:
             timeouts = defaultdict(int)
@@ -126,8 +129,6 @@ async def on_ready():
 def writeus(): #TODO move this to misc
     with open(r"data/us.txt", "w") as file:
         json.dump(list(us), file, indent=4)
-
-
 
 def readus():
     global us
@@ -151,7 +152,7 @@ async def on_message_delete(msg: nextcord.Message):
         # if ctx.guild.id == 601381789096738863:
         #     await ctx.add_reaction("<:kekw:800726027290148884>")
         if args.logfile:
-            tolog = f"{msg.author} said ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.name} at {str(datetime.now())}"
+            tolog = f"{msg.author} deleted ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.name} at {str(datetime.now())}"
             tolog = emoji.demojize(antimakkcen(tolog)).encode('ascii', "ignore").decode()
             pipikLogger.log(5, tolog)
         if msg.attachments:
@@ -396,7 +397,7 @@ for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know
     if not args.no_linecount:
         with open("./cogs/"+file, "r", encoding="UTF-8") as f:
             linecount += len(f.readlines())
-    client.load_extension("cogs." + file[:-3], extras={"baselogger": pipikLogger})
+    client.load_extension("cogs." + file[:-3])
     if not args.debug:
         sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.02f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
         sys.stdout.flush()

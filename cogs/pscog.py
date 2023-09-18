@@ -7,10 +7,10 @@ from utils.ps import Adress, broadcasty
 
 
 class PsCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         global pslogger
         self.client = client
-        pslogger = baselogger.getChild(f"{__name__}logger")
+        pslogger = client.logger.getChild(f"{__name__}logger")
 
     class BroadcastCalcModal(discord.ui.Modal):
         def __init__(self):
@@ -111,5 +111,5 @@ class PsCog(commands.Cog):
         await ctx.send("https://cdn.discordapp.com/attachments/892054308563091456/998385704117731418/Subnetting.mp4?size=4096")
 
 
-def setup(client, baselogger):
-    client.add_cog(PsCog(client, baselogger))
+def setup(client):
+    client.add_cog(PsCog(client))

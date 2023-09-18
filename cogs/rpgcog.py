@@ -1572,12 +1572,12 @@ class RPGGame:
 ##empty_armor = RPGGame.Armor(price=None,weight=None,amount=None,armor=0,armortype=None,material=None,display_name="Empty")
 
 class RPGCog(commands.Cog):
-    def __init__(self, client, baselogger: logging.Logger):
+    def __init__(self, client):
         global logger
         self.client = client
         self.worlds = {}
         self.players = {}
-        logger = baselogger.getChild(f"{__name__}logger")
+        logger = client.logger.getChild(f"{__name__}logger")
 
     @classmethod
     async def backToMap(cls, ctx, player):
@@ -1738,6 +1738,6 @@ class RPGCog(commands.Cog):
         await ctx.send(player.move("down", viewObj), view=viewObj, embed=player.statEmbed(ctx.user.color))
 
 
-def setup(client, baselogger):
-    client.add_cog(RPGCog(client, baselogger))
+def setup(client):
+    client.add_cog(RPGCog(client))
 

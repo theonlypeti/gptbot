@@ -31,14 +31,15 @@ os.makedirs(root + r"/data", exist_ok=True)
 with open(root + r"/data/emojis.txt", "r") as file:
     allemojis_dict = json.load(file)
 allemojis = sum([v for v in allemojis_dict.values()],[])
-unlockable_emojis_dict = {k:v for k,v in allemojis_dict.items() if k not in ("pipikachis","cloveceachis")}
-unlockable_emojis = sum([v for v in unlockable_emojis_dict.values()],[])
-achi_emojis_dict = {k:v for k,v in allemojis_dict.items() if k in ("pipikachis","cloveceachis")}
+unlockable_emojis_dict = {k:v for k,v in allemojis_dict.items() if k not in ("pipikachis", "cloveceachis")}
+unlockable_emojis = sum([v for v in unlockable_emojis_dict.values()], [])
+achi_emojis_dict = {k:v for k,v in allemojis_dict.items() if k in ("pipikachis", "cloveceachis")}
+
 
 class LobbyCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         global cloveceLogger
-        cloveceLogger = baselogger.getChild("CloveceLogger")
+        cloveceLogger = client.logger.getChild("CloveceLogger")
         self.users = []
 
         try:
@@ -1351,5 +1352,5 @@ obsadene policka svojmi panakmi, prekrocenie dlzky domceku a obsadene policka v 
         await asyncio.sleep(sleepTimeMult)
 
 
-def setup(client, baselogger):
-    client.add_cog(LobbyCog(client, baselogger))
+def setup(client):
+    client.add_cog(LobbyCog(client))

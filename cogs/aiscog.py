@@ -33,9 +33,9 @@ class Tema(object):
 
 
 class AisCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         self.client = client
-        self.aisLogger = baselogger.getChild('aisLogger')
+        self.aisLogger = client.logger.getChild('aisLogger')
         self.printer.start()
         self.temy = []
         if os.path.exists(root+r'/data/ais_notif_channels.txt'):
@@ -93,7 +93,7 @@ class AisCog(commands.Cog):
                     oldNames: list[str] = list(oldDict.keys()) #[tema.name for tema in self.temy]
                     if len(temy) > len(self.temy):
                         diff = set(newNames).difference(oldNames)
-                        diffTemy: list[Tema] = sorted([newDict[name] for name in diff], key= lambda tema: tema.num)
+                        diffTemy: list[Tema] = sorted([newDict[name] for name in diff], key=lambda tema: tema.num)
                     else:
                         diff = set(oldNames).difference(newNames)
                         diffTemy: list[Tema] = sorted([oldDict[name] for name in diff], key=lambda tema: tema.num)
@@ -257,5 +257,5 @@ class AisCog(commands.Cog):
             await interaction.message.edit(view=None)
 
 
-def setup(client, baselogger):  # bot shit
-    client.add_cog(AisCog(client, baselogger))
+def setup(client):  # bot shit
+    client.add_cog(AisCog(client))
