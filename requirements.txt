@@ -1,4 +1,5 @@
 nextcord
+PyNaCl
 coloredlogs
 beautifulsoup4
 argparse

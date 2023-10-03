@@ -5,11 +5,11 @@ from random import choice, choices
 import inspect
 import emoji
 
-root = "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pipik"
-path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe"
+root = os.getcwd()
+path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe" #TODO ofc this is not ok xd
 maindir = "D:\\Users\\Peti.B\\Music\\San Andreas Radio Constructor\\San Andreas Radio Constructor"
 
-radio_icons_station = {"<:BounceFM:957469538599985223>":"Bounce FM","<:CSR1039:957469539518545960> ":"CSR 103.9","<:KDST:957469532816048159> ":"K-DST","<:KJAHWest:957469552168558732>":"K-Jah West","<:KRose:957469547760345109>":"K-Rose","<:MasterSounds:957469544681725972>":"Master Sounds 98.3","<:PlaybackFMLogo:957469525211766855>":"Playback FM","<:RadioLosSantos:957469549270294568>":"Radio Los Santos","<:RadioX:957469523387232256>":"Radio X","<:SFUR:957469545428299836>":"SF-UR"}
+radio_icons_station = {"<:BounceFM:957469538599985223>":"Bounce FM","<:CSR1039:957469539518545960>":"CSR 103.9","<:KDST:957469532816048159>":"K-DST","<:KJAHWest:957469552168558732>":"K-Jah West","<:KRose:957469547760345109>":"K-Rose","<:MasterSounds:957469544681725972>":"Master Sounds 98.3","<:PlaybackFMLogo:957469525211766855>":"Playback FM","<:RadioLosSantos:957469549270294568>":"Radio Los Santos","<:RadioX:957469523387232256>":"Radio X","<:SFUR:957469545428299836>":"SF-UR"}
 station_emojis = {v:k for k,v in radio_icons_station.items()}    
 
 
@@ -34,7 +34,7 @@ class RadioCog(commands.Cog):
         
         for station in os.listdir(maindir)[2:-3]:
             self.stations.append(self.Station(station, emoji=station_emojis[station], desc=station_descs[station])) #TODO dont do this, initialize them only when called by join
-        self.ads = os.listdir(maindir+"\\!Commercials")
+        self.ads = os.listdir(maindir+r"\!Commercials")
 
     class Station(object):
         def __init__(self, folder, emoji="", desc=""):
@@ -77,7 +77,7 @@ class RadioCog(commands.Cog):
                         self.songs[-1][2].append(song)
                 else:
                     del(self.songs[-1][0])
-                    self.songs.append([song,[song],[],[]])
+                    self.songs.append([song, [song], [], []])
             del(self.songs[-1][0])
 
     class StationDropdown(discord.ui.Select):
@@ -97,10 +97,12 @@ class RadioCog(commands.Cog):
             if not emoji: #intentless fallback
                 radioLogger.info(station)
                 try:
-                    emoji = await self.cog.client.get_guild(957469186798518282).fetch_emoji(station.split(":")[2][:-2])
+                    tofetch = station.split(":")[2][:-2]
+                    radioLogger.debug(tofetch)
+                    emoji = await self.cog.client.get_guild(957469186798518282).fetch_emoji(tofetch)
                 except discord.errors.NotFound:  
                 #if not emoji: #local file fallback
-                    icondir ="F:/Program Files/Python39/MyScripts/discordocska/zene/radio icons/"
+                    icondir = root + r"\data\radio icons\\"
                     file = discord.File(icondir+station.split(":")[1]+".png", filename="image.png")
                     embedVar.set_thumbnail(url="attachment://image.png")
                     await inter.response.edit_message(file=file, embed=embedVar, view=viewObj)
@@ -149,6 +151,7 @@ class RadioCog(commands.Cog):
         await ctx.send("Left voice channel.", delete_after=2.0)
         #radiocog.radios.remove(self)
 
+
 class Radio(object):
     def __init__(self, vclient: discord.VoiceClient, station: str, cog):
         self.radiodir: str|None = None
@@ -163,8 +166,9 @@ class Radio(object):
         self.announceChance = 30 #Station name/catchphrase announce chance
         # ^ - Above values are in percents%, they dont have to add up to 100%
         self.noRepeats = 6 #noRepeats #How many songs to play until they can be repeated
-        self.noneChance = max(0,100-(self.DJTalkChance+self.callChance+self.adChance+self.storyChance+self.announceChance))
-        self.chancelist = (self.DJTalkChance/100,self.callChance/100,self.adChance/100,self.storyChance/100,self.announceChance/100,self.noneChance/100)
+        self.noneChance = max(0, 100-(self.DJTalkChance+self.callChance+self.adChance+self.storyChance+self.announceChance))
+        self.chancelist = (self.DJTalkChance/100, self.callChance/100, self.adChance/100, self.storyChance/100, self.announceChance/100, self.noneChance/100)
+        self.radiodir = maindir + "\\" + self.station.name + "\\"
         radioLogger.info("radio initialised i guess")
 
     def getStation(self,stationName):
@@ -179,13 +183,13 @@ class Radio(object):
             self.played.append(song)
             if len(self.played) > self.noRepeats:
                 del self.played[0]
-            self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=choice(song[0])),
-                     after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=song[1][0]),
-                                                  after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=choice(song[2])),
+            self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=self.radiodir + choice(song[0])),
+                     after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=self.radiodir + song[1][0]),
+                                                  after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=self.radiodir + choice(song[2])),
                                                                                     after=lambda a: self.playerloop())))
             radioLogger.debug(f"{len(inspect.stack(0))} inspect stack")
             
-            radioLogger.info("♪ Now playing -", song[1][0][:-9], "♪")
+            radioLogger.info(f"♪ Now playing - {song[1][0][:-9]} ♪")
             return 
         else:
             radioLogger.warning("retrying")
@@ -221,6 +225,7 @@ class Radio(object):
             radioLogger.debug("story end")
 
     def announceStation(self):
+        radioLogger.debug(self.radiodir)
         radioLogger.debug("gonna announce")
         if len(self.station.stationAnnounce) < 1:
             radioLogger.debug("nvm talk")
@@ -245,11 +250,13 @@ class Radio(object):
 
     def playerloop(self):
         radioLogger.debug("were back in the playerloop")
-        self.radiodir = maindir + "\\" + self.station.name + "\\"
+        # self.radiodir = maindir + "\\" + self.station.name + "\\"
+        # radioLogger.debug(self.radiodir)
         # os.chdir(maindir+"\\"+self.station.name) #TODO dont do chdir just append it to the path name
-        a = (choices((self.djtalk,self.djcall,self.adbreak,self.djstory,self.announceStation,self.doNothing), weights=self.chancelist)[0])
+        a = (choices((self.djtalk, self.djcall, self.adbreak, self.djstory, self.announceStation, self.doNothing), weights=self.chancelist)[0])
         radioLogger.debug(f"{a} choice")
         a()
+
 
 def setup(client):
     client.add_cog(RadioCog(client))

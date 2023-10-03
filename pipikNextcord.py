@@ -149,8 +149,6 @@ async def on_disconnect():
 @client.event
 async def on_message_delete(msg: nextcord.Message):
     if not msg.author.bot:
-        # if ctx.guild.id == 601381789096738863:
-        #     await ctx.add_reaction("<:kekw:800726027290148884>")
         if args.logfile:
             tolog = f"{msg.author} deleted ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.name} at {str(datetime.now())}"
             tolog = emoji.demojize(antimakkcen(tolog)).encode('ascii', "ignore").decode()
@@ -372,15 +370,19 @@ async def rename(ctx, name):
 os.chdir(root)
 if not args.minimal and not args.no_sympy: #TODO does not take into consideration the only_ keyword arguments
     utils = [file for file in os.listdir(r"./utils") if file.endswith(".py")]
-    files = utils + [r"../pipikNextcord.py"]
+    files = utils + [__file__]
     linecount = 197  # matstatMn is added manually cuz i have a million commented lines after if __name__ == __main__
 else:
-    files = (r"../pipikNextcord.py",) # TODO somehow make sure i can rename the file and it still works __file__ is not working
+    files = (__file__,)
     linecount = 0
 for file in files:
     if file.endswith(".py"):
-        with open(root+r"/utils/"+file, "r", encoding="UTF-8") as f:
-            linecount += len(f.readlines())
+        try:
+            with open(root+r"/utils/"+file, "r", encoding="UTF-8") as f:
+                linecount += len(f.readlines())
+        except OSError:
+            with open(file, "r", encoding="UTF-8") as f:
+                linecount += len(f.readlines())
 
 allcogs = [cog for cog in os.listdir("./cogs") if cog.endswith("cog.py")] + ["testing.py"]
 cogcount = len(allcogs)

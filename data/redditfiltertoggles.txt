@@ -1,1 +1,1 @@
-{"nsfw": false, "relationships": true, "serious": true, "cliche": false}
+{"nsfw": true, "relationships": true, "serious": true, "cliche": false}

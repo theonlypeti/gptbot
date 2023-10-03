@@ -73,7 +73,7 @@ class ZSSKCog(commands.Cog):
             try:
                 vclient = await channel.connect()
             except Exception as e:
-                self.zsskLogger.info(f"{e}")
+                self.zsskLogger.error(f"{e}")
                 vclient = ctx.guild.voice_client
             self.vclient = vclient
             await ctx.send("Working on it...", delete_after=10)

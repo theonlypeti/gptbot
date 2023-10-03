@@ -1,13 +1,12 @@
 import asyncio
-import logging
 import os
 import re
-
 import EdgeGPT.EdgeGPT
 import nextcord as discord
+from BingImageCreator import ImageGenAsync
 from EdgeGPT.EdgeGPT import Chatbot
 from nextcord.ext import commands
-from textwrap import wrap, TextWrapper
+from textwrap import TextWrapper
 
 root = os.getcwd()
 
@@ -19,8 +18,8 @@ class GptCog(commands.Cog):
 
     class TextInputModal(discord.ui.Modal):
         def __init__(self, chat, model, cog, msg, view):
-            super().__init__(title="Ask away")
-            self.q = discord.ui.TextInput(label="Reply to the bot", required=True)
+            super().__init__(title="Reply to the bot")
+            self.q = discord.ui.TextInput(label="Your reply", required=True)
             self.add_item(self.q)
             self.chat: EdgeGPT.EdgeGPT.Chatbot = chat
             self.model: str = model
@@ -61,6 +60,7 @@ class GptCog(commands.Cog):
         async def callback(self, interaction):
             await interaction.response.defer()
             self.style = discord.ButtonStyle.green
+            self.view.children[-1].style = discord.ButtonStyle.gray
             for child in self.view.children:
                 child.disabled = True
             await interaction.edit(view=self.view)
@@ -77,8 +77,11 @@ class GptCog(commands.Cog):
         async def callback(self, interaction):
             modal = self.cog.TextInputModal(self.chat, self.model, self.cog, interaction.message, self.view)
             await interaction.response.send_modal(modal)
-
     @discord.slash_command(name="chatgpt")
+    async def chatgpt(self, interaction):
+        pass
+
+    @chatgpt.subcommand(name="ask")
     async def query2(self, interaction: discord.Interaction,
                      query: str,
                      model: str = discord.SlashOption(name="model",
@@ -102,7 +105,7 @@ class GptCog(commands.Cog):
         model = model.lower()
         try:
             response = await bot.ask(prompt=query, conversation_style=model, simplify_response=True)
-            self.logger.debug(response)
+            # self.logger.debug(response)
             # await bot.close()
         except Exception as e:
             embed = discord.Embed(title=query, description=e, color=discord.Color.red())
@@ -110,7 +113,7 @@ class GptCog(commands.Cog):
             raise e
         embeds = []
         # combined_text = response["text"] + "\n" + "\n [".join(response["sources_text"].split("["))
-        if response["sources_text"] in response["text"] or response["text"] in response["sources_text"]:
+        if (response["sources_text"] in response["text"]) or (response["text"] in response["sources_text"]):
             combined_text = response["text"] #for when there are no sources to cite, sources_text is usually a carbon copy of text
         else:
             combined_text = response["text"] + "\n" + "\n\u200b[".join(response["sources_text"].split("["))
@@ -139,6 +142,32 @@ class GptCog(commands.Cog):
         embeds[-1].set_footer(text=f"Message limit: {msgnum}/{maxnum}")
         msg = await interaction.send(embed=embeds[-1], view=viewObj)
         viewObj.msg = msg
+
+    @chatgpt.subcommand(name="images")
+    async def imgen(self, interaction: discord.Interaction, txt: str):
+        await interaction.response.defer()
+        from EdgeGPT.EdgeUtils import Query, Cookie
+        Cookie.dir_path = r"./data/cookies"
+        Cookie.import_data()
+        Query.image_dir_path = r"./data/images"
+
+        # embeds = []
+        # Fetches image links
+        # Add embed to list of embeds
+        # [embeds.append(discord.Embed(url="https://www.bing.com/").set_image(url=image_link)) for image_link in images]
+        # await interaction.send(txt, embeds=embeds, wait=True)
+
+        async with ImageGenAsync(all_cookies=Cookie.current_data) as image_generator:
+            # async with ImageGenAsync(Cookie.image_token) as image_generator:
+            try:
+                images = await image_generator.get_images(txt)
+                await interaction.send(images[0])
+                for i in images[1:]:
+                    await interaction.channel.send(i)
+            except Exception as e:
+                await interaction.send(f"Error \n{e}")
+                raise e
+            # await image_generator.save_images(images, output_dir=Query.image_dir_path)
 
 
 def setup(client):

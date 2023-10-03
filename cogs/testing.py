@@ -1,9 +1,8 @@
-import logging
 import os
 import random
 from io import BytesIO
 import nextcord as discord
-from PIL import Image, ImageOps, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 from utils.getMsgFromLink import getMsgFromLink
 from nextcord.ext import commands
 
@@ -16,6 +15,7 @@ class Selection:
         copy = img.copy()
         self.image = copy.crop(boundary)
         self.boundary = boundary
+
 
 class Testing(commands.Cog):
     def __init__(self, client):
@@ -200,7 +200,6 @@ class Testing(commands.Cog):
         channel: discord.TextChannel = interaction.channel
         whs = await channel.webhooks()
         await interaction.send(content=", ".join([str(wh.url) for wh in whs]))
-
 
     @discord.slash_command(name="wh", guild_ids=TESTSERVER + (800196118570205216, 601381789096738863, 409081549645152256, 691647519771328552))
     async def whtet3(self, interaction: discord.Interaction, txt: str, name: str, pfp_link: str = None, tts: bool = False, channel: discord.TextChannel = None):
