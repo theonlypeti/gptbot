@@ -1,10 +1,12 @@
+import os
+import random
 from io import BytesIO
-from logging import Logger
 from math import ceil
 import emoji
 import nextcord as discord
 from nextcord.ext import commands #remove in all cogs? used for prefix cmds
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageFilter, ImageOps
+import utils.embedutil
 
 THUMBNAIL_SIZE = (720, 480)
 
@@ -13,6 +15,7 @@ THUMBNAIL_SIZE = (720, 480)
 #TODO highlighter effect
 #TODO use layers, use dropdowns to select them and shit
 #TODO make custom emojis for the buttons
+#TODO send embed with image size and other info?
 
 
 class PillowCog(commands.Cog):
@@ -41,7 +44,7 @@ class PillowCog(commands.Cog):
     class EditorView(discord.ui.View):
         def __init__(self, cog, message: discord.Message, image: Image, filetype: str):
             self.filetype = filetype
-            self.cog = cog
+            self.cog: PillowCog = cog
             self.message = message
             self.img: Image = image
             self.selection = None
@@ -71,7 +74,7 @@ class PillowCog(commands.Cog):
             viewObj = self.cog.CorrectionsView(self)
             await self.message.edit(view=viewObj)  # contrast, saturation, brightness, hue?, gamma?
 
-        @discord.ui.button(label="Crop", style=discord.ButtonStyle.gray, emoji=emoji.emojize(':scissors:'))
+        @discord.ui.button(label="Crop", style=discord.ButtonStyle.gray, emoji=emoji.emojize(':scissors:'), disabled=True)
         async def cropbutton(self, button, interaction):
             await interaction.response.defer()
             if self.selection is not None:
@@ -82,9 +85,10 @@ class PillowCog(commands.Cog):
             else:
                 await interaction.send(embed=discord.Embed(description="Define a selection first using the **Make selection** button", color=discord.Color.red()), ephemeral=True)
 
-        @discord.ui.button(label="Rescale", style=discord.ButtonStyle.gray, emoji=emoji.emojize(':pinching_hand:'), disabled=True)
+        @discord.ui.button(label="Rescale", style=discord.ButtonStyle.gray, emoji=emoji.emojize(':pinching_hand:'), disabled=False)
         async def resizebutton(self, button, interaction):
-            pass  # modal buttons for height and width aspect ratio? but in pixels? and a select for common aspect ratios
+            await interaction.response.send_modal(self.cog.ResizeModal(returnView=self))
+            #TODO modal buttons for height and width aspect ratio? but in pixels? and a select for common aspect ratios
 
         @discord.ui.button(label="Filters", style=discord.ButtonStyle.gray, emoji=emoji.emojize(':smile:', language="alias"), disabled=False)
         async def filtersbutton(self, button, interaction):
@@ -109,7 +113,7 @@ class PillowCog(commands.Cog):
         def __init__(self, returnView):
             self.returnView = returnView
             self.selection = returnView.selection #used only for returning to previous menu
-            self.cog = returnView.cog
+            self.cog: PillowCog = returnView.cog
             self.img = returnView.img
             super().__init__()
 
@@ -194,7 +198,7 @@ class PillowCog(commands.Cog):
                         image_binary.seek(0)
                         await interaction.guild.create_sticker(name=name, emoji=emoji.demojize(emote, language="alias", delimiters=("", "")), file=discord.File(image_binary))
 
-                else:
+                else: #single emote
                     await interaction.response.defer()
                     em = self.img.copy()
                     em.thumbnail((256, 256))
@@ -225,7 +229,11 @@ class PillowCog(commands.Cog):
             self.img: Image = returnView.img
             self.message = returnView.message
             self.filetype = returnView.filetype
-            options = [discord.SelectOption(label="Deepfry"), discord.SelectOption(label="Blur"), discord.SelectOption(label="Invert"), discord.SelectOption(label="Cancel")]
+            options = [discord.SelectOption(label="Deepfry"),
+                       discord.SelectOption(label="Blur"),
+                       discord.SelectOption(label="Invert"),
+                       discord.SelectOption(label="Flowers"),
+                       discord.SelectOption(label="Cancel")]
             super().__init__(options=options)
 
         def deepfry(self, img):
@@ -233,6 +241,33 @@ class PillowCog(commands.Cog):
             img = ImageEnhance.Sharpness(img).enhance(2)
             img = ImageEnhance.Color(img).enhance(5)
             return img.effect_spread(distance=img.size[0])
+
+        def flowers(self, img: Image):
+            flowerdir = r"D:\Users\Peti.B\Pictures\viragok"
+            # img = Image.open(img)
+            mappak = os.listdir(flowerdir)
+            for i in range(56):
+                mappa = fr"{flowerdir}\{random.choice(mappak)}"
+                virag = fr"{mappa}\{random.choice(os.listdir(mappa))}"
+                with open(virag, "rb") as file:
+                    virag = Image.open(file)
+                    size = img.width // 8
+                    virag.thumbnail((size, size))
+                    img.paste(virag, (random.choice([i for i in range(-size // 3, int(img.width - (size * 1))) if
+                                                     i not in range(size * 1, img.width - size * 3)]),
+                                      random.randint(0, img.height - size * 2)), virag)
+
+            for i in range(24):
+                mappa = fr"{flowerdir}\{random.choice(mappak)}"
+                virag = fr"{mappa}\{random.choice(os.listdir(mappa))}"
+                with open(virag, "rb") as file:
+                    virag = Image.open(file)
+                    size = img.width // 8
+                    virag.thumbnail((size, size))
+                    img.paste(virag, (
+                        random.randint(0, img.width), random.randint(img.height - size * 2, img.height - size)), virag)
+
+            return img
 
         async def callback(self, interaction: discord.Interaction):
             await interaction.response.defer()
@@ -253,6 +288,9 @@ class PillowCog(commands.Cog):
             elif self.values[0] == "Invert":
                 toedit = toedit.convert("RGB")#.point(lambda x: 255 - x)
                 toedit = ImageOps.invert(toedit)
+
+            elif self.values[0] == "Flowers":
+                toedit = self.flowers(toedit)
 
             if self.returnview.selection:
                 self.returnview.img.paste(toedit, self.returnview.selection.boundary)
@@ -632,6 +670,43 @@ class PillowCog(commands.Cog):
                 self.returnView.img.paste(self.returnView.selection.image, self.returnView.selection.boundary)
 
             await self.returnView.cog.returnMenu(self.returnView)
+
+    class ResizeModal(discord.ui.Modal):
+        def __init__(self, returnView):
+            self.returnView = returnView
+            self.img = returnView.img
+
+            super().__init__(title="Resize the whole image")
+            self.widthbox = discord.ui.TextInput(label="Width (leave one dimension blank)", required=False, style=discord.TextInputStyle.short, placeholder=self.img.width)
+            self.add_item(self.widthbox)
+            self.heightbox = discord.ui.TextInput(label="Height (to retain aspect ratio)", required=False, placeholder=self.img.height)
+            self.add_item(self.heightbox)
+
+        async def callback(self, interaction: discord.Interaction):
+            if not self.widthbox.value and not self.heightbox.value:
+                return
+            try:
+                if self.widthbox.value:
+                    assert int(self.widthbox.value) > 0
+                if self.heightbox.value:
+                    assert int(self.heightbox.value) > 0
+            except AssertionError:
+                await utils.embedutil.error(interaction, "Input numbers only!")
+                return
+            await interaction.response.defer()
+            aspectratio = self.img.height/self.img.width
+            if self.widthbox.value:
+                neww = int(self.widthbox.value)
+            else:
+                neww = int(self.heightbox.value)*aspectratio
+
+            if self.heightbox.value:
+                newh = int(self.heightbox.value)
+            else:
+                newh = int(self.widthbox.value)*aspectratio
+            self.img = self.img.resize((int(neww), int(newh)))
+            self.returnView.img = self.img
+            await self.returnView.cog.returnMenu(view=self.returnView)
 
     class AttachmentSelectDropdown(discord.ui.Select):
         def __init__(self, attachments: list[discord.Attachment], cog):

@@ -1,5 +1,6 @@
 import random
 import aiohttp
+from math import ceil
 from nextcord.ext import commands
 import nextcord as discord
 import os
@@ -10,19 +11,30 @@ from utils.antimakkcen import antimakkcen
 path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe" #TODO now this is bad
 root = os.getcwd()
 maindir = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\R3"
-os.chdir(maindir)
 
-with open("vonatdb.json", "r") as file:
+with open(r"data\vonatdb.json", "r") as file:
     soundfiles = json.load(file)
-os.chdir(root)
 
 
 class TimeTable(object):
-    def __init__(self, time, cities, meska, vlaktype):
-        self.time = time
-        self.cities = cities
-        self.delay = meska
-        self.vlaktype = vlaktype
+    def __init__(self, time: str, cities: list[str], meska: str, vlaktype: str|None):
+        self.time: str = time
+        self.cities: list[str] = cities
+        self.delay: str = meska
+        self.vlaktype: str|None = vlaktype
+
+
+def custom_round(num: int) -> str:
+    if num <= 60:
+        return str(ceil(num / 5) * 5)
+    elif num<=180:
+        return str(round(num, -1))
+    elif num<=300:
+        return str(ceil(num / 20) * 20)
+    elif num<=480:
+        return str(ceil(num / 30) * 30)
+    else:
+        return "VICE480"
 
 
 class ZSSKCog(commands.Cog):
@@ -83,7 +95,7 @@ class ZSSKCog(commands.Cog):
             return
         else:
             link = f"https://cp.hnonline.sk/vlakbus/spojenie/vysledky/?"+(f"date={date}&" if date else "") + (f"time={time}&" if time else "") +f"f={fromcity}&fc=100003&t={tocity}&tc=100003&af=true&trt=150,151,152,153"
-            self.zsskLogger.debug(f"{link},{len(link)}")
+            self.zsskLogger.debug(f"{link=},{len(link)=}")
             self.tt = await self.getTimeTable(link)
             if self.tt is None:
                 await ctx.send("Not found.", delete_after=5)
@@ -91,9 +103,9 @@ class ZSSKCog(commands.Cog):
 
     @zssk.on_autocomplete("fromcity")
     @zssk.on_autocomplete("tocity")
-    async def stanica_autocomplete(self,interaction, city: str):
+    async def stanica_autocomplete(self, interaction: discord.Interaction, city: str):
         if city:
-            get_near_city = {i:antimakkcen(i).replace(" ","%20") for i in soundfiles.keys() if antimakkcen(i.casefold()).startswith(antimakkcen(city.casefold()))}
+            get_near_city = {i:antimakkcen(i).replace(" ", "%20") for i in soundfiles.keys() if antimakkcen(i.casefold()).startswith(antimakkcen(city.casefold()))}
             get_near_city = dict(list(get_near_city.items())[:25])
             self.zsskLogger.debug(get_near_city)
             await interaction.response.send_autocomplete(get_near_city)
@@ -107,26 +119,26 @@ class ZSSKCog(commands.Cog):
             
     def znelka(self): #TODO make these relative paths
         os.chdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\ZNELKY")
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="startOld.WAV"),
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path, source="startOld.WAV"),
                           after=lambda a: self.traintype())
 
     def traintype(self):
         os.chdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\V1")
         sound = random.choice(os.listdir())
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=sound), #NFVOS
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=sound), #NFVOS
                           after=lambda a: self.smerom())
 
     def smerom(self):
         os.chdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA")
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="SM2.WAV"),
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path, source="SM2.WAV"),
                           after=lambda a: self.city(self.tt.cities))
 
-    def city(self,cities):
+    def city(self, cities):
         os.chdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\R3")
         if len(cities) > 0:
             chosencity = cities.pop()
             try:
-                self.zsskLogger.debug(f"{chosencity}")
+                self.zsskLogger.debug(f"{chosencity=}")
                 chosencity = soundfiles[chosencity]
             except KeyError:
                 self.zsskLogger.error(f"not found {chosencity}")
@@ -135,49 +147,47 @@ class ZSSKCog(commands.Cog):
                 self.zsskLogger.error(f"no file found {chosencity}")
                 self.city(cities)
             else:
-                self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=chosencity+".WAV"),
+                self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=chosencity+".WAV"),
                           after=lambda a: self.city(cities))
         else:
             self.prichod(self.tt)
             
-    def prichod(self,tt):
+    def prichod(self, tt):
         os.chdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA")
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="PRPR.WAV"),
-                          after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C1\\"+tt.time.split(":")[0]+".WAV"),
-                                                  after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C3\\"+str(int(tt.time.split(":")[1]))+".WAV"),
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path, source="PRPR.WAV"),
+                          after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C1\\"+tt.time.split(":")[0]+".WAV"),
+                                                  after=lambda a: self.vclient.play(discord.FFmpegPCMAudio(executable=path, source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C3\\"+str(int(tt.time.split(":")[1]))+".WAV"),
                                                                                             after=lambda a: self.meskanie(tt))))
 
     def meskanie(self, tt):
         if tt.delay:
             try:
-                delay = int(tt.delay)
-                delay = round(delay//5)*5
+                delay = custom_round(int(tt.delay))
                 if delay == 0:
-                    delay = 5
+                    delay = "5"
             except Exception:
-                delay = 5
+                delay = "5"
             try:
-                delay = str((round(delay // 10) * 10) or 5)
-                file = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+str(delay)+".WAV"
+                file = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+delay+".WAV"
             except OSError:
-                file = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+str(delay)+".WAV"
+                file = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\C9\\"+delay+".WAV"
             finally:
                 self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA\\BMA.WAV"),
                                   after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=file),
                                                           after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path, source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA\\MSMZ.WAV"),
                                                                                            after=lambda a: self.znelkaOut())))
         else:
-            nastupiste = random.choice(("01","02","03"))
+            nastupiste = random.choice(("01", "02", "03"))
             kolaj = random.choice(os.listdir("D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\K1"))
-            self.vclient.play(discord.FFmpegPCMAudio(executable=path,source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA\\PRIDE.WAV"),
-                              after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=f"D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\N1\\{nastupiste}.WAV"),
-                                            after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=f"D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\K1\\{kolaj}"),
+            self.vclient.play(discord.FFmpegPCMAudio(executable=path, source="D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\SLOVA\\PRIDE.WAV"),
+                              after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=f"D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\N1\\{nastupiste}.WAV"),
+                                            after=lambda a:self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=f"D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\K1\\{kolaj}"),
                                                           after=lambda a:self.znelkaOut())))
-
 
     def znelkaOut(self):
         mypath = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK\\ZNELKY"
-        self.vclient.play(discord.FFmpegPCMAudio(executable=path,source=mypath + "\\END.WAV"))
+        self.vclient.play(discord.FFmpegPCMAudio(executable=path, source=mypath + "\\END.WAV"))
+
 
 def setup(client):
     client.add_cog(ZSSKCog(client))

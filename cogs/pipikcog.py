@@ -3,7 +3,7 @@ import json
 import os
 import random
 from copy import deepcopy
-from typing import Union, Sequence
+from typing import Union, Sequence, MutableSequence
 import emoji
 import nextcord as discord
 import pyowm
@@ -174,7 +174,7 @@ class PipikBot(commands.Cog):
         self.leaderboards = {}
         self.loserboards = {}
         self.sunrise_date = datetime.now()  # just a placeholder, it gets actually rewritten
-        self.users: Sequence[PipikUser] = []
+        self.users: MutableSequence[PipikUser] = []
         self.achievements = {i[0]: Achievement(i) for i in default_achievements}
         
         try:
@@ -213,11 +213,11 @@ class PipikBot(commands.Cog):
         user.achi.append(achi.achiid)
         self.saveFile() #any action that warrants an achievement already saves the users #not true lol, in pp func theres bunch of occasions where it doesnt save
 
-    def updateLeaderBoard(self, ldb: int, dcid: int, value: int) -> None:
+    def updateLeaderBoard(self, ldb: str, dcid: int, value: float) -> None:
         """
-                ldb: int = guild id
+                ldb: str = guild id
                 dcid: int = user id
-                value: int = recorded achieved score
+                value: float = recorded achieved score
                 """
         try:
             self.leaderboards[str(ldb)]
@@ -229,11 +229,11 @@ class PipikBot(commands.Cog):
         with open(root+"/data/pipikv3top.txt", "w") as file:
             json.dump(self.leaderboards, file, indent=4)
 
-    def updateLoserBoard(self, ldb: int, dcid: int, value: int) -> None:
+    def updateLoserBoard(self, ldb: str, dcid: int, value: float) -> None:
         """
-        ldb: int = guild id
+        ldb: str = guild id
         dcid: int = user id
-        value: int = recorded achieved score
+        value: float = recorded achieved score
         """
         try:
             self.loserboards[str(ldb)]
@@ -881,7 +881,7 @@ class PipikBot(commands.Cog):
         multiplier += self.temperature - pocasieOffset
 
         #moon phase checker
-        if int(moon.phase()) in range(14,21):
+        if int(moon.phase()) in range(14, 21):
             multiplier += 10
             curve -= 0.1
             currmethods = currmethods | 64
@@ -901,9 +901,9 @@ class PipikBot(commands.Cog):
                 if msg:
                     await msg.edit(embed=embedMsg)
                 if "helping_hands" not in held.achi:  # helpout
-                    await self.updateUserAchi(ctx,ctx.user, "helping_hands")  # holding achis
+                    await self.updateUserAchi(ctx, ctx.user, "helping_hands")  # holding achis
                 if "friend_need" not in holderpp.achi:
-                    await self.updateUserAchi(ctx,holder, "friend_need")
+                    await self.updateUserAchi(ctx, holder, "friend_need")
             del self.holding[ctx.guild.id]
         except KeyError as e: #redundant
             self.logger.debug(str(e) + " - in this guild noone is holding anything")
@@ -913,7 +913,7 @@ class PipikBot(commands.Cog):
             self.logger.warning(25 * "#" + "uh oh stinky")
             curve = -curve * 0.01
         pipik = round((random.expovariate(curve) * multiplier), 3)
-        self.logger.debug(f"{ctx.user.display_name}, pipik, {pipik}, curve, {curve}, mult, {multiplier}, compl, {compliments}, temp,{self.temperature}, fap, {user.fap}, cd, {user.cd}")
+        self.logger.debug(f"{ctx.user.display_name}, {pipik=}, {curve=}, {multiplier=}, {compliments=}, {self.temperature=}, {user.fap=}, {user.cd=}")
 
         # personal record checker
         if pipik > user.pb:
@@ -942,13 +942,13 @@ class PipikBot(commands.Cog):
         # size achi checker
         if pipik > 300:
             if "megapp" not in user.achi:
-                await self.updateUserAchi(ctx,ctx.user, "megapp")
+                await self.updateUserAchi(ctx, ctx.user, "megapp")
         elif pipik < 0.5:
             if "micropp" not in user.achi:
-                await self.updateUserAchi(ctx,ctx.user, "micropp")
+                await self.updateUserAchi(ctx, ctx.user, "micropp")
         elif 69 <= pipik < 70:
             if "nice" not in user.achi:
-                await self.updateUserAchi(ctx,ctx.user, "nice")
+                await self.updateUserAchi(ctx, ctx.user, "nice")
 
         # pp enlargement methods achi checker
         try:

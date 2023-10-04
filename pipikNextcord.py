@@ -9,6 +9,7 @@ import nextcord.ext.commands
 from numpy import clip
 from nextcord.ext import commands
 from datetime import datetime, timedelta
+# from tqdm import tqdm
 from utils.antimakkcen import antimakkcen
 import emoji
 import os
@@ -16,7 +17,7 @@ import argparse
 import time as time_module
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
-from utils.mentionCommand import mentionCommand
+from utils.mentionCommand import mentionCommand #used in /run
 from utils.getMsgFromLink import getMsgFromLink
 from utils import mylogger
 
@@ -88,7 +89,6 @@ client.logger = pipikLogger
 # TODO replace every list typehint with Sequence or MutableSequence or smth or Iterable
 # TODO a database abstraction for myself
 # TODO selectmenu for bp temy to open their desc and availability in a embed, then the pagi arrows would cycle through the bp temy one by one + button for english
-# TODO move baselogger into client, and each every subsequent use in cogs
 
 #T9 = ({key * i: letter for i, key, letter in zip([(num % 3) + 1 for num in range(0, 26)], [str(q // 3) for q in range(6, 30)],sorted({chr(a) for a in range(ord("A"), ord("Z") + 1)} - {"S", "Z"}))} | {"7777": "S", "9999": "Z","0": " "})
 #T9rev = {v: k for k, v in T9.items()}
@@ -403,9 +403,16 @@ for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know
     if not args.debug:
         sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.02f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
         sys.stdout.flush()
+
 sys.stdout.write(f"\r{len(cogs)}/{cogcount} cogs loaded.".ljust(50)+"\n")
 sys.stdout.flush()
 os.chdir(root)
+
+# for file in tqdm(cogs):
+#     if not args.no_linecount:
+#         with open("./cogs/"+file, "r", encoding="UTF-8") as f:
+#             linecount += len(f.readlines())
+#     client.load_extension("cogs." + file[:-3])  #breaks
 
 client.run(os.getenv("MAIN_DC_TOKEN"))
 

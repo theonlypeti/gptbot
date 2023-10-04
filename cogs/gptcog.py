@@ -19,7 +19,7 @@ class GptCog(commands.Cog):
     class TextInputModal(discord.ui.Modal):
         def __init__(self, chat, model, cog, msg, view):
             super().__init__(title="Reply to the bot")
-            self.q = discord.ui.TextInput(label="Your reply", required=True)
+            self.q = discord.ui.TextInput(label="Your reply", required=True, style=discord.TextInputStyle.paragraph)
             self.add_item(self.q)
             self.chat: EdgeGPT.EdgeGPT.Chatbot = chat
             self.model: str = model
@@ -77,6 +77,7 @@ class GptCog(commands.Cog):
         async def callback(self, interaction):
             modal = self.cog.TextInputModal(self.chat, self.model, self.cog, interaction.message, self.view)
             await interaction.response.send_modal(modal)
+
     @discord.slash_command(name="chatgpt")
     async def chatgpt(self, interaction):
         pass
@@ -139,7 +140,7 @@ class GptCog(commands.Cog):
             await interaction.send(embed=emb)
         maxnum = response["max_messages"]
         msgnum = maxnum - response["messages_left"]
-        embeds[-1].set_footer(text=f"Message limit: {msgnum}/{maxnum}")
+        embeds[-1].set_footer(text=f"Message limit: {msgnum}/{maxnum-1}")
         msg = await interaction.send(embed=embeds[-1], view=viewObj)
         viewObj.msg = msg
 

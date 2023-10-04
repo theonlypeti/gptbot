@@ -216,14 +216,15 @@ class MiscallenousCog(commands.Cog):
 
     @discord.user_command(name="FbAnna profilka", force_global=True)
     async def flowersprofilka(self, interaction: discord.Interaction, user: discord.User):
+        flowerdir = r"D:\Users\Peti.B\Pictures\viragok"
         await interaction.response.defer()
         with BytesIO() as image:
             await user.display_avatar.save(image)
             img = Image.open(image)
+            mappak = os.listdir(flowerdir)
             for i in range(56):
-                mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
-                mappa = r"D:\Users\Peti.B\Downloads\viragok/" + random.choice(mappak)
-                virag = mappa + "/" + random.choice(os.listdir(mappa))
+                mappa = flowerdir + "\\" +random.choice(mappak)
+                virag = mappa + "\\" + random.choice(os.listdir(mappa))
                 with open(virag, "rb") as file:
                     virag = Image.open(file)
                     size = img.width // 8
@@ -231,14 +232,13 @@ class MiscallenousCog(commands.Cog):
                     img.paste(virag, (random.choice([i for i in range(-size // 3, int(img.width - (size * 1))) if i not in range(size * 1, img.width - size * 3)]), random.randint(0, img.height - size * 2)), virag)
 
             for i in range(24):
-                mappak = os.listdir(r"D:\Users\Peti.B\Downloads\viragok")
-                mappa = r"D:\Users\Peti.B\Downloads\viragok/" + random.choice(mappak)
-                virag = mappa + "/" + random.choice(os.listdir(mappa))
+                mappa = fr"{flowerdir}\{random.choice(mappak)}"
+                virag = fr"{mappa}\{random.choice(os.listdir(mappa))}"
                 with open(virag, "rb") as file:
                     virag = Image.open(file)
                     size = img.width // 8
                     virag.thumbnail((size, size))
-                    img.paste(virag,(random.randint(0, img.width), random.randint(img.height - size * 2, img.height - size)),virag)
+                    img.paste(virag,(random.randint(0, img.width), random.randint(img.height - size * 2, img.height - size)), virag)
 
             d = ImageDraw.Draw(img)
             fnt = ImageFont.truetype('FREESCPT.TTF', size=size)
