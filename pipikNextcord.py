@@ -69,6 +69,7 @@ intents.typing = True
 client = commands.Bot(command_prefix='&', intents=intents, chunk_guilds_at_startup=True, status=discord.Status.offline, activity=discord.Game(name="Booting up...")) #TODO chunk_guilds_at_startup=False might help me
 client.remove_command('help')
 client.logger = pipikLogger
+client.root = root
 
 # TODO play with this @commands.has_permissions(manage_server=True) only applicable to prefix commands, slash has smth else
 # TODO colored ansi text
@@ -89,6 +90,8 @@ client.logger = pipikLogger
 # TODO replace every list typehint with Sequence or MutableSequence or smth or Iterable
 # TODO a database abstraction for myself
 # TODO selectmenu for bp temy to open their desc and availability in a embed, then the pagi arrows would cycle through the bp temy one by one + button for english
+# TODO lavalink music player
+# TODO zssk listok buyer
 
 #T9 = ({key * i: letter for i, key, letter in zip([(num % 3) + 1 for num in range(0, 26)], [str(q // 3) for q in range(6, 30)],sorted({chr(a) for a in range(ord("A"), ord("Z") + 1)} - {"S", "Z"}))} | {"7777": "S", "9999": "Z","0": " "})
 #T9rev = {v: k for k, v in T9.items()}

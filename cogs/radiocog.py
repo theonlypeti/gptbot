@@ -9,8 +9,8 @@ root = os.getcwd()
 path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe" #TODO ofc this is not ok xd
 maindir = "D:\\Users\\Peti.B\\Music\\San Andreas Radio Constructor\\San Andreas Radio Constructor"
 
-radio_icons_station = {"<:BounceFM:957469538599985223>":"Bounce FM","<:CSR1039:957469539518545960>":"CSR 103.9","<:KDST:957469532816048159>":"K-DST","<:KJAHWest:957469552168558732>":"K-Jah West","<:KRose:957469547760345109>":"K-Rose","<:MasterSounds:957469544681725972>":"Master Sounds 98.3","<:PlaybackFMLogo:957469525211766855>":"Playback FM","<:RadioLosSantos:957469549270294568>":"Radio Los Santos","<:RadioX:957469523387232256>":"Radio X","<:SFUR:957469545428299836>":"SF-UR"}
-station_emojis = {v:k for k,v in radio_icons_station.items()}    
+radio_icons_station = {"<:BounceFM:957469538599985223>": "Bounce FM", "<:CSR1039:957469539518545960>": "CSR 103.9", "<:KDST:957469532816048159>": "K-DST","<:KJAHWest:957469552168558732>":"K-Jah West","<:KRose:957469547760345109>":"K-Rose","<:MasterSounds:957469544681725972>":"Master Sounds 98.3","<:PlaybackFMLogo:957469525211766855>":"Playback FM","<:RadioLosSantos:957469549270294568>":"Radio Los Santos","<:RadioX:957469523387232256>":"Radio X","<:SFUR:957469545428299836>":"SF-UR"}
+station_emojis = {v: k for k, v in radio_icons_station.items()}
 
 
 station_descs = {k.split(" - ")[0]:k.split(" - ")[1] for k in """Bounce FM - Funk, Disco
@@ -23,6 +23,7 @@ Playback FM - Classic East Coast Hip Hop
 Radio Los Santos - West Coast Hip Hop, Gangsta Rap
 Radio X - Funk, Disco
 SF-UR - House""".split("\n")}
+
 
 class RadioCog(commands.Cog):
     def __init__(self, client):

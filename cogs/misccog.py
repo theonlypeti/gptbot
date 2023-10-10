@@ -7,10 +7,10 @@ import emoji
 import nextcord as discord
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from nextcord.ext import commands
-from pipikNextcord import root
+# from pipikNextcord import root #  dont freaking do this, causes to rerun the main file
 from pycaw.utils import AudioUtilities
 from utils.bf import bf
+from nextcord.ext import commands
 
 stunlocked = None
 
@@ -107,7 +107,7 @@ class MiscallenousCog(commands.Cog):
         print(img)
         with open(img, "rb") as file:
             await interaction.guild.edit(icon=file.read())
-        os.chdir(root)
+        os.chdir(interaction.client.root)
 
     @discord.slash_command(name="ticho", description="Uber hlasitost", guild_ids=(860527626100015154,))
     async def ticho(self, ctx: discord.Interaction, message: Optional[str]):

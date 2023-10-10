@@ -95,14 +95,16 @@ class GptCog(commands.Cog):
         Cookie.dir_path = r"./data/cookies"
         Cookie.import_data()
         try:
+            self.logger.debug(Cookie.current_data)
             bot = await Chatbot.create(cookies=Cookie.current_data)
+            # bot = await Chatbot.create()
         except Exception as e:
             embed = discord.Embed(title=query, description=e, color=discord.Color.red())
             await interaction.send(embed=embed, delete_after=180)
             raise e
         await self.askbot(interaction, bot, model, query)
 
-    async def askbot(self, interaction: discord.Interaction, bot: EdgeGPT.EdgeGPT.Chatbot, model:str, query:str):
+    async def askbot(self, interaction: discord.Interaction, bot: EdgeGPT.EdgeGPT.Chatbot, model: str, query: str):
         model = model.lower()
         try:
             response = await bot.ask(prompt=query, conversation_style=model, simplify_response=True)
