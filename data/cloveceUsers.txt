@@ -51,7 +51,8 @@
                     ":100:",
                     ":woman_gesturing_ok:",
                     ":nail_care:",
-                    ":bowling:"
+                    ":bowling:",
+                    ":person_with_probing_cane:"
                 ],
                 "pipikachis": [
                     ":sunrise_over_mountains:",
@@ -96,7 +97,8 @@
                     ":tomato:",
                     ":icecream:",
                     ":coconut:",
-                    ":bacon:"
+                    ":bacon:",
+                    ":bell_pepper:"
                 ],
                 "professions": [
                     ":artist:",
@@ -119,13 +121,13 @@
             "Second places": 4,
             "Third places": 0,
             "Dice thrown": 945,
-            "Spins": 60,
-            "Default icons owned": 62,
+            "Spins": 62,
+            "Default icons owned": 64,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":radioactive:",
         "ready": false,
-        "dailyDate": "2022-10-27T00:00:00",
+        "dailyDate": "2023-10-16",
         "inLobby": null
     },
     {
@@ -447,7 +449,7 @@
         },
         "icon": ":vampire:",
         "ready": false,
-        "dailyDate": "2023-01-29",
+        "dailyDate": "2023-01-29T00:00:00",
         "inLobby": null
     },
     {

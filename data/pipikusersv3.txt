@@ -540,24 +540,24 @@
         "items": [
             [
                 0,
-                152
+                115
             ],
             [
                 1,
-                96
+                40
             ],
             [
                 2,
-                19
+                24
             ]
         ],
-        "pb": 1024.901,
+        "pb": 1702.853,
         "pw": 0.311,
         "cd": null,
         "methods": 63,
-        "pill": null,
-        "pillPopTime": "2021-10-19T19:48:47.346062",
-        "dailyDate": "2023-05-29",
+        "pill": 2,
+        "pillPopTime": "2023-10-20T20:30:41.146617",
+        "dailyDate": "2023-10-20T00:00:00",
         "dailyStreak": 1
     },
     {
@@ -733,12 +733,14 @@
     {
         "id": 835166714659995729,
         "fap": 0,
-        "achi": [],
+        "achi": [
+            "nice"
+        ],
         "items": [],
-        "pb": 35.924,
-        "pw": 7.631,
+        "pb": 159.736,
+        "pw": 1.278,
         "cd": null,
-        "methods": 0,
+        "methods": 4,
         "pill": null,
         "pillPopTime": 0,
         "dailyStreak": 0,
@@ -974,5 +976,21 @@
         "pillPopTime": "2022-11-27T22:27:41.378514",
         "dailyStreak": 0,
         "dailyDate": "2022-11-26T22:27:41.378514"
+    },
+    {
+        "id": 259068352205553664,
+        "fap": 0,
+        "achi": [
+            "helping_hands"
+        ],
+        "items": [],
+        "pb": 151.137,
+        "pw": 151.137,
+        "cd": null,
+        "methods": 5,
+        "pill": null,
+        "pillPopTime": "2023-10-20T22:02:24.199160",
+        "dailyStreak": 0,
+        "dailyDate": "2023-10-19T22:02:24.199160"
     }
 ]

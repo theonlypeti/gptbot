@@ -3,7 +3,9 @@ import nextcord as discord
 from nextcord.ext import commands
 import json
 import emoji
-root = os.getcwd()
+root = os.getcwd()  #client.root exists
+#TODO i could use autocomplete to return the gifs from the folder quickly
+
 
 class GifCog(commands.Cog):
     def __init__(self, client):
@@ -107,10 +109,10 @@ class GifCog(commands.Cog):
             self.ogctx = ctx
             self.msg = msg
             self.giffolders = giffolders
-            optionen = [discord.SelectOption(label=emoji.emojize(i),value=i) for i in list(self.giffolders.keys())]
+            optionen = [discord.SelectOption(label=emoji.emojize(i), value=i) for i in list(self.giffolders.keys())]
             super().__init__(options=optionen, placeholder="Select a folder to pick a GIF from")
 
-        async def callback(self,ctx):
+        async def callback(self, ctx):
             folder = self.values[0]
             viewObj = discord.ui.View()
             viewObj.add_item(self.GifLoadSelectDropdown(self.giffolders[folder],self.msg))
@@ -120,7 +122,7 @@ class GifCog(commands.Cog):
             def __init__(self, folder, msg):
                 self.msg = msg
                 self.folder = folder
-                optionen = [discord.SelectOption(label=emoji.emojize(i),value=i) for i in list(folder.keys())]
+                optionen = [discord.SelectOption(label=emoji.emojize(i), value=i) for i in list(folder.keys())]
                 super().__init__(options=optionen, placeholder="Pick a GIF to send")
 
             async def callback(self, ctx):
@@ -144,6 +146,7 @@ class GifCog(commands.Cog):
     #     viewObj = discord.ui.View()
     #     viewObj.add_item(self.GifLoadFolderSelect(ctx,msg,self.db[str(ctx.user.id)]))
     #     await ctx.send(view=viewObj,ephemeral=True)
+
 
 def setup(client):
     client.add_cog(GifCog(client))

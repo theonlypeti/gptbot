@@ -4,7 +4,7 @@ from io import BytesIO
 from math import ceil
 import emoji
 import nextcord as discord
-from nextcord.ext import commands #remove in all cogs? used for prefix cmds
+from nextcord.ext import commands
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageFilter, ImageOps
 import utils.embedutil
 
@@ -212,17 +212,16 @@ class PillowCog(commands.Cog):
                 logger.error(f"{e}")
                 await interaction.send(f"{e}")
 
-    class RescaleView(discord.ui.View):
+    class RescaleView(discord.ui.View): #TODO what is this for?
         def __init__(self, returnView):
             self.cog = returnView.cog
             self.img: Image = returnView.img
             self.message: discord.Message = returnView.message
             self.filetype = returnView.filetype
             super().__init__()
-            #button for a modal to enter dimensions
-            #select with aspect ratio options
+            #TODO select with aspect ratio options
 
-    class FiltersDropdown(discord.ui.Select): #TODO add flowers filter
+    class FiltersDropdown(discord.ui.Select):
         def __init__(self, returnView):
             self.returnview = returnView
             self.cog = returnView.cog
@@ -448,7 +447,7 @@ class PillowCog(commands.Cog):
 
     class SelectionView(discord.ui.View):
         def __init__(self, returnView, boundaries=None):
-            self.cog = returnView.cog
+            self.cog: PillowCog = returnView.cog
             self.img = returnView.img
             self.message = returnView.message
             self.filetype = returnView.filetype
@@ -619,7 +618,7 @@ class PillowCog(commands.Cog):
             self.add_item(self.leftcrop)
             self.add_item(self.rightcrop)
 
-        async def callback(self, interaction: discord.Interaction):
+        async def callback(self, interaction: discord.Interaction): #TODO add option to define percentages
             await interaction.response.defer()
             try:
                 boundaries = (int(self.leftcrop.value),

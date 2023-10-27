@@ -177,9 +177,9 @@ class ColorRoleCog(commands.Cog):
     @mycolor.subcommand(description="Export a role color for easy sharing and use on other roles or servers.")
     async def export(self, interaction, role: discord.Mentionable = discord.SlashOption(name="role", description="The role to export the color of.", required=False, default=None)):
         if role:
-            color = role.color
+            color: discord.Color = role.color
         else:
-            color = interaction.user.color
+            color: discord.Color = interaction.user.color
         hexcode = str(color)
         embedVar = discord.Embed(title="Color", color=color)
         embedVar.add_field(name="hex", value=hexcode, inline=False)

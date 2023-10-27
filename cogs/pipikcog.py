@@ -319,7 +319,7 @@ class PipikBot(commands.Cog):
             self.saveFile()
 
     def getTemp(self):
-        w = mgr.weather_at_place(location).weather
+        w = mgr.weather_at_place(location).weather #TODO try except cuz this crashes whole code
         self.temperature = w.temperature("celsius")["temp"]
         self.sunrise_date = w.sunrise_time(timeformat='date')
         # self.sunrise_date = self.sunrise_date + timedelta(hours=1) #note to self, DONT do this, i am checking utc time when measuring the pp, this is FINE
@@ -388,7 +388,7 @@ class PipikBot(commands.Cog):
             if type(user.dailyDate) == datetime:
                 user.dailyDate = user.dailyDate.date()
         except AttributeError as e:
-            self.logger.error(e) # TODO if does not come up, remove this #yes should not happen
+            self.logger.error(e)  # TODO if does not come up, remove this #yes should not happen
             user.dailyDate = (datetime.now() - timedelta(days=1)).date()
             user.dailyStreak = 0  # kind of redundant? nvm
         finally:
@@ -422,7 +422,7 @@ class PipikBot(commands.Cog):
             if user.dailyStreak / 10 >= random.randint(0, 99):
                 await self.addPill(ctx, ctx.user.color, user, 2, 1)  # blue pill
                 if "lucky_draw" not in user.achi:
-                    await self.updateUserAchi(ctx,ctx.user, "lucky_draw")
+                    await self.updateUserAchi(ctx, ctx.user, "lucky_draw")
             #self.saveFile() saving happens in addpill() too
 
     @discord.slash_command(name="max", description="Leaderboard of biggest pps", dm_permission=False)
@@ -441,7 +441,7 @@ class PipikBot(commands.Cog):
                 user = ctx.guild.get_member(int(i[0])).display_name
                 if user is None:
                     user = self.client.get_user(int(i[0])).name
-            except ValueError:
+            except (ValueError, AttributeError):
                 user = i[0]
             embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
         await ctx.send(embed=embedVar)
@@ -463,7 +463,7 @@ class PipikBot(commands.Cog):
                 user = ctx.guild.get_member(int(i[0])).display_name
                 if user is None:
                     user = self.client.get_user(int(i[0])).name
-            except ValueError:
+            except (ValueError, AttributeError):
                 user = i[0]
             embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
         await ctx.send(embed=embedVar)
@@ -767,10 +767,10 @@ class PipikBot(commands.Cog):
         await ctx.send("```\n" + text + "\n```" + f"for more info, try {mentionCommand(self.client,'achi')}") #lord forgive me for what ive done
 
     @discord.slash_command(name="achi", description="See your achievements")
-    async def achi(self, ctx):
+    async def achi(self, ctx): #TODO let ppl see others achis but reveal only the ones they have
         user = self.getUserFromDC(ctx.user)
         achievements = self.achievements
-        text = "Your achievements".center(60,"=")+"\n"
+        text = "Your achievements".center(60, "=")+"\n"
         text += "\n".join((emoji.emojize(":check_mark_button:") if achi.achiid in user.achi else emoji.emojize(":locked:")) + " " + achi.icon + " " + "{:23}".format(achi.name) + (("= " + achi.desc) if achi.achiid in user.achi else "= ???") for achi in achievements.values())
         await ctx.send("```\n" + text + "\n```", ephemeral=True)
 
