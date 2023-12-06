@@ -158,5 +158,7 @@
     "Shocked_Mia_Khalifa": "<:Shocked_Mia_Khalifa:1112285567334486106>",
     "melting": "<:melting:962465821962170418>",
     "slay": "<:slay:1116759043130794104>",
-    "missingtexture": "<:missingtexture:701445827465314493>"
+    "missingtexture": "<:missingtexture:701445827465314493>",
+    "AHA": "<:AHA:757850012452519937>",
+    "boboka": "<:boboka:941784614857478214>"
 }

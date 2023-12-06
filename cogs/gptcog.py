@@ -1,12 +1,19 @@
 import asyncio
+import json
 import os
 import re
+import textwrap
+from io import BytesIO
+import requests
+from PIL import Image, ImageDraw, ImageFont
 import EdgeGPT.EdgeGPT
 import nextcord as discord
 from BingImageCreator import ImageGenAsync
 from EdgeGPT.EdgeGPT import Chatbot
 from nextcord.ext import commands
 from textwrap import TextWrapper
+
+import utils.embedutil
 
 root = os.getcwd()
 
@@ -111,7 +118,7 @@ class GptCog(commands.Cog):
             # self.logger.debug(response)
             # await bot.close()
         except Exception as e:
-            embed = discord.Embed(title=query, description=e, color=discord.Color.red())
+            embed = discord.Embed(title=(query[:253] + "...") if len(query) > 255 else query, description=e, color=discord.Color.red())
             await interaction.send(embed=embed, delete_after=180)
             raise e
         embeds = []
@@ -171,6 +178,61 @@ class GptCog(commands.Cog):
                 await interaction.send(f"Error \n{e}")
                 raise e
             # await image_generator.save_images(images, output_dir=Query.image_dir_path)
+
+    @chatgpt.subcommand()
+    async def meme(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        from EdgeGPT.EdgeUtils import Query, Cookie
+        Cookie.dir_path = r"./data/cookies"
+        Cookie.import_data()
+        Query.image_dir_path = r"./data/images"
+
+        querystr = "make up a random new family friendly meme picture or scenario in your head that will not get blocked by content filters. Describe it as an image generator prompt. Caption the image and return these two strings as json using the keywords: prompt and caption. Make sure it is in json format using curly braces too."
+
+        try:
+            query = Query(prompt=querystr, cookie_files={Cookie.dir_path + i for i in os.listdir(Cookie.dir_path)}, style="creative")
+            await query.log_and_send_query(echo=False, echo_prompt=False)
+        except Exception as e:
+            await utils.embedutil.error(interaction, str(e))
+            raise e
+        self.logger.debug(query)
+        if query.code is None or True:
+            resp = query.output[query.output.index("{"):]
+            self.logger.debug(resp)
+            response = json.loads(resp)
+        else:
+            response = query.code
+        self.logger.debug(response)
+        prompt = response["prompt"]
+        caption = response["caption"]
+
+        caption = "\n".join(textwrap.wrap(caption, width=40, break_long_words=False, replace_whitespace=False))
+
+        async with ImageGenAsync(all_cookies=Cookie.current_data) as image_generator:
+            # async with ImageGenAsync(Cookie.image_token) as image_generator:
+            try:
+                images = await image_generator.get_images(prompt)
+                # await interaction.send(images[0])
+                # await image_generator.save_images(images, output_dir=Query.image_dir_path)
+                img = Image.open(requests.get(images[0], stream=True).raw)
+                d = ImageDraw.Draw(img)
+
+                mult = ((100 - len(caption) * 2) / 100)
+                textsize = (img.width // 10) * max(mult, 0.5)
+                textsize = int(max(textsize, 20))  # todo devize an algorithm to determine optimal size
+                fnt = ImageFont.truetype('impact.ttf', size=textsize)
+
+                textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": img.width // 100,
+                              "fill": (255, 255, 255), "anchor": "md"}
+                d.multiline_text((img.width / 2, img.height - textsize), caption, **textconfig)
+
+            except Exception as e:
+                await utils.embedutil.error(interaction, str(e))
+                raise e
+            with BytesIO() as output:
+                img.save(output, format="PNG")
+                output.seek(0)
+                await interaction.send(file=discord.File(output, "meme.png"))
 
 
 def setup(client):

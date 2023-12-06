@@ -29,7 +29,7 @@ class ColorRoleCog(commands.Cog):
     @tasks.loop(count=1)
     async def getemoteserver(self):
         await self.client.wait_until_ready()
-        self.emoteserver: discord.Guild = self.client.get_guild(957469186798518282)
+        self.emoteserver: discord.Guild = self.client.get_guild(1040628832857759804)
 
     @discord.slash_command(name="mycolor", guild_ids=[691647519771328552, 860527626100015154, 601381789096738863, 409081549645152256, 552498097528242197, 800196118570205216], dm_permission=False)
     async def mycolor(self, interaction):
@@ -147,7 +147,7 @@ class ColorRoleCog(commands.Cog):
             palette = list(set(color_thief.get_palette(color_count=self.colorstopick)))
             emojis = []
             if not self.emoteserver:
-                self.emoteserver = self.client.get_guild(957469186798518282)
+                self.emoteserver = self.client.get_guild(1040628832857759804)
             assert self.emoteserver.emoji_limit - len(self.emoteserver.emojis) > self.colorstopick #TODO add if, warning and make separate emojis
             for n, color in enumerate(palette):
                 im1 = npzeros((100, 100, 3), dtype='uint8')

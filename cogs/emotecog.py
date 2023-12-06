@@ -13,6 +13,8 @@ from utils.paginator import Paginator
 from nextcord.ext import commands
 from utils.antimakkcen import antimakkcen
 from utils.getMsgFromLink import getMsgFromLink
+import imageio.v3 as iio
+import numpy as np
 
 root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pipik"
 
@@ -26,20 +28,51 @@ class EmoteCog(commands.Cog):
         emotelogger = client.logger.getChild("EmoteLogger")
         self.readEmotes()
 
-    async def flipemote(self, emote, state, orient: Literal["H"] | Literal["V"]):  #TODO: make this into a context manager, with flippedemote(): and then it deletes the emote
+    async def flipemote(self, emote, state, orient: Literal["H"] | Literal["V"]):
         self.emoteserver: discord.Guild = self.emoteserver or self.client.get_guild(957469186798518282)
         em = discord.PartialEmoji.from_str(emote)
         em = discord.PartialEmoji.with_state(state, name=em.name, animated=em.animated, id=em.id)
         file = await em.to_file()
-        img = Image.open(file.fp)  # invalid start byte if em.read
-        if orient == "H":
-            img = img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
-        elif orient == "V":
-            img = img.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
-        with BytesIO() as image_binary:
-            img.save(image_binary, format="gif" if em.animated else "png") #TODO make this work with animated emotes
-            image_binary.seek(0)
-            newemoji = await self.emoteserver.create_custom_emoji(name=f"{em.name}flip{orient}", image=image_binary.read())
+
+        # Read the image with imageio
+        try:
+            img = iio.imread(file.fp, extension="."+file.filename.split(".")[-1]) #TODO sometimes gifs have no transparency so the shape is (x,y,3) then (x,y,4), fix this
+        except ValueError as e:
+            return e
+        # emotelogger.debug(f"{img.shape=}")
+
+        # Check if the image is animated (i.e., it has more than one frame)
+        if len(img.shape) > 3 and img.shape[0] > 1:
+            # Handle animated GIF
+            flipped_imgs = []
+            for frame in img:
+                # Flip each frame
+                if orient == "H":
+                    flipped_img = frame[:, ::-1]
+                elif orient == "V":
+                    flipped_img = frame[::-1, :]
+                flipped_imgs.append(flipped_img)
+            # Save all frames to a BytesIO object
+            with BytesIO() as image_binary:
+                iio.imwrite(image_binary, np.array(flipped_imgs), format="gif", loop=0)
+                image_binary.seek(0)
+                emotelogger.debug(f"{img.shape=}")
+                newemoji = await self.emoteserver.create_custom_emoji(name=f"{em.name}flip{orient}",
+                                                                      image=image_binary.read())
+        else:
+            emotelogger.debug(f"{img.shape=}")
+            # Handle static image
+            if orient == "H":
+                emotelogger.debug(f"{img.shape=}")
+                img = img[:, ::-1]
+            elif orient == "V":
+                img = img[::-1, :]
+            with BytesIO() as image_binary:
+                iio.imwrite(image_binary, img, format="png")
+                emotelogger.debug(f"{img.shape=}")
+                image_binary.seek(0)
+                newemoji = await self.emoteserver.create_custom_emoji(name=f"{em.name}flip{orient}", image=image_binary.read())
+
         return newemoji
 
     def saveEmotes(self):
@@ -167,6 +200,7 @@ class EmoteCog(commands.Cog):
                     await wh.send(content=emote, username=ctx.user.display_name, avatar_url=ctx.user.avatar.url)
                     await ctx.send(ephemeral=True, content="Done", delete_after=5)
             if flipped:
+                await asyncio.sleep(2)
                 await self.emoteserver.delete_emoji(emote)
 
         elif text:
@@ -265,7 +299,7 @@ class EmoteCog(commands.Cog):
         await interaction.response.send_autocomplete(get_near_emote)
 
     @emote.on_autocomplete("text")  # does not really work
-    async def emote_autocomplete(self, interaction, text: str):
+    async def emotetext_autocomplete(self, interaction, text: str):
         if not text:
             return None
         text = text.rpartition("{")

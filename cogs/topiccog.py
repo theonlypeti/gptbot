@@ -13,8 +13,6 @@ from utils import embedutil
 
 load_dotenv(r"./credentials/reddit.env")
 
-#TODO AITA? maybe a multiselect for multiple subreddits
-
 reddit = asyncpraw.Reddit(client_id=os.getenv("REDDIT_CLIENT_ID"),
                      client_secret=os.getenv("REDDIT_CLIENT_SECRET"),
                      user_agent=os.getenv("REDDIT_USER_AGENT"),
@@ -25,7 +23,7 @@ emoji_buttons = (emoji.emojize(":red_question_mark:"), emoji.emojize(":men’s_r
                  emoji.emojize(":women’s_room:"), emoji.emojize(":women’s_room:"),
                  emoji.emojize(":person_raising_hand:"), emoji.emojize(":person_raising_hand:"), emoji.emojize(":person_raising_hand:"),
                  emoji.emojize(":no_one_under_eighteen:")) #note, dont delete!
-subs = ("AskReddit", "AskMen", "askteenboys", "AskWomen", "AskTeenGirls", "DAE+DoesAnybodyElse", "amitheonlyone", "AmItheAsshole", "AskRedditAfterDark")
+subs = ("AskReddit+ask", "AskMen", "askteenboys", "AskWomen", "AskTeenGirls", "DAE+DoesAnybodyElse", "amitheonlyone", "AmItheAsshole", "AskRedditAfterDark")
 subs_names = ("General questions", "Ask Men", "Ask Teen Boys", "Ask Women", "Ask Teen Girls", "Does Anybody Else..?", "Am I The Only One..?", "Am I The Asshole?", "After Dark")
 Sub = namedtuple("Sub", ["id", "display_name", "emoji"])
 subs = [Sub(id=i, display_name=n, emoji=e) for i, n, e in zip(subs, subs_names, emoji_buttons)]
@@ -45,7 +43,7 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
         def __init__(self, cog):
             self.cog = cog
             opts = [discord.SelectOption(label=sub.display_name, value=sub.id, emoji=sub.emoji) for sub in subs]
-            super().__init__(placeholder="Choose a subreddit", options=opts, min_values=1, max_values=len(opts))
+            super().__init__(placeholder="Choose multiple subreddits", options=opts, min_values=1, max_values=len(opts))
 
         async def callback(self, interaction: discord.Interaction):
             await interaction.response.defer()
@@ -102,7 +100,9 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
                 await self.cog.nexttopic(interaction.channel, "AskRedditAfterDark", interaction.user)
 
     @discord.slash_command(name="topic", description="For when you want to revive a dead chat")
-    async def topic(self, ctx, selector: Literal["Classic", "Experimental"] = "Classic"):
+    # async def topic(self, ctx, selector: Literal["Classic", "Experimental"] = "Classic"):
+    # async def topic(self, ctx, selector: Literal["Classic", "Experimental"]):
+    async def topic(self, ctx, selector: Literal["Classic", "Experimental"] = discord.SlashOption(name="selector", description="Choose a topic theme selection method", choices=["Classic", "Experimental"])):
         if selector == "Classic":
             embedVar = discord.Embed(title="Choose a question theme", description="Expect stupid questions as they are community submitted lol\n\n" + "\n".join(emoji_buttons[i] + " = " + ("General questions", "Ask men", "Ask women", "Does anybody else..?", "After dark")[i] for i in range(len(emoji_buttons))) + "\n" + 25 * "-")
             embedVar.set_footer(text="{} = Comments | {} = Next question | {} = Random question | {} = Try to refresh topics".format(emoji.emojize(":memo:"), emoji.emojize(":right_arrow:"), emoji.emojize(":shuffle_tracks_button:"), emoji.emojize(":counterclockwise_arrows_button:")))
@@ -184,8 +184,8 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             await self.sendNoTopic(channel, sub)
         else:
             viewObj = self.TopicNextButtons(self, sub=sub)
-            viewObj.add_item(
-                discord.ui.Button(style=discord.ButtonStyle.link, url="https://redd.it/" + subm.id, emoji=emoji.emojize(":globe_with_meridians:")))
+            # viewObj.add_item(
+            #     discord.ui.Button(style=discord.ButtonStyle.link, url="https://redd.it/" + subm.id, emoji=emoji.emojize(":globe_with_meridians:")))
             viewObj.children[2].disabled = (sub == "AskWomen")
             await channel.send(embed=embedVar, view=viewObj)
 
@@ -421,6 +421,7 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
 
             subs = {"AskMen": reddit.subreddit("AskMen+askteenboys"),
                     "AskWomen": reddit.subreddit("AskWomen+AskTeenGirls"),
+                    "AskReddit": reddit.subreddit("askreddit+ask"),
                     "DAE": reddit.subreddit("DAE+doesanybodyelse+amitheonlyone+AmItheAsshole")}
             # "DAE": reddit.subreddit("")}
             if subname in subs:
@@ -482,7 +483,6 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             #return embedVar
 
         async def prettyprint(self, post: asyncpraw.reddit.Submission, *attr):
-            logger.debug(post.subreddit.display_name)
             # embedVar = discord.Embed(title=post.title if post.title and len(post.title) <= 256 else "\u200b", description=post.title if post.title and len(post.title) > 256 else (post.selftext[:self.max_desc_length] + ("... " if len(post.selftext) > self.max_comment_length else "")) if (post.selftext and len(post.selftext) <= self.max_desc_length) else "\u200b", color=attr[0].color if attr else discord.Colour.random())
             embedVar = discord.Embed(title=post.title if post.title and len(post.title) <= 256 else "\u200b", description=post.title if post.title and len(post.title) > 256 else (post.selftext[:self.max_desc_length] + ("... " if len(post.selftext) > self.max_comment_length else "")) if post.selftext else "\u200b", color=attr[0].color if attr else discord.Colour.random())
             embedVar.set_footer(text=f"id: {post.id} |{list(filter(lambda s: post.subreddit.display_name.lower() in s.id.lower(), subs))[0].emoji} | /topic to change topic" + (" | Low score. Might be stupid?!" if post.score < 100 else f" | {str(post.score)} points."))

@@ -1,5 +1,8 @@
 """A simple example of using Mafic."""
 from __future__ import annotations
+import subprocess
+import asyncio
+import os
 import time
 import traceback
 from datetime import timedelta, datetime
@@ -8,6 +11,8 @@ from mafic import NodePool, Player, Playlist, Track, TrackEndEvent
 import nextcord as discord
 from nextcord.ext import commands
 from nextcord.ext import tasks
+
+import utils.embedutil
 
 if TYPE_CHECKING:
     from nextcord.abc import Connectable
@@ -19,6 +24,7 @@ class MyPlayer(Player[discord.Client]):
 
         # Mafic does not provide a queue system right now, low priority.
         self.queue: list[tuple[discord.User, Track]] = []
+        self.addedby: discord.User|None = None
 
 
 class LavaLinkCog(commands.Cog):
@@ -32,18 +38,28 @@ class LavaLinkCog(commands.Cog):
 
     @tasks.loop(count=1)
     async def on_ready(self):
+        self.logger.debug("Creating lavalink node.")
         if self.ready_ran:
+            self.logger.info("Lavalink node on.")
             return
-
         await self.pool.create_node(
             host="127.0.0.1",
             port=2333,
+            # port=8080,
             label="MAIN",
             password="haha",
         )
         self.logger.info("Created lavalink node.")
 
         self.ready_ran = True
+
+    @on_ready.before_loop
+    async def start_lavalink(self):
+        self.logger.info("Starting lavalink.")
+        self.client.lavalink = subprocess.Popen(['java', '-jar', 'Lavalink.jar'], cwd=r'./lavalink')
+        await asyncio.sleep(10)
+        self.logger.info("Lavalink started.")
+        ...
 
     @discord.slash_command(name="yt", dm_permission=False)
     async def ytgroup(self, interaction):
@@ -55,13 +71,17 @@ class LavaLinkCog(commands.Cog):
         assert isinstance(inter.user, discord.Member)
 
         if not inter.user.voice or not inter.user.voice.channel:
-            return await inter.response.send_message("You are not in a voice channel.")
+            await utils.embedutil.error(inter, "You are not in a voice channel.")
+            return
 
         channel = inter.user.voice.channel
 
         # This apparently **must** only be `Client`.
         vc = await channel.connect(cls=MyPlayer)  # pyright: ignore[reportGeneralTypeIssues]
-        await vc.guild.change_voice_state(self_deaf=True)
+        try:
+            await vc.guild.change_voice_state(self_deaf=True, channel=vc.channel)
+        except TypeError:
+            pass
         self.logger.debug(vc)
         self.players.update({inter.guild.id: inter.guild.voice_client})
         await inter.send(f"Joined {channel.mention}.")
@@ -74,6 +94,10 @@ class LavaLinkCog(commands.Cog):
             The song to search or play.
         """
         assert inter.guild is not None
+
+        if not inter.user.voice or not inter.user.voice.channel:
+            await utils.embedutil.error(inter, "You are not in a voice channel.")
+            return
 
         if not inter.guild.voice_client:
             await self.join(inter)
@@ -92,12 +116,13 @@ class LavaLinkCog(commands.Cog):
             if len(tracks) > 1:
                 player.queue.extend([(inter.user, track) for track in tracks[1:]])
 
-        track = tracks[0]
+        track: Track = tracks[0]
 
         if player.current:
             player.queue.append((inter.user, track))
         else:
             await player.play(track)
+            player.addedby = inter.user
         await inter.send(f"Playing {track.uri}")
 
     @ytgroup.subcommand()
@@ -176,22 +201,29 @@ class LavaLinkCog(commands.Cog):
         )
         if not player:
             player = self.players[inter.guild.id]
-        if not player.queue:
+        if not player.queue and not player.current:
             return await inter.send("No tracks in queue.")
-        embed = discord.Embed(title="Queue", description="\n".join([f"{i+1}. {track.title} *({timedelta(seconds=track.length//1000)}) added by* **{user.display_name}**" for i, (user, track) in enumerate(player.queue)][:4000]))
-        embed.set_footer(text=f"Total queue length: {timedelta(seconds=sum([track.length//1000 for user, track in player.queue]))}")
+
+        q = [(player.addedby, player.current)] + player.queue  # TODO paginator
+        embed = discord.Embed(title="Queue", description="\n".join([f"{i+1}. {track.title} *({timedelta(seconds=track.length//1000)}) added by* **{user.display_name}**" for i, (user, track) in enumerate(q)][:4000]))
+        embed.set_footer(text=f"Total queue length: {timedelta(seconds=sum([track.length//1000 for user, track in q]))}")
         await inter.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_track_end(self, event: TrackEndEvent):
         assert isinstance(event.player, MyPlayer)
         if event.player.queue:
+            event.player.addedby = event.player.queue[0][0]
             await event.player.play(event.player.queue.pop(0)[1])
 
-    @commands.Cog.listener()
-    async def on_application_command_error(self, inter: discord.Interaction[discord.Client], error: Exception):
-        traceback.print_exception(type(error), error, error.__traceback__)
-        await inter.send(f"An error occurred: {error}")
+    # @commands.Cog.listener() #TODO good error printing way
+    # async def on_application_command_error(self, inter: discord.Interaction[discord.Client], error: Exception):
+    #     traceback.print_exception(type(error), error, error.__traceback__)
+    #     await inter.send(f"An error occurred: {error}")
+
+    def cog_unload(self):
+        self.logger.info("Deconstructing lavalink..")
+        self.client.lavalink.terminate()
 
 
 def setup(client):

@@ -54,7 +54,10 @@ class Paginator(discord.ui.View):
         """Called when the paginator times out."""
         for ch in self.children:
             ch.disabled = True
-        await self.msg.edit(view=self)
+        try:
+            await self.msg.edit(view=self)
+        except discord.NotFound:
+            pass
 
     def mergeview(self, view: discord.ui.View, row=2):
         """Merges a discord.ui.View into this one.

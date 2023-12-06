@@ -28,22 +28,22 @@ def correctboolean(expr):
     return expr.replace("!", "~").replace("||","|").replace("&&", "&")
 
 def addbackground(url: str):
-    img = imageio.imread(url)
+    img = imageio.v2.imread(url, pilmode='RGBA')
     img[:, :, 3] = 255
     return img
 
 
 async def sendmsg(ctx, embedVar, img: list[imageio.core.Array]):
     with BytesIO() as image_binary:
-        img[0]._meta.clear() #idk why this hacky shit works
-        img[1]._meta.clear()
+        # img[0]._meta.clear() #idk why this hacky shit works
+        # img[1]._meta.clear()
         imageio.imsave(image_binary, img[0], "png")
         image_binary.seek(0)
-        with BytesIO() as another_image:
-            imageio.imsave(another_image, img[1], "png")
-            another_image.seek(0)
-            await ctx.send("Result of:", embed=embedVar, files=[discord.File(fp=image_binary, filename='question.png'),
-                                                  discord.File(fp=another_image, filename="result.png")])
+        await ctx.send("Result of:", embed=embedVar, file=discord.File(fp=image_binary, filename='question.png'))
+    with BytesIO() as another_image:
+        imageio.imsave(another_image, img[1], "png")
+        another_image.seek(0)
+        await ctx.send("Result of:", embed=embedVar, file=discord.File(fp=another_image, filename='result.png'))
 
 
 class SympyCog(commands.Cog):
@@ -197,7 +197,7 @@ class SympyCog(commands.Cog):
             except Exception as e:
                 sympylogger.error(e)
                 result = "Error"
-            embedVar = discord.Embed(title=f"Result of lim({escape_markdown(expression)}) {going_from}->{going_to}", description=escape_markdown(str(result)),color=ctx.user.color)
+            embedVar = discord.Embed(title=f"Result of lim({escape_markdown(expression)}) {going_from}->{going_to}", description=escape_markdown(str(result)), color=ctx.user.color)
             latexed = latex(result).replace(" ", "%20")
             questionpic = addbackground(f"https://latex.codecogs.com/png.image?{question if question else 'Error'}")
             img = addbackground(f'https://latex.codecogs.com/png.image?{latexed}')

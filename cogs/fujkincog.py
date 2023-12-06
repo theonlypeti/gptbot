@@ -32,7 +32,7 @@ class FujkinCog(commands.Cog):
     async def before_fujkin(self):
         await self.client.wait_until_ready()
         # self.channels = (self.client.get_channel(607897146750140457),) #rageon
-        self.channels = (self.client.get_channel(897298417431240714),) #rageon
+        self.channels = (self.client.get_channel(897298417431240714),) #bosi
 
 
 def setup(client): #bot shit

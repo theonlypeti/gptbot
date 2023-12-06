@@ -608,7 +608,7 @@
         "achi": [],
         "items": [],
         "pb": 92.102,
-        "pw": 92.102,
+        "pw": 18.687,
         "cd": null,
         "methods": 4,
         "pill": null,
@@ -992,5 +992,47 @@
         "pillPopTime": "2023-10-20T22:02:24.199160",
         "dailyStreak": 0,
         "dailyDate": "2023-10-19T22:02:24.199160"
+    },
+    {
+        "id": 530757386172891169,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 72.322,
+        "pw": 72.322,
+        "cd": null,
+        "methods": 4,
+        "pill": null,
+        "pillPopTime": "2023-11-07T16:42:23.724187",
+        "dailyStreak": 0,
+        "dailyDate": "2023-11-06T16:42:23.724187"
+    },
+    {
+        "id": 379998476618039297,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 22.216,
+        "pw": 22.216,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": "2023-11-07T21:35:49.052302",
+        "dailyStreak": 0,
+        "dailyDate": "2023-11-06T21:35:49.052302"
+    },
+    {
+        "id": 153679550625087488,
+        "fap": 0,
+        "achi": [],
+        "items": [],
+        "pb": 92.877,
+        "pw": 92.877,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": "2023-11-08T00:10:42.247618",
+        "dailyStreak": 0,
+        "dailyDate": "2023-11-07T00:10:42.247618"
     }
 ]

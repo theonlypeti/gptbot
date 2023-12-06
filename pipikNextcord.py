@@ -20,6 +20,8 @@ from PIL import Image, ImageDraw, ImageFont
 from utils.mentionCommand import mentionCommand #used in /run
 from utils.getMsgFromLink import getMsgFromLink
 from utils import mylogger
+import cProfile
+import pstats
 
 
 start = time_module.perf_counter()
@@ -39,6 +41,7 @@ parser.add_argument("--no_testing", action="store_true", help="Disable testing m
 parser.add_argument("--only_testing", action="store_true", help="Add testing module.")
 parser.add_argument("--logfile", action="store_true", help="Turns on logging to a text file.")
 parser.add_argument("--no_linecount", action="store_true", help="Turns off line counting.")
+parser.add_argument("--profiling", action="store_true", help="Measures the bootup time and outputs it to profile.prof.")
 args = parser.parse_args()
 
 mylogger.main(args) #initializing the logger
@@ -82,7 +85,6 @@ client.root = root
 # TODO make a better help command
 # TODO make pipikbot users a dict of id:user instead of a list of users, also redo the getUserFromDC func then
 # TODO make an actual lobby extension
-# TODO merge caesar, clownize, t9 ize into one context command
 # TODO maybe make some mafia type game but rebrand it to some discord admins and mods vs spammers and use right click user commands
 # TODO play with this  if interaction.user.guild_permissions.administrator
 # TODO play with ClientCog and its application_commands property
@@ -90,20 +92,7 @@ client.root = root
 # TODO replace every list typehint with Sequence or MutableSequence or smth or Iterable
 # TODO a database abstraction for myself
 # TODO selectmenu for bp temy to open their desc and availability in a embed, then the pagi arrows would cycle through the bp temy one by one + button for english
-# TODO lavalink music player
 # TODO zssk listok buyer
-
-#T9 = ({key * i: letter for i, key, letter in zip([(num % 3) + 1 for num in range(0, 26)], [str(q // 3) for q in range(6, 30)],sorted({chr(a) for a in range(ord("A"), ord("Z") + 1)} - {"S", "Z"}))} | {"7777": "S", "9999": "Z","0": " "})
-#T9rev = {v: k for k, v in T9.items()}
-
-##@client.message_command(name="T9ize",guild_ids=[860527626100015154])
-##async def t9(interaction, text):
-##    await interaction.send(" ".join([T9rev[letter.upper()] for letter in text.content]))
-##
-##@client.message_command(name="T9rev",guild_ids=[860527626100015154])
-##async def t9r(interaction, text):
-##    await interaction.send("".join([T9[letters] for letters in text.content.split(" ")]))
-
 
 #-------------------------------------------------#
 
@@ -112,6 +101,9 @@ async def on_ready():
     global timeouts, us
     print(f"Signed in at {datetime.now()}")
     pipikLogger.info(f"{time_module.perf_counter() - start} Bootup time")
+    if args.profiling:
+        os.system("snakeviz profile.prof")
+        exit(0)
     game = discord.CustomActivity(
         name="Custom Status",
         state=f"{linecount} lines of code; V{version}!"
@@ -396,7 +388,7 @@ if not args.minimal:  # if not minimal
         for cog in reversed(cogs):  # remove the cogs that are marked to be excluded with no_*
             if args.__getattribute__(f"no_{cog.removesuffix('cog.py').removesuffix('.py')}"):  # if the cog is marked to be excluded
                 cogs.remove(cog)  # remove it from the list of cogs to be loaded
-cogs.remove("testing.py") if args.no_testing else None  # remove testing.py from the list of cogs to be loaded if testing is disabled
+# cogs.remove("testing.py") if args.no_testing else None  # remove testing.py from the list of cogs to be loaded if testing is disabled
 
 for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know how many cogs to load and so dont know how to format loading bar
     if not args.no_linecount:
@@ -417,7 +409,15 @@ os.chdir(root)
 #             linecount += len(f.readlines())
 #     client.load_extension("cogs." + file[:-3])  #breaks
 
-client.run(os.getenv("MAIN_DC_TOKEN"))
+if args.profiling:
+    with cProfile.Profile() as pr:
+        client.run(os.getenv("MAIN_DC_TOKEN"))
+    stats = pstats.Stats(pr)
+    # stats.sort_stats(pstats.SortKey.TIME)
+    # stats.print_stats()
+    stats.dump_stats(filename="profile.prof")
+else:
+    client.run(os.getenv("MAIN_DC_TOKEN"))
 
 # 277129587776 reduced perms
 # https://discord.com/api/oauth2/authorize?client_id=618079591965392896&permissions=543652576368&scope=bot%20applications.commands bogibot

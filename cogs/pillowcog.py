@@ -723,7 +723,7 @@ class PillowCog(commands.Cog):
         await interaction.response.defer()
         if not msg.attachments:
             if "https:" in msg.content:
-                if msg.content.startswith("https://cdn.discordapp.com/attachments"): #or imgur
+                if msg.content.startswith("https://cdn.discordapp.com/attachments"): #or imgur or not cdn but other prefix also regex this not just startswith
                     pass  #todo
                 else:
                     pass  #todo

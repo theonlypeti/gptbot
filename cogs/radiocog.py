@@ -116,6 +116,7 @@ class RadioCog(commands.Cog):
             
             try:
                 vclient = await self.voice.connect()
+                await vclient.guild.change_voice_state(self_deaf=True, channel=vclient.channel)
             except Exception:
                 vclient = inter.guild.voice_client
             newRadio = Radio(vclient, radio_icons_station[station], self.cog)

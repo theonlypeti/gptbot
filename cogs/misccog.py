@@ -1,14 +1,19 @@
 import os
 import random
+import string
 from datetime import datetime, timedelta
 from io import BytesIO
+from textwrap import TextWrapper
 from typing import Optional, Literal
 import emoji
 import nextcord as discord
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from nextcord import Interaction
+from numpy import clip
 # from pipikNextcord import root #  dont freaking do this, causes to rerun the main file
 from pycaw.utils import AudioUtilities
+from utils import embedutil, antimakkcen
 from utils.bf import bf
 from nextcord.ext import commands
 
@@ -24,6 +29,11 @@ class MiscallenousCog(commands.Cog):
             self.karomkodasok = file.readlines()
         logger.debug(f"{len(self.karomkodasok)} bad words loaded.")
 
+        self.T9 = {key * i: letter for i, key, letter in
+                    zip([(num % 3) + 1 for num in range(0, 26)], [str(q // 3) for q in range(6, 30)],
+                        sorted(set(string.ascii_uppercase) - {"S", "Z"}))} | {"7777": "S", "9999": "Z", "0": " "}
+        self.T9rev = {v: k for k, v in self.T9.items()}
+
     @discord.user_command(name="Karomkodas")
     async def karmokdoas(self, interaction: discord.Interaction, user: discord.User):
         # await interaction.response.defer() #if deferred, the tts doesn't work
@@ -37,11 +47,11 @@ class MiscallenousCog(commands.Cog):
             self.add_item(self.inputtext)
 
         async def callback(self, ctx):
-            text = self.inputtext.value
+            text = antimakkcen.antimakkcen(self.inputtext.value)
             textik = ("".join([chr(((ord(letter) - 97 + 13) % 26) + 97) if letter.isalpha() and letter.islower() else chr(
                 ((ord(letter) - 65 + 13) % 26) + 65) if letter.isalpha() and letter.isupper() else letter for letter in text]))
             embedVar = discord.Embed(title="Message", type="rich", description=textik)
-            embedVar.set_author(name=ctx.user.display_name, icon_url=ctx.user.avatar.url)
+            embedutil.setuser(embedVar, ctx.user)
             await ctx.send(embed=embedVar)
 
     @discord.slash_command(description="Encrypt/Decrypt", name="caesar")
@@ -86,8 +96,7 @@ class MiscallenousCog(commands.Cog):
             for i in range(0, len(question), 38):
                 newquestion += question[i:i + 38] + "\n"
 
-            textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": img.width // 100,
-                          "fill": (255, 255, 255), "anchor": "mm"}
+            textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": img.width // 100, "fill": (255, 255, 255), "anchor": "mm"}
             d.multiline_text((img.width / 2, textsize + (textsize * len(question) // 38)), newquestion, **textconfig)
             with BytesIO() as image_binary:
                 img.save(image_binary, "jpeg")
@@ -104,7 +113,7 @@ class MiscallenousCog(commands.Cog):
         emotes = [emote for emote in os.listdir() if not emote.endswith(".gif") or interaction.guild.premium_tier]
         await interaction.send(f"Picking from {len(emotes)} emotes...")
         img = random.choice(emotes)
-        print(img)
+        logger.info(f"Changing pfp to {img} in {interaction.guild.name} on behalf of {interaction.user.name}")
         with open(img, "rb") as file:
             await interaction.guild.edit(icon=file.read())
         os.chdir(interaction.client.root)
@@ -150,7 +159,7 @@ class MiscallenousCog(commands.Cog):
                     if timestr < now:
                         timestr = timestr.replace(year=now.year + 1)
             elif ":" in time:  # if only time is given
-                timestr = now.replace(**{"hour": int(time.split(":")[0]), "minute": int(time.split(":")[1]),"second": 0})  # i could have done strptime %H:%M but it would have given me a 1970 date
+                timestr = now.replace(**{"hour": int(time.split(":")[0]), "minute": int(time.split(":")[1]), "second": 0})  # i could have done strptime %H:%M but it would have given me a 1970 date
             elif "=" in time:  # if relative
                 timestr = now + timedelta(**{k.strip(): int(v.strip()) for k, v in [i.split("=") for i in time.split(",")]})
             else:  # if no time is given
@@ -199,20 +208,88 @@ class MiscallenousCog(commands.Cog):
         else:
             await interaction.send("WIP lol") #TODO
     # buttons to add colored text -> dropdown for color + rainbow -> modal to inpu
-    # button for link, if added disable copying, only send to channel
-    # add select for components if add newline or not
+    # button for link, if added disable copying, only send to channel //actually probably works now
+    # add select for components if add newline or not //what?
     # add time modal maybe with multi parse but idk how to do full or relative
-    # add fancytext unicode shit
+    # add fancytext unicode shit (honestly idk what you mean like smalltext and like fancy font?)
 
-    @discord.message_command(name="Mocking clown")
     async def randomcase(self, interaction: discord.Interaction, message: discord.Message):
+        """Spongebob mocking"""
         assert message.content
-        await interaction.send("".join(random.choice([betu.casefold(), betu.upper()]) for betu in message.content) + " <:pepeclown:803763139006693416>")
+        await message.reply("".join(random.choice([betu.casefold(), betu.upper()]) for betu in message.content) + " <:pepeclown:803763139006693416>")
 
-    @discord.message_command(name="Louder for the ppl in the back")
     async def shout(self, interaction: discord.Interaction, message: discord.Message):
+        """Louder for the ppl in the back"""
         assert message.content
-        await interaction.send("# " + message.content)
+        await message.reply("# " + message.content)
+
+    async def t9(self, interaction: discord.Interaction, message: discord.Message):
+        if message.content.replace(" ", "").isnumeric():
+            await message.reply("".join([self.T9[numbers] for numbers in message.content.split(" ")]))
+        else:
+            await message.reply(" ".join([self.T9rev[letter.upper()] for letter in antimakkcen.antimakkcen(message.content)]))
+
+    async def caesarcmd(self, interaction: discord.Interaction, message: discord.Message):
+        """Caesar (de)cypher"""
+        text = antimakkcen.antimakkcen(message.content)
+        textik = ("".join([chr(((ord(letter) - 97 + 13) % 26) + 97) if letter.isalpha() and letter.islower() else chr(
+            ((ord(letter) - 65 + 13) % 26) + 65) if letter.isalpha() and letter.isupper() else letter for letter in
+                           text]))
+        await message.reply(textik)
+
+    async def unemojize(self, interaction, message):
+        await interaction.send(f"`{emoji.demojize(message.content)}`", ephemeral=True)
+
+    class MiscMessageSelector(discord.ui.Select):
+        def __init__(self, cog, message: discord.Message):
+            super().__init__()
+            self.cog: MiscallenousCog = cog
+            self.message = message
+            self.cmds = [self.cog.randomcase, self.cog.caesarcmd, self.cog.t9, self.cog.shout, self.cog.unemojize]
+            cmd = self.cmds[0]
+
+            self.options = [discord.SelectOption(label=cmd.__doc__ or cmd.__name__.capitalize(), value=i) for i, cmd in enumerate(self.cmds)]
+
+        async def callback(self, interaction: Interaction) -> None:
+            cmd = self.cmds[int(self.values[0])]
+            await cmd(interaction, self.message)
+
+    @discord.message_command(name="Message manipulation")
+    async def misc_msg_cmnds(self, interaction: discord.Interaction, message: discord.Message):
+        assert message.content
+        viewObj = discord.ui.View()
+        viewObj.add_item(self.MiscMessageSelector(self, message))
+        await interaction.send(view=viewObj, ephemeral=True)
+
+    class RatioModal(discord.ui.Modal):
+        def __init__(self, message: discord.Message):
+            super().__init__(title="Fact check")
+            self.message = message
+            self.fact = discord.ui.TextInput(label="Fact check their message", required=True)
+            self.add_item(self.fact)
+
+        async def callback(self, interaction: Interaction) -> None:
+            txt = self.fact.value
+            img = Image.open(r"data/ratio.png")
+            d = ImageDraw.Draw(img)
+            # textsize = img.width * (1 / (len(txt)))
+            # textsize = int(clip(textsize, 25, 25))
+            textsize = 20
+            fnt = ImageFont.truetype(r'C:\Users\booth\AppData\Local\Microsoft\Windows\Fonts\Roboto-Regular.ttf', size=textsize)
+
+            txt = "\n".join([text for text in TextWrapper(width=80, break_long_words=False, replace_whitespace=False).wrap(txt)])
+
+            textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": 1,
+                          "fill": (255, 255, 255), "anchor": "ls"}
+            d.multiline_text((40, 90), txt, **textconfig)
+            with BytesIO() as image_binary:
+                img.save(image_binary, "png")
+                image_binary.seek(0)
+                await self.message.reply(file=discord.File(fp=image_binary, filename=f'ratio.png'))
+
+    @discord.message_command(name="Twitter fact check")
+    async def ratio(self, interaction: discord.Interaction, message: discord.Message):
+        await interaction.response.send_modal(self.RatioModal(message))
 
     @discord.user_command(name="FbAnna profilka", force_global=True)
     async def flowersprofilka(self, interaction: discord.Interaction, user: discord.User):
@@ -238,7 +315,7 @@ class MiscallenousCog(commands.Cog):
                     virag = Image.open(file)
                     size = img.width // 8
                     virag.thumbnail((size, size))
-                    img.paste(virag,(random.randint(0, img.width), random.randint(img.height - size * 2, img.height - size)), virag)
+                    img.paste(virag, (random.randint(0, img.width), random.randint(img.height - size * 2, img.height - size)), virag)
 
             d = ImageDraw.Draw(img)
             fnt = ImageFont.truetype('FREESCPT.TTF', size=size)
@@ -275,13 +352,14 @@ class MiscallenousCog(commands.Cog):
     @discord.slash_command(name="csgo")
     async def csgo(self, interaction: discord.Interaction, how_many_needed: int = discord.SlashOption(choices=[1,2,3,4])):
         # "({self.link.value}\n" + '"{}"'.format(self.hovertext.value) + ")"
-        title = f"[__Launch!__](steam://rungameid/730\n" + '"{}"'.format('Launch CSGO') + ")"
-        embedVar = discord.Embed(title=f"{interaction.user.display_name} is LFG for CSGO",
-                              description=f"{how_many_needed} needed!\n{title}")
+        title = f"[__Launch!__](steam://rungameid/730\n" + '"{}"'.format('Launch CS2') + ")"
+        embedVar = discord.Embed(title=f"{interaction.user.display_name} is LFG for CS2",
+                              description=f"{how_many_needed} needed!")
+                              # description=f"{how_many_needed} needed!\n{title}")
         embedVar.add_field(name=interaction.user.display_name, value=f"I'm ready! {emoji.emojize(':check_mark_button:')}")
         viewObj = discord.ui.View(timeout=None)
         viewObj.add_item(self.Whenimcoming(interaction))
-        await interaction.send(discord.utils.find(lambda a: any(i in a.name.lower() for i in ("csgo", "pangtok", "szieszgo")), interaction.guild.roles).mention,embed=embedVar, view=viewObj)
+        await interaction.send(discord.utils.find(lambda a: any(i in a.name.lower() for i in ("csgo", "pangtok", "szieszgo", "cs2")), interaction.guild.roles).mention, embed=embedVar, view=viewObj)
 
     class Whenimcoming(discord.ui.StringSelect):
         def __init__(self, inter: discord.Interaction):
@@ -307,7 +385,7 @@ class MiscallenousCog(commands.Cog):
 
                 if val.isdigit():
                     timestr = now + timedelta(minutes=int(val))
-                    embed.add_field(name=interaction.user.display_name, value="in " + discord.utils.format_dt(timestr, style="R"), inline=False)
+                    embed.add_field(name=interaction.user.display_name, value=discord.utils.format_dt(timestr, style="R"), inline=False)
                 else:
                     embed.add_field(name=interaction.user.display_name, value=f"{val} {emoji.emojize(':check_mark_button:')}", inline=False)
 
@@ -318,8 +396,11 @@ class MiscallenousCog(commands.Cog):
             else:
                 pass
 
-            title = f"[__Launch!__](steam://rungameid/730\n" + '"{}"'.format('Launch CSGO') + ")"
-            embed.description = f"{max(0,readys)} needed!\n{title}"
+            # title = f"[__Launch!__](steam://rungameid/730\n" + '"{}"'.format('Launch CSGO') + ")"
+            # # embed.description = f"{max(0,readys)} needed!\n{title}"
+            # embed.description = f"{max(0,readys)} needed!"
+            title = f"[__Launch!__](steam://rungameid/730 'Launch CSGO')"
+            embed.description = f"{max(0, readys)} needed!\n{title}"
             await self.msg.edit(embed=embed)
 
     @commands.Cog.listener()

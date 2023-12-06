@@ -243,7 +243,7 @@ class AisCog(commands.Cog):
             return interaction.user == self.original_user
 
         @discord.ui.button(emoji=emoji.emojize(':wastebasket:', language="alias"), label="Vymaž aj rolu", style=discord.ButtonStyle.danger)
-        async def deleterole(self, button, interaction: discord.Interaction): #TODO when ill save all channels for a server ill do this automatically
+        async def deleterole(self, button, interaction: discord.Interaction): #when ill save all channels for a server ill do this automatically //what i think i get it when i save server:channel i wont need to do this but ill keep it in
             try:
                 if (role := discord.utils.find(lambda m: m.name == 'Bakalarka notifications', interaction.guild.roles)) is not None:
                     await role.delete(reason=f"{interaction.user.name}#{interaction.user.discriminator} disabled notification channel {interaction.channel.name} for bakalarka temy")
