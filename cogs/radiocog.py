@@ -145,7 +145,7 @@ class RadioCog(commands.Cog):
         await ctx.send(embed=discord.Embed(title="Choose a station"), view=viewObj)
 
     @discord.slash_command(name="leave", description="Kicks the bot if playing in a voice channel.")
-    async def leave(self, ctx: discord.Interaction):
+    async def leave(self, ctx: discord.Interaction): #TODO move to somewhere else where it is more general?
         server = ctx.guild.voice_client
         radioLogger.info(f"{ctx.user} used disconnect in {ctx.guild}")
         await server.disconnect(force=True)

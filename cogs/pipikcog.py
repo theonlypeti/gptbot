@@ -13,7 +13,6 @@ from astral import moon
 import pytz
 from utils.antimakkcen import antimakkcen
 from utils.mentionCommand import mentionCommand
-from utils.mapvalues import mapvalues
 
 mgr = pyowm.OWM(os.getenv("OWM_TOKEN")).weather_manager()
 location = 'Bratislava,sk'
@@ -23,7 +22,7 @@ root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pip
 good_emojis = (':smiling_face_with_hearts:', ':smiling_face_with_heart-eyes:', ':face_blowing_a_kiss:', ':kissing_face:', ':kissing_face_with_closed_eyes:')
 bad_emojis = (':rolling_on_the_floor_laughing:', ':cross_mark:', ':squinting_face_with_tongue:', ':thumbs_down:')
 good_words = {"affectionate", "admirable", "charm", "creative", "friend", "funny", "generous", "kind", "likable", "loyal", "polite", "sincere", "pretty", "please", "love", "goodnight", "nite", "prett", "kind", "sugar", "clever", "beaut", "star", "heart", "my", "wonderful", "legend", "neat", "good", "great", "amazing", "marvelous", "fabulous", "hot", "best", "birthday", "bday", "ador", "cute", " king", "queen", "master","daddy", "lil", "zlat", "bby", "angel", "god", "cool", "nice", "lil", "marvelous", "magnificent","lovely", "cutie","handsome","sweet"}
-bad_words = {"adopt", "dirt", "die", "kill", "cring", "selfish", "ugly", "dick", "small", "devil", "drb", "ass", "autis", "deranged", "idiot", "cock", "cut ","cutt", "d1e", "fuck", "slut", "d13", "fake", "a55", "retard", "r3tard", "tard", "bitch", "nigga", "nibba", "nazi", "jew", "fag", "f4g", "feg", "feck", "pussy", "pvssy","stink", "smell", "stupid","cunt"}
+bad_words = {"adopt", "dirt", "die", "kill", "cring", "selfish", "ugly", "dick", "small", "devil", "drb", "ass", "autis", "deranged", "idiot", "cock", "cut ","cutt", "d1e", "fuck", "slut", "d13", "fake", "a55", "retard", "r3tard", "tard", "bitch", "nigga", "nibba", "nazi", "jew", "fag", "f4g", "feg", "feck", "pussy", "pvssy","stink", "smell", "stupid","cunt"}  # TODO use pip install profanity-check
 pills = [{"name": "\U0001F48A Size Up Forte", "effect": 5, "effectDur": timedelta(minutes=5), #TODO make custom emojis
           "badEffectDur": timedelta(seconds=0)},
          {"name": "\U0001F608 Calvin Extra", "effect": 10, "effectDur": timedelta(minutes=20), #TODO make into class
@@ -91,7 +90,7 @@ default_achievements = (
 ("friend_need", emoji.emojize(':raising_hands:'), "A friend in need", "Help out someone by holding their pp"),
 ("pill_popper", emoji.emojize(':pill:'), "Pill popper", "Use a pp enlargement pill"),
 ("breaking_bad", emoji.emojize(":scientist:"), "Breaking bad", "Mix pills together to get a stronger pill"),
-("lucky_draw", emoji.emojize(':slot_machine:'), "Lucky draw", "Get a viagra from daily pills"),
+("lucky_draw", emoji.emojize(':slot_machine:'), "Lucky draw", "Get a Niagara XXL from daily pills"),
 ("dedicated", emoji.emojize(':partying_face:'), "Dedicated fan!", "Come back each day for a daily for over a month"),
 ("tested", emoji.emojize(':mouse:'), "Tried and tested", "Try out all possible pp enlargement methods"),
 ("desperate", emoji.emojize(':weary_face:'), "I´m desperate", "Have all possible pp enlargement methods active at the same time!"),
@@ -262,6 +261,28 @@ class PipikBot(commands.Cog):
             json.dump(tempusers, file, indent=4)
         self.logger.info("saved users")
 
+    #TODO
+    # """
+    # from pymongo import MongoClient
+    #
+    # # Create a connection to the MongoDB server
+    # client = MongoClient('mongodb://localhost:27017/')
+    #
+    # # Connect to your database
+    # db = client['your_database']
+    #
+    # # Connect to your collection
+    # collection = db['your_collection']
+    #
+    # # Insert a document into the collection
+    # document = {"name": "John", "age": 30, "city": "New York"}
+    # collection.insert_one(document)
+    #
+    # # Retrieve a document from the collection
+    # result = collection.find_one({"name": "John"})
+    # print(result)
+    # """
+
     def saveSettings(self):
         settings = {"temperature": self.temperature, "weatherUpdTime": self.weatherUpdatedTime.isoformat(), "sunrise": self.sunrise_date.isoformat()}
         with open(root+"/data/pipisettings.txt", "w") as file:
@@ -336,51 +357,11 @@ class PipikBot(commands.Cog):
             await interaction.send(f"You are now holding your own pp. Umm... I don't know what for but to be honest i don't even wanna know. \nNo effect is in place.", ephemeral=True)
             self.logger.debug(f"{interaction.user} is holding self lolololol")
 
-    @discord.slash_command(name="help", description="Lists what all the commands do.")
-    async def help(self, ctx):
-        await ctx.send("""```
-    -----------------------------------
-    PP COMMANDS:
-    pp = Measures your pp.
-    min = Leaderboard of smallest pps.
-    max = Leaderboard of biggest pps.
-    daily = Come back each day for your daily pills!
-    fap = Increases your horniness level, growing your pp.
-    profile = Shows someone's profile.
-    weather = Shows how does the weather affect your pp.
-    achi = Shows your achievements in your DMs.
-    pills = Shows your inventory of pills.
-    ---------------------------------
-    non-pp commands:
+    @discord.slash_command(name="ppp", description="For measuring your pp.", dm_permission=False)
+    async def ppp(self, ctx: discord.Interaction):
+        pass
 
-    topic = Gives you a question to spin up a convo with.
-    └ topic_filters = if you want to exclude some sensitive topics
-    weather <city> = Shows current weather at place.
-    radio = Spins up a radio player, you must be in a voice channel.
-    └ leave = to kick it.
-    time = Make discord timestamps
-    cat = Random cat pic for when you feel down
-    beans = Random pet toe beans pic when you feel down
-    sub <subreddit name> = Random post from a subreddit
-    bored = Recommends a random thread game to play in a text chat
-    clovece = Play a game of clovece
-    mycolor (if enabled on server) = Set your custom role color
-    chatgpt = Initiate a chat with an AI chatbot
-    convert = Converts between two any currencies, real or crypto
-    imageditor = Image editor in discord
-    emote = use nitro emotes without subscription
-    bakalarka = Set up notifications for FEI bachelor theses
-    mat = Solve maths problems
-    ps = Calculate IP adresses
-    run = Execute python commands
-    brainfuck = Run brainfuck code
-    caesar = Encode/decode text with caesar cipher
-    zssk = Call forth the train announcer lady to tell you info about a connection
-    map = RPG game in development
-    wordle = Play a game of co-op wordle
-    ```""")
-
-    @discord.slash_command(name="daily", description="Collect your daily pills")
+    @ppp.subcommand(name="daily", description="Collect your daily pills")
     async def daily(self, ctx: discord.Interaction):
         user = self.getUserFromDC(ctx.user)
         try:
@@ -425,7 +406,7 @@ class PipikBot(commands.Cog):
                     await self.updateUserAchi(ctx, ctx.user, "lucky_draw")
             #self.saveFile() saving happens in addpill() too
 
-    @discord.slash_command(name="max", description="Leaderboard of biggest pps", dm_permission=False)
+    @ppp.subcommand(name="max", description="Leaderboard of biggest pps")
     async def max(self, ctx: discord.Interaction, server: str = discord.SlashOption("leaderboard", description="User leaderboard or server leaderboards", required=False, choices=("This server", "Between servers"), default="This server")):
         embedVar = discord.Embed(title="Leaderboard of {} biggest pps".format(ctx.guild.name + '\'s' if server == 'This server' else ''), description=25 * "-") #cant do f string
         if server == "This server":
@@ -446,7 +427,7 @@ class PipikBot(commands.Cog):
             embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
         await ctx.send(embed=embedVar)
 
-    @discord.slash_command(name="min", description="Leaderboard of smallest pps", dm_permission=False)
+    @ppp.subcommand(name="min", description="Leaderboard of smallest pps")
     async def min(self, ctx: discord.Interaction, server: str = discord.SlashOption("leaderboard", description="User leaderboard or server leaderboards",required=False, choices=("This server", "Between servers"), default="This server")):
 
         if server == "This server":
@@ -468,68 +449,17 @@ class PipikBot(commands.Cog):
             embedVar.add_field(name=user, value=f"{i[1]} cm {'total' if server == 'Between servers' else ''}", inline=False)
         await ctx.send(embed=embedVar)
 
-    @discord.slash_command(name="weather", description="Current weather at location, or simply see how your pp is affected at the moment.")
+    @ppp.subcommand(name="weather", description="See how your pp is affected at the moment.")
     async def weather(self, ctx, location: str = discord.SlashOption(name="city", description="City name, for extra precision add a comma and a country code e.g. London,UK",required=False)):
         await ctx.response.defer()
-        if not location:
-            self.getTemp()
-            offset = ((7 - abs(7 - datetime.now().month)) - 1) * 3  # average temperature okolo ktorej bude pocitat <zcvrk alebo rast>
-            embedVar = discord.Embed(title=f"It´s {self.temperature} degrees in Bratislava.", description="You can expect {} {} pps".format(("quite", "slightly")[int(abs(self.temperature - offset) < 5)],("shorter", "longer")[int(self.temperature - offset > 0)]), color=(0x17dcff if self.temperature < offset - 5 else 0xbff5ff if self.temperature <= offset else 0xff3a1c if self.temperature > offset + 5 else 0xffa496 if self.temperature > offset else ctx.user.color))
-            offsettime = self.sunrise_date.astimezone(pytz.timezone("Europe/Vienna"))
-            embedVar.add_field(name="And the sun is coming up at", value="{}:{:0>2}.".format(offsettime.hour, offsettime.minute))
-        else:
-            if location == "me":
-                try:
-                    location = {617840759466360842: "Bardoňovo", 756092460265898054: "Plechotice", 677496112860626975: "Giraltovce", 735473733753634827: "Veľký Šariš"}[ctx.user.id]
-                except KeyError:
-                    pass
-            else:
-                try:
-                    location = {"ds": "Dunajská Streda", "ba": "Bratislava", "temeraf": "Piešťany", "piscany": "Piešťany","pistany": "Piešťany", "mesto snov": "Piešťany", "terebes": "Trebišov", "eperjes": "Prešov", "blava": "Bratislava", "diera": "Stropkov", "saris": "Veľký Šariš", "ziar": "Žiar nad Hronom","pelejte": "Plechotice", "bardonovo": "Bardoňovo", "rybnik": "Rybník,SK"}[antimakkcen(location.casefold())]
-                except KeyError:
-                    if "better than" in location.casefold():
-                        description = "Yeah babe, you are the best!"
-                    elif any(word in location.casefold() for word in
-                             ("dick", "pp", "penis", "cock", "schlong", "pussy", "humanity", "faith", "tits", "titty")):
-                        description = "Very funny."
-                    elif "to live" in location.casefold():
-                        description = "Please seek help, do not suffer alone!"
-                    elif "someone like you" == location:
-                        description = "Keep searching Adele, maybe go deeper!"
-                    elif "asked" in location:
-                        description = "Oof what a burn! Your kindergarten friends must be impressed."
-                    elif "someone" in location:
-                        description = "Keep searching, babe."
-                    elif any(word in location.casefold() for word in
-                             ("gf", "bf", "girlfriend", "boyfriend", "girl friend", "boy friend")):
-                        description = "I'm not a cupid, yo!"
-                    else:
-                        description = "Please check your spelling or specify the countrycode e.g. London,uk"
-            # a = (mgr.weather_at_places(location, 'like', limit=1)[0]).weather some items are missing :(
-            try:
-                b = mgr.weather_at_place(location)
-                a = b.weather
-            except pyowm.commons.exceptions.NotFoundError:
-                await ctx.send(embed=discord.Embed(title=f"{location} not found.", description=description))
-                return
-            else:
-                embedVar = discord.Embed(title=f"Current weather at ** {b.location.name},{b.location.country}**", color=ctx.user.color)
-                for k, v in {"Weather": a.detailed_status, "Temperature": str(a.temperature("celsius")["temp"]) + "°C",
-                             "Feels like": str(a.temperature("celsius")["feels_like"]) + "°C",
-                             "Clouds": str(a.clouds) + "%", "Wind": str(a.wind()["speed"] * 3.6)[:6] + "km/h",
-                             "Humidity": str(a.humidity) + "%", "Visibility": str(a.visibility_distance) + "m",
-                             "Sunrise": str(a.sunrise_time(timeformat="date") + timedelta(seconds=a.utc_offset))[11:19],
-                             "Sunset": str(a.sunset_time(timeformat="date") + timedelta(seconds=a.utc_offset))[11:19],
-                             "UV Index": a.uvi, "Atm. Pressure": str(a.pressure["press"]) + " hPa",
-                             "Precip.": str(a.rain["1h"] if "1h" in a.rain else 0) + " mm/h"}.items():
-                    embedVar.add_field(name=k, value=v)
-                embedVar.set_thumbnail(url=a.weather_icon_url())
-                moonphases = (':new_moon:', ':waning_crescent_moon:', ':last_quarter_moon:', ':waning_gibbous_moon:', ':full_moon:', ':waxing_gibbous_moon:', ':first_quarter_moon:', ':waxing_crescent_moon:')
-                currphase = int(mapvalues(moon.phase(), 0, 28, 0, len(moonphases)))
-                embedVar.set_footer(text=f"Local time: {str(datetime.utcnow() + timedelta(seconds=a.utc_offset))[11:19]} | Moon phase: {emoji.emojize(moonphases[currphase])}")
+        self.getTemp()
+        offset = ((7 - abs(7 - datetime.now().month)) - 1) * 3  # average temperature okolo ktorej bude pocitat <zcvrk alebo rast> #TODO Greenwich
+        embedVar = discord.Embed(title=f"It´s {self.temperature} degrees in Bratislava.", description="You can expect {} {} pps".format(("quite", "slightly")[int(abs(self.temperature - offset) < 5)],("shorter", "longer")[int(self.temperature - offset > 0)]), color=(0x17dcff if self.temperature < offset - 5 else 0xbff5ff if self.temperature <= offset else 0xff3a1c if self.temperature > offset + 5 else 0xffa496 if self.temperature > offset else ctx.user.color))
+        offsettime = self.sunrise_date.astimezone(pytz.timezone("Europe/Vienna"))
+        embedVar.add_field(name="And the sun is coming up at", value="{}:{:0>2}.".format(offsettime.hour, offsettime.minute))
         await ctx.send(embed=embedVar)
 
-    @discord.slash_command(name="tips", description="Read some tips on how to increase your pp size")
+    @ppp.subcommand(name="tips", description="Read some tips on how to increase your pp size")
     async def tips(self, ctx):
         text = """```ansi
     [41m[37mDisclaimer: EVERYTHING IS RANDOM, NOTHING GUARANTEES BIGGER PPS, ONLY BETTER CHANCES FOR A BIG PP![0m
@@ -654,7 +584,7 @@ class PipikBot(commands.Cog):
             else:
                 await interaction.send(f"This is not your prompt, use {mentionCommand(self.cog.client,'pills')} to use your pills.",ephemeral=True)
 
-    @discord.slash_command(description="See, manage and use your pill inventory.")
+    @ppp.subcommand(description="See, manage and use your pill inventory.")
     async def pills(self, ctx):
         user = self.getUserFromDC(ctx.user)
         user.items = [item for item in user.items if item[1] > 0] #removnig ones that you dont own, idk where this is implemented, maybe got lost in the migration
@@ -714,7 +644,7 @@ class PipikBot(commands.Cog):
                 self.user.fap = 0
             await interaction.response.edit_message(view=self.view)
 
-    @discord.slash_command(name="fap", description="Increase your pp length by repeatedly mashing a button.")
+    @ppp.subcommand(name="fap", description="Increase your pp length by repeatedly mashing a button.")
     async def fap(self, ctx):
         user = self.getUserFromDC(ctx.user)
         if user.cd is not None:
@@ -729,7 +659,7 @@ class PipikBot(commands.Cog):
         viewObj.add_item(self.FapButton(user, self))
         await ctx.send(embed=embedVar, view=viewObj)
 
-    @discord.slash_command(name="profile", description="See your, or someone else's pp profile") #oh my god this is ugly
+    @ppp.subcommand(name="profile", description="See your, or someone else's pp profile") #oh my god this is ugly
     async def profile(self, ctx: discord.Interaction, user: discord.User = discord.SlashOption(name="user", description="User to display", required=False)):
         usertocheck = user or ctx.user
         user = self.getUserFromDC(usertocheck)
@@ -766,15 +696,14 @@ class PipikBot(commands.Cog):
         text += "\n" + "{:-^25}".format("-")
         await ctx.send("```\n" + text + "\n```" + f"for more info, try {mentionCommand(self.client,'achi')}") #lord forgive me for what ive done
 
-    @discord.slash_command(name="achi", description="See your achievements")
+    @ppp.subcommand(name="achi", description="See your achievements")
     async def achi(self, ctx): #TODO let ppl see others achis but reveal only the ones they have
         user = self.getUserFromDC(ctx.user)
-        achievements = self.achievements
         text = "Your achievements".center(60, "=")+"\n"
-        text += "\n".join((emoji.emojize(":check_mark_button:") if achi.achiid in user.achi else emoji.emojize(":locked:")) + " " + achi.icon + " " + "{:23}".format(achi.name) + (("= " + achi.desc) if achi.achiid in user.achi else "= ???") for achi in achievements.values())
+        text += "\n".join((emoji.emojize(":check_mark_button:") if achi.achiid in user.achi else emoji.emojize(":locked:")) + " " + achi.icon + " " + "{:23}".format(achi.name) + (("= " + achi.desc) if achi.achiid in user.achi else "= ???") for achi in self.achievements.values())
         await ctx.send("```\n" + text + "\n```", ephemeral=True)
 
-    @discord.slash_command(name="pp", description="For measuring your pp.",dm_permission=False)
+    @discord.slash_command(name="pp", description="For measuring your pp.", dm_permission=False)
     async def pp(self, ctx: discord.Interaction, message: str = discord.SlashOption(name="message", description="Would you like to tell me something?", required=False, default=None)):
         await ctx.response.defer()
         msg = None

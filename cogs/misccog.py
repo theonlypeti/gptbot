@@ -16,8 +16,12 @@ from pycaw.utils import AudioUtilities
 from utils import embedutil, antimakkcen
 from utils.bf import bf
 from nextcord.ext import commands
+from utils.mapvalues import mapvalues
+import pyowm
+from astral import moon
 
 stunlocked = None
+mgr = pyowm.OWM(os.getenv("OWM_TOKEN")).weather_manager() #yes same as i client i should consolidate
 
 
 class MiscallenousCog(commands.Cog):
@@ -396,12 +400,135 @@ class MiscallenousCog(commands.Cog):
             else:
                 pass
 
-            # title = f"[__Launch!__](steam://rungameid/730\n" + '"{}"'.format('Launch CSGO') + ")"
-            # # embed.description = f"{max(0,readys)} needed!\n{title}"
-            # embed.description = f"{max(0,readys)} needed!"
-            title = f"[__Launch!__](steam://rungameid/730 'Launch CSGO')"
-            embed.description = f"{max(0, readys)} needed!\n{title}"
+            title = f"[__Launch!__](steam://rungameid/730\n" + '"{}"'.format('Launch CSGO') + ")"
+            # embed.description = f"{max(0,readys)} needed!\n{title}"
+            embed.description = f"{max(0,readys)} needed!"
             await self.msg.edit(embed=embed)
+
+    @discord.slash_command(name="weather", description="Current weather at location")
+    async def weather(self, ctx, location: str = discord.SlashOption(name="city",
+                                                                     description="City name, for extra precision add a comma and a country code e.g. London,UK",
+                                                                     required=True)):
+        await ctx.response.defer()
+        if location == "me": #move these mby to different file?
+            try:
+                location = {617840759466360842: "Bardoňovo", 756092460265898054: "Plechotice",
+                            677496112860626975: "Giraltovce", 735473733753634827: "Veľký Šariš"}[ctx.user.id]
+            except KeyError:
+                pass
+        else:
+            try:
+                location = \
+                {"ds": "Dunajská Streda", "ba": "Bratislava", "temeraf": "Piešťany", "piscany": "Piešťany",
+                 "pistany": "Piešťany", "mesto snov": "Piešťany", "terebes": "Trebišov", "eperjes": "Prešov",
+                 "blava": "Bratislava", "diera": "Stropkov", "saris": "Veľký Šariš", "ziar": "Žiar nad Hronom",
+                 "pelejte": "Plechotice", "bardonovo": "Bardoňovo", "rybnik": "Rybník,SK"}[
+                    antimakkcen.antimakkcen(location.casefold())]
+            except KeyError:
+                if "better than" in location.casefold():
+                    description = "Yeah babe, you are the best!"
+                elif any(word in location.casefold() for word in
+                    ("dick", "pp", "penis", "cock", "schlong", "pussy", "humanity", "faith", "tits", "titty")):
+
+                    description = "Very funny."
+                elif "to live" in location.casefold():
+                    description = "Please seek help, do not suffer alone!"
+                elif "someone like you" == location:
+                    description = "Keep searching Adele, maybe go deeper!"
+                elif "asked" in location:
+                    description = "Oof what a burn! Your kindergarten friends must be impressed."
+                elif "someone" in location:
+                    description = "Keep searching, babe."
+                elif any(word in location.casefold() for word in
+                         ("gf", "bf", "girlfriend", "boyfriend", "girl friend", "boy friend")):
+                    description = "I'm not a cupid, yo!"
+                else:
+                    description = "Please check your spelling or specify the countrycode e.g. London,uk"     #TODO Popular culture references: These could be quotes from movies, TV shows, books, or games that your user base might recognize and appreciate.  Puns or wordplay: These can be related to the functionality of your application. For example, in a weather application, you could have a string like "raining cats and dogs" fetch the weather for a location known for its pet-friendly policies.  Inside jokes or references: If your application is being used by a specific community, inside jokes or references that only members of that community would understand can be a fun addition.
+        # a = (mgr.weather_at_places(location, 'like', limit=1)[0]).weather some items are missing :(
+        try:
+            b = mgr.weather_at_place(location)
+            a = b.weather
+        except pyowm.commons.exceptions.NotFoundError:
+            await ctx.send(embed=discord.Embed(title=f"{location} not found.", description=description))
+            return
+        else:
+            embedVar = discord.Embed(title=f"Current weather at ** {b.location.name},{b.location.country}**", color=ctx.user.color)
+            for k, v in {"Weather": a.detailed_status, "Temperature": str(a.temperature("celsius")["temp"]) + "°C",
+                         "Feels like": str(a.temperature("celsius")["feels_like"]) + "°C",
+                         "Clouds": str(a.clouds) + "%", "Wind": str(a.wind()["speed"] * 3.6)[:6] + "km/h",
+                         "Humidity": str(a.humidity) + "%", "Visibility": str(a.visibility_distance) + "m",
+                         "Sunrise": str(a.sunrise_time(timeformat="date") + timedelta(seconds=a.utc_offset))[11:19],
+                         "Sunset": str(a.sunset_time(timeformat="date") + timedelta(seconds=a.utc_offset))[11:19],
+                         "UV Index": a.uvi, "Atm. Pressure": str(a.pressure["press"]) + " hPa",
+                         "Precip.": str(a.rain["1h"] if "1h" in a.rain else 0) + " mm/h"}.items():
+                embedVar.add_field(name=k, value=v)
+            embedVar.set_thumbnail(url=a.weather_icon_url())
+            moonphases = (
+            ':new_moon:', ':waning_crescent_moon:', ':last_quarter_moon:', ':waning_gibbous_moon:', ':full_moon:',
+            ':waxing_gibbous_moon:', ':first_quarter_moon:', ':waxing_crescent_moon:')
+            currphase = int(mapvalues(moon.phase(), 0, 28, 0, len(moonphases)))
+            embedVar.set_footer(
+                text=f"Local time: {str(datetime.utcnow() + timedelta(seconds=a.utc_offset))[11:19]} | Moon phase: {emoji.emojize(moonphases[currphase])}")
+        await ctx.send(embed=embedVar)
+
+    @discord.slash_command(name="help", description="Lists what all the commands do.")  # TODO rename clovece to ludo
+    async def help(self, interaction: discord.Interaction):
+        await interaction.send("""```
+        -----------------------------------
+        PP COMMANDS:
+        pp = Measures your pp.
+        min = Leaderboard of smallest pps.
+        max = Leaderboard of biggest pps.
+        daily = Come back each day for your daily pills!
+        fap = Increases your horniness level, growing your pp.
+        profile = Shows someone's profile.
+        weather = Shows how does the weather affect your pp.
+        achi = Shows your achievements in your DMs.
+        pills = Shows your inventory of pills.
+        ---------------------------------
+        non-pp commands:
+
+        topic = Gives you a question to spin up a convo with.
+        └ topic_filters = if you want to exclude some sensitive topics
+        weather <city> = Shows current weather at place.
+        radio = Spins up a radio player, you must be in a voice channel.
+        └ leave = to kick it.
+        yt = Summons a youtube player in your voice channel.
+        └ play <song name> = to play a song.
+        └ pause = to pause the song.
+        └ seek +/-/n = to seek in the song plus n seconds / minus n seconds / exactly to n seconds.
+        └ queue = to see the queue.
+        time = Make discord timestamps
+        cat = Random cat pic for when you feel down
+        beans = Random pet toe beans pic when you feel down
+        sub <subreddit name> = Random post from a subreddit
+        bored = Recommends a random thread game to play in a text chat
+        joke = Tells a random joke
+        clovece = Play a game of clovece
+        mycolor (if enabled on server) = Set your custom role color
+        chatgpt = Use GPT-4 and DALL-E 3 for text or image generation
+        └ ask = Initiate a conversation with an AI chatbot
+        └ images = Generate 4 images from text
+        └ meme = Generate an meme completely thought up by AI
+        convert = Convert between units
+        └ currency = Converts between two any currencies, real or crypto
+        └ length = Converts between length units
+        └ temperature = Converts between temperature units
+        imageditor = Image editor in discord
+        emote = use nitro emotes without subscription
+        bakalarka = Set up notifications for FEI bachelor theses
+        makelink = Make a custom link
+        mat = Solve maths problems
+        ps = Calculate IP adresses
+        as, aza, bool = Solve algebra problems
+        run = Execute python commands
+        brainfuck = Run brainfuck code
+        caesar = Encode/decode text with caesar cipher
+        zssk = Call forth the train announcer lady to tell you info about a train connection
+        map = RPG game in development
+        wordle = Play a game of co-op wordle
+        csgo = Ping the csgo role when looking for group
+        ```""")
 
     @commands.Cog.listener()
     async def on_typing(self, channel: discord.TextChannel, who: discord.Member, when: datetime):

@@ -68,7 +68,7 @@ class PillowCog(commands.Cog):
             viewObj = self.cog.TransformView(self)
             await self.message.edit(view=viewObj)
 
-        @discord.ui.button(label="Corrections", style=discord.ButtonStyle.gray,emoji=emoji.emojize(':level_slider:'), disabled=False)
+        @discord.ui.button(label="Corrections", style=discord.ButtonStyle.gray, emoji=emoji.emojize(':level_slider:'), disabled=False)
         async def slidersbutton(self, button, interaction: discord.Interaction):
             # await interaction.response.defer()
             viewObj = self.cog.CorrectionsView(self)
@@ -99,7 +99,7 @@ class PillowCog(commands.Cog):
         @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"))
         async def finishbutton(self, button, interaction):
             await interaction.response.defer()
-            await self.cog.show(self.message, self.img, self.filetype, view=None) #note to self, using interaction.message here would not work for some reason
+            await self.cog.show(self.message, self.img, self.filetype, view=None) #note to self, using interaction.message here would not work for some reason # note: fixed in nextcord 2.x something
 
         @discord.ui.button(label="Upload to", style=discord.ButtonStyle.green)#, emoji=emoji.emojize(":check_mark_button:"))
         async def uploadbutton(self, button, interaction):

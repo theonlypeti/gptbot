@@ -9,12 +9,15 @@ from typing import Literal
 import emoji
 import nextcord as discord
 from PIL import Image
+
+import utils.embedutil
 from utils.paginator import Paginator
 from nextcord.ext import commands
 from utils.antimakkcen import antimakkcen
 from utils.getMsgFromLink import getMsgFromLink
 import imageio.v3 as iio
 import numpy as np
+from string import Template
 
 root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pipik"
 
@@ -29,6 +32,8 @@ class EmoteCog(commands.Cog):
         self.readEmotes()
 
     async def flipemote(self, emote, state, orient: Literal["H"] | Literal["V"]):
+        if not emote:
+            return None
         self.emoteserver: discord.Guild = self.emoteserver or self.client.get_guild(957469186798518282)
         em = discord.PartialEmoji.from_str(emote)
         em = discord.PartialEmoji.with_state(state, name=em.name, animated=em.animated, id=em.id)
@@ -38,7 +43,8 @@ class EmoteCog(commands.Cog):
         try:
             img = iio.imread(file.fp, extension="."+file.filename.split(".")[-1]) #TODO sometimes gifs have no transparency so the shape is (x,y,3) then (x,y,4), fix this
         except ValueError as e:
-            return e
+            emotelogger.error(f"ValueError: {e=}")
+            return None
         # emotelogger.debug(f"{img.shape=}")
 
         # Check if the image is animated (i.e., it has more than one frame)
@@ -157,7 +163,7 @@ class EmoteCog(commands.Cog):
                                                    description="Use 'copy message link' to specify a message to react to.",
                                                    required=False),
                     text: str = discord.SlashOption(name="text",
-                                                    description="The text message to send along with any emotes, use {emotename} as placeholder.",
+                                                    description="The text message to send along with any emotes, use :emotename: as placeholder like regular.",
                                                     required=False, default=None)):
         def check(reaction, user):
             emotelogger.debug(f"{str(reaction.emoji)=}, {emote=}")
@@ -168,13 +174,17 @@ class EmoteCog(commands.Cog):
         if emote:
             if emote.endswith("+flipH"):
                 flipped = True
-                emote = await self.flipemote(self.discord_emotes[emote.removesuffix("+flipH")], ctx.guild.me._state,orient="H")
+                emotef = await self.flipemote(self.discord_emotes.get(emote.removesuffix("+flipH")), ctx.guild.me._state,orient="H")
             elif emote.endswith("+flipV"):
                 flipped = True
-                emote = await self.flipemote(self.discord_emotes[emote.removesuffix("+flipV")], ctx.guild.me._state,orient="V")
+                emotef = await self.flipemote(self.discord_emotes.get(emote.removesuffix("+flipV")), ctx.guild.me._state,orient="V")
             else:
                 flipped = False
-                emote = self.discord_emotes[emote]
+                emotef = self.discord_emotes.get(emote)
+            if not emotef:
+                await utils.embedutil.error(ctx, f"Emote {emote.split('+')[0]} not found")
+                return
+            emote = emotef
             if msg:
                 await ctx.response.defer(ephemeral=True)
                 mess = await getMsgFromLink(self.client, msg)
@@ -226,10 +236,30 @@ class EmoteCog(commands.Cog):
                 flippedemotesv = [await self.flipemote(self.discord_emotes[emotetoflip], ctx.guild.me._state, orient="V") for emotetoflip in emotestoflipv]  # flipping, adding to server
                 self.discord_emotes.update({f"{i}+flipV": j for i, j in zip(emotestoflipv, flippedemotesv)})
 
-                #emotelogger.debug(self.discord_emotes)
-                text = text.replace("{", "{self.discord_emotes['")
-                text = text.replace("}", "']}")
-                text = eval(f'f"{text}"')
+                # #emotelogger.debug(self.discord_emotes)
+                # text = text.replace("{", "{self.discord_emotes['")
+                # text = text.replace("}", "']}")
+                # text = eval(f'f"{text}"')  #this is apparently a security risk, it requires a malicious string to be in the discord_emotes dict, but still
+                class MyTemplate(Template):
+                    delimiter = ':'
+                    pattern = r"""
+                    \:                       # Escape and start delimiter
+                    (?:
+                      (?P<escaped>\:) |      # Escape sequence of two delimiters
+                      (?P<named>[_a-z][_a-z0-9]*)\b     # delimiter and a Python identifier
+                      (?:
+                        \:                   # Unescaped delimiter
+                        (?:
+                          (?P<braced>[_a-z][_a-z0-9]*)\b |   # Braced identifier
+                          (?P<invalid>)              # Other ill-formed delimiter exprs
+                        )
+                      )?
+                    )
+                    """
+
+                template = MyTemplate(text)
+                text = template.safe_substitute(self.discord_emotes)
+
                 if msg:
                     mess: discord.PartialMessage = await getMsgFromLink(self.client, msg)
                     await mess.reply(f"{ctx.user.display_name} says:\n{text}")
@@ -302,10 +332,10 @@ class EmoteCog(commands.Cog):
     async def emotetext_autocomplete(self, interaction, text: str):
         if not text:
             return None
-        text = text.rpartition("{")
+        text = text.rpartition(":")
         emote = text[2]
         if emote:
-            get_near_emote = [text[0]+text[1]+i+"}" for i in self.discord_emotes.keys() if i.casefold().startswith(emote.casefold())]
+            get_near_emote = [text[0]+text[1]+i+":" for i in self.discord_emotes.keys() if i.casefold().startswith(emote.casefold())]
             get_near_emote = get_near_emote[:25]
             await interaction.response.send_autocomplete(get_near_emote)
 

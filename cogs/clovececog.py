@@ -11,6 +11,8 @@ from copy import deepcopy
 from utils.mentionCommand import mentionCommand
 
 #TODO redo emoji selection to paginators
+#TODO import unittest
+#from unittest.mock import Mock
 
 sleepTimeMult = 1
 
@@ -91,7 +93,7 @@ class LobbyCog(commands.Cog):
             cloveceLogger.debug(f"user daily date, {user.dailyDate}, {type(user.dailyDate)}")
             if type(user.dailyDate) == datetime: #what is this line and the one below?!?!
                 user.dailyDate = user.dailyDate.date()
-            elif type(user.dailyDate) == str:
+            elif type(user.dailyDate) == str: #TODO consider instanceof?
                 cloveceLogger.warning("str?!?!?!! while claiming daily")
                 user.dailyDate = (datetime.now() - timedelta(days=1)).date()
         except KeyError or ValueError:
@@ -108,12 +110,12 @@ class LobbyCog(commands.Cog):
             elif (user.dailyDate - date.today()) <= timedelta(days=-1): #if picking up daily
                 embedVar = discord.Embed(title="Daily spin token", color=ctx.user.color)
                 embedVar.add_field(name="You've got:", value=f"{spinTokenIcon} **1** x **Spin token**")
-                await ctx.send(embed=embedVar,view=self.SpinButton(self))
+                await ctx.send(embed=embedVar, view=self.SpinButton(self))
             else:
                 cloveceLogger.error(f"something is wrong,{user.dailyDate},{date.today()},{user.dailyDate - date.today()}")
                 return
             user.dailyDate = datetime.now().date() 
-            user.addItem("spinToken",1)
+            user.addItem("spinToken", 1)
             self.savePlayers()
 
     @clovece.subcommand(name="stats",description="Shows your stats across all the games you´ve played.")
@@ -137,7 +139,7 @@ class LobbyCog(commands.Cog):
         await ctx.send(embed=embedVar, ephemeral=True)
 
     @clovece.subcommand(name="help", description="Shows the help manual to this game and the bot.")
-    async def helpclovece(self,ctx):
+    async def helpclovece(self, ctx):
         helptext = {
             "commands": """**play** (*public*/*private*) = Makes a lobby for 4 players max. Private lobbies can be joined only via room code.
             

@@ -20,12 +20,10 @@ from PIL import Image, ImageDraw, ImageFont
 from utils.mentionCommand import mentionCommand #used in /run
 from utils.getMsgFromLink import getMsgFromLink
 from utils import mylogger
-import cProfile
-import pstats
 
 
 start = time_module.perf_counter()
-version = 3.9
+version = "3.9.5"
 load_dotenv(r"./credentials/main.env")
 
 parser = argparse.ArgumentParser(prog=f"PipikBot V{version}", description='A fancy discord bot.', epilog="Written by theonlypeti.")
@@ -121,9 +119,11 @@ async def on_ready():
     readus()
     pipikLogger.debug(timeouts)
 
+
 def writeus(): #TODO move this to misc
     with open(r"data/us.txt", "w") as file:
         json.dump(list(us), file, indent=4)
+
 
 def readus():
     global us
@@ -136,10 +136,12 @@ def readus():
         with open(r"data/us.txt", "w") as file:
             json.dump([], file, indent=4)
 
+
 @client.event
 async def on_disconnect():
     global start
     start = time_module.perf_counter()
+
 
 @client.event
 async def on_message_delete(msg: nextcord.Message):
@@ -167,7 +169,7 @@ async def on_message(msg: nextcord.Message):
             if msg.guild.id not in (800196118570205216,):
                 words = msg.content.split(" ")
                 for word in words:
-                    if (word.lower().endswith("us") or word.lower().endswith("usz")) and len(word) > 4 and word.lower() not in us:
+                    if (word.lower().endswith("us") or word.lower().endswith("usz")) and len(word) in range(4,15) and word.lower() not in us:
                         us.add(word.lower())
                         writeus()
                         img = Image.open(r"data/amogus.png") #TODO extract this writing thing to a func?
@@ -189,6 +191,10 @@ async def on_message(msg: nextcord.Message):
                             image_binary.seek(0)
                             await msg.reply(file=discord.File(fp=image_binary, filename=f'amogus.png'))
                         break
+                if any(word in msg.content for word in ("@someone", "@anyone", "@random")):
+                    members = [member for member in msg.guild.members if
+                               msg.channel.permissions_for(member).read_messages]
+                    await msg.reply(random.choice(members).mention)
         else:
             tolog = f"{msg.author} sent dm: ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.recipient} at {str(datetime.now())}"
             tolog = emoji.demojize(antimakkcen(tolog)).encode('ascii', "ignore").decode()
@@ -409,15 +415,18 @@ os.chdir(root)
 #             linecount += len(f.readlines())
 #     client.load_extension("cogs." + file[:-3])  #breaks
 
-if args.profiling:
-    with cProfile.Profile() as pr:
+if __name__ == "__main__":
+    if args.profiling:
+        import cProfile
+        import pstats
+        with cProfile.Profile() as pr:
+            client.run(os.getenv("MAIN_DC_TOKEN"))
+        stats = pstats.Stats(pr)
+        # stats.sort_stats(pstats.SortKey.TIME)
+        # stats.print_stats()
+        stats.dump_stats(filename="profile.prof")
+    else:
         client.run(os.getenv("MAIN_DC_TOKEN"))
-    stats = pstats.Stats(pr)
-    # stats.sort_stats(pstats.SortKey.TIME)
-    # stats.print_stats()
-    stats.dump_stats(filename="profile.prof")
-else:
-    client.run(os.getenv("MAIN_DC_TOKEN"))
 
 # 277129587776 reduced perms
 # https://discord.com/api/oauth2/authorize?client_id=618079591965392896&permissions=543652576368&scope=bot%20applications.commands bogibot

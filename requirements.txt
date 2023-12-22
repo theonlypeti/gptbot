@@ -22,4 +22,5 @@ pycaw
 pint
 tabulate
 EdgeGPT
+snakeviz
 

@@ -170,7 +170,7 @@ class GptCog(commands.Cog):
         async with ImageGenAsync(all_cookies=Cookie.current_data) as image_generator:
             # async with ImageGenAsync(Cookie.image_token) as image_generator:
             try:
-                images = await image_generator.get_images(txt)
+                images = list(filter(lambda im: not im.endswith(".svg"), await image_generator.get_images(txt)))
                 await interaction.send(images[0])
                 for i in images[1:]:
                     await interaction.channel.send(i)
@@ -187,7 +187,7 @@ class GptCog(commands.Cog):
         Cookie.import_data()
         Query.image_dir_path = r"./data/images"
 
-        querystr = "make up a random new family friendly meme picture or scenario in your head that will not get blocked by content filters. Describe it as an image generator prompt. Caption the image and return these two strings as json using the keywords: prompt and caption. Make sure it is in json format using curly braces too."
+        querystr = "make up a random new pg-rated meme picture or scenario that is not a cat in a kitchen in your head that will not get blocked by content filters. Describe it as an image generator prompt. Caption the image and return these two strings as json using the keywords: prompt and caption. Make sure it is in json format using curly braces too."
 
         try:
             query = Query(prompt=querystr, cookie_files={Cookie.dir_path + i for i in os.listdir(Cookie.dir_path)}, style="creative")
@@ -199,7 +199,7 @@ class GptCog(commands.Cog):
         if query.code is None or True:
             resp = query.output[query.output.index("{"):]
             self.logger.debug(resp)
-            response = json.loads(resp)
+            response = json.loads(resp.strip("`"))
         else:
             response = query.code
         self.logger.debug(response)
