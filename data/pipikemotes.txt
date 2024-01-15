@@ -153,5 +153,10 @@
     "hihi": "<:hihi:957957279485927464>",
     "peepohappy": "<:peepohappy:800726673309040650>",
     "hand3": "<:hand3:701378263238311957>",
-    "hand4": "<:hand4:701378250126917672>"
+    "hand4": "<:hand4:701378250126917672>",
+    "annoyedblob": "<:annoyedblob:976118375606525972>",
+    "dontcare": "<:dontcare:1116759036923228220>",
+    "boobs": "<:boobs:1116759044858851428>",
+    "blobcatblush": "<:blobcatblush:976118379310088252>",
+    "blobcatheart": "<:blobcatheart:1116759039590793256>"
 }

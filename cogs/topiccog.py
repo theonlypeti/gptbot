@@ -28,7 +28,7 @@ subs_names = ("General questions", "Ask Men", "Ask Teen Boys", "Ask Women", "Ask
 Sub = namedtuple("Sub", ["id", "display_name", "emoji"])
 subs = [Sub(id=i, display_name=n, emoji=e) for i, n, e in zip(subs, subs_names, emoji_buttons)]
 emoji_buttons = list(dict.fromkeys(emoji_buttons)) #remove duplicates
-root = os.getcwd()
+root = os.getcwd() #TODO consider root = (os.path.dirname(os.path.abspath(__file__))) or something because cwd might be something else if ran from somewhere else
 
 
 class TopicCog(commands.Cog): #TODO make reddithandler not global, and have multiple handlers for multiple guilds, TODO check if it is good now

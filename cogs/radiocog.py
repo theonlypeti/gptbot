@@ -5,7 +5,7 @@ from random import choice, choices
 import inspect
 import emoji
 
-root = os.getcwd()
+root = os.getcwd() #TODO look into
 path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe" #TODO ofc this is not ok xd
 maindir = "D:\\Users\\Peti.B\\Music\\San Andreas Radio Constructor\\San Andreas Radio Constructor"
 
@@ -34,7 +34,7 @@ class RadioCog(commands.Cog):
         self.stations = []
         
         for station in os.listdir(maindir)[2:-3]:
-            self.stations.append(self.Station(station, emoji=station_emojis[station], desc=station_descs[station])) #TODO dont do this, initialize them only when called by join
+            self.stations.append(self.Station(station, emoji=station_emojis[station], desc=station_descs[station]))
         self.ads = os.listdir(maindir+r"\!Commercials")
 
     class Station(object):
@@ -149,7 +149,6 @@ class RadioCog(commands.Cog):
         server = ctx.guild.voice_client
         radioLogger.info(f"{ctx.user} used disconnect in {ctx.guild}")
         await server.disconnect(force=True)
-        os.chdir(root)
         await ctx.send("Left voice channel.", delete_after=2.0)
         #radiocog.radios.remove(self)
 
@@ -254,7 +253,7 @@ class Radio(object):
         radioLogger.debug("were back in the playerloop")
         # self.radiodir = maindir + "\\" + self.station.name + "\\"
         # radioLogger.debug(self.radiodir)
-        # os.chdir(maindir+"\\"+self.station.name) #TODO dont do chdir just append it to the path name
+        # os.chdir(maindir+"\\"+self.station.name)
         a = (choices((self.djtalk, self.djcall, self.adbreak, self.djstory, self.announceStation, self.doNothing), weights=self.chancelist)[0])
         radioLogger.debug(f"{a} choice")
         a()

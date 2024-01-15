@@ -50,7 +50,6 @@ class LavaLinkCog(commands.Cog):
             password="haha",
         )
         self.logger.info("Created lavalink node.")
-
         self.ready_ran = True
 
     @on_ready.before_loop
@@ -59,7 +58,6 @@ class LavaLinkCog(commands.Cog):
         self.client.lavalink = subprocess.Popen(['java', '-jar', 'Lavalink.jar'], cwd=r'./lavalink')
         await asyncio.sleep(10)
         self.logger.info("Lavalink started.")
-        ...
 
     @discord.slash_command(name="yt", dm_permission=False)
     async def ytgroup(self, interaction):
@@ -132,7 +130,7 @@ class LavaLinkCog(commands.Cog):
             inter.guild.voice_client
         )  # pyright: ignore[reportGeneralTypeIssues]
         if not player:
-            player = self.players[inter.guild.id]
+            player = self.players[inter.guild.id] #TODO apparently this should not be needed but in the real world it doesnt work
         # if player.queue:
         if player.current:
             await player.seek(player.current.length) #cant skip to next track as it will trigger the on_end listener, so just skip to end of current one

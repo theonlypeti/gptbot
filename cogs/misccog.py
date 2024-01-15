@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import string
@@ -10,18 +11,19 @@ import nextcord as discord
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from nextcord import Interaction
-from numpy import clip
 # from pipikNextcord import root #  dont freaking do this, causes to rerun the main file
 from pycaw.utils import AudioUtilities
 from utils import embedutil, antimakkcen
+from utils.Colored import Colored
 from utils.bf import bf
 from nextcord.ext import commands
 from utils.mapvalues import mapvalues
 import pyowm
 from astral import moon
+from utils.paginator import Paginator
+from utils.webhook_manager import WebhookManager
 
-stunlocked = None
-mgr = pyowm.OWM(os.getenv("OWM_TOKEN")).weather_manager() #yes same as i client i should consolidate
+mgr = pyowm.OWM(os.getenv("OWM_TOKEN")).weather_manager() #yes same as in client i should consolidate
 
 
 class MiscallenousCog(commands.Cog):
@@ -223,25 +225,28 @@ class MiscallenousCog(commands.Cog):
         await message.reply("".join(random.choice([betu.casefold(), betu.upper()]) for betu in message.content) + " <:pepeclown:803763139006693416>")
 
     async def shout(self, interaction: discord.Interaction, message: discord.Message):
-        """Louder for the ppl in the back"""
+        """Louder for the people in the back"""
         assert message.content
         await message.reply("# " + message.content)
 
     async def t9(self, interaction: discord.Interaction, message: discord.Message):
+        """As if you typed this on a phone keypad
+        """
         if message.content.replace(" ", "").isnumeric():
-            await message.reply("".join([self.T9[numbers] for numbers in message.content.split(" ")]))
+            await message.reply("".join([self.T9.get(numbers, "") for numbers in message.content.split(" ")])) #TODO add number 1 for punctuation
         else:
-            await message.reply(" ".join([self.T9rev[letter.upper()] for letter in antimakkcen.antimakkcen(message.content)]))
+            await message.reply(" ".join([self.T9rev.get(letter.upper(), "") for letter in antimakkcen.antimakkcen(message.content)]))
 
-    async def caesarcmd(self, interaction: discord.Interaction, message: discord.Message):
-        """Caesar (de)cypher"""
+    async def caesar(self, interaction: discord.Interaction, message: discord.Message):
+        """Caesar or ROT13 (de)cypher"""
         text = antimakkcen.antimakkcen(message.content)
         textik = ("".join([chr(((ord(letter) - 97 + 13) % 26) + 97) if letter.isalpha() and letter.islower() else chr(
             ((ord(letter) - 65 + 13) % 26) + 65) if letter.isalpha() and letter.isupper() else letter for letter in
                            text]))
         await message.reply(textik)
 
-    async def unemojize(self, interaction, message):
+    async def unemojize(self, interaction: discord.Interaction, message: discord.Message):
+        """Readable form of emojis"""
         await interaction.send(f"`{emoji.demojize(message.content)}`", ephemeral=True)
 
     class MiscMessageSelector(discord.ui.Select):
@@ -249,10 +254,9 @@ class MiscallenousCog(commands.Cog):
             super().__init__()
             self.cog: MiscallenousCog = cog
             self.message = message
-            self.cmds = [self.cog.randomcase, self.cog.caesarcmd, self.cog.t9, self.cog.shout, self.cog.unemojize]
-            cmd = self.cmds[0]
+            self.cmds = [self.cog.randomcase, self.cog.caesar, self.cog.t9, self.cog.shout, self.cog.unemojize]
 
-            self.options = [discord.SelectOption(label=cmd.__doc__ or cmd.__name__.capitalize(), value=i) for i, cmd in enumerate(self.cmds)]
+            self.options = [discord.SelectOption(label=cmd.__name__.capitalize(), description=cmd.__doc__, value=f"{i}") for i, cmd in enumerate(self.cmds)]
 
         async def callback(self, interaction: Interaction) -> None:
             cmd = self.cmds[int(self.values[0])]
@@ -336,14 +340,6 @@ class MiscallenousCog(commands.Cog):
             image_binary.seek(0)
             await interaction.send(file=discord.File(image_binary, "flowers.PNG"))
 
-    @discord.user_command(name="Stunlock", guild_ids=(601381789096738863,))
-    async def stunlock(self, interaction: discord.Interaction, user: discord.User):
-        global stunlocked
-        if stunlocked == user:
-            stunlocked = None
-        else:
-            stunlocked = user
-        await interaction.send(f"Stunlokced {stunlocked}", ephemeral=True)
 
     # @client.slash_command(name="banboci", description="Timeout boci mindkét accját.",guild_ids=(601381789096738863,), dm_permission=False)
     # async def banboci(interaction: discord.Interaction, minutes: float, reason: str):
@@ -352,6 +348,7 @@ class MiscallenousCog(commands.Cog):
     #     boci2: discord.Member = interaction.guild.get_member(422386822350635008)
     #     await boci2.timeout(timeout=timedelta(minutes=minutes), reason=reason)
     #     await interaction.send(f"Timeouted both Boci accounts for {minutes} minutes, reason: {reason}")
+
 
     @discord.slash_command(name="csgo")
     async def csgo(self, interaction: discord.Interaction, how_many_needed: int = discord.SlashOption(choices=[1,2,3,4])):
@@ -422,7 +419,7 @@ class MiscallenousCog(commands.Cog):
                 {"ds": "Dunajská Streda", "ba": "Bratislava", "temeraf": "Piešťany", "piscany": "Piešťany",
                  "pistany": "Piešťany", "mesto snov": "Piešťany", "terebes": "Trebišov", "eperjes": "Prešov",
                  "blava": "Bratislava", "diera": "Stropkov", "saris": "Veľký Šariš", "ziar": "Žiar nad Hronom",
-                 "pelejte": "Plechotice", "bardonovo": "Bardoňovo", "rybnik": "Rybník,SK"}[
+                 "pelejte": "Plechotice", "bardonovo": "Bardoňovo", "rybnik": "Rybník,SK", "bos": "Gabčíkovo"}[
                     antimakkcen.antimakkcen(location.casefold())]
             except KeyError:
                 if "better than" in location.casefold():
@@ -455,12 +452,18 @@ class MiscallenousCog(commands.Cog):
             embedVar = discord.Embed(title=f"Current weather at ** {b.location.name},{b.location.country}**", color=ctx.user.color)
             for k, v in {"Weather": a.detailed_status, "Temperature": str(a.temperature("celsius")["temp"]) + "°C",
                          "Feels like": str(a.temperature("celsius")["feels_like"]) + "°C",
-                         "Clouds": str(a.clouds) + "%", "Wind": str(a.wind()["speed"] * 3.6)[:6] + "km/h",
-                         "Humidity": str(a.humidity) + "%", "Visibility": str(a.visibility_distance) + "m",
+                         "Clouds": str(a.clouds) + "%",
+                         "Wind": str(a.wind()["speed"] * 3.6)[:6] + "km/h",
+                         "Humidity": str(a.humidity) + "%",
+                         "Visibility": str(a.visibility_distance) + "m",
                          "Sunrise": str(a.sunrise_time(timeformat="date") + timedelta(seconds=a.utc_offset))[11:19],
                          "Sunset": str(a.sunset_time(timeformat="date") + timedelta(seconds=a.utc_offset))[11:19],
-                         "UV Index": a.uvi, "Atm. Pressure": str(a.pressure["press"]) + " hPa",
-                         "Precip.": str(a.rain["1h"] if "1h" in a.rain else 0) + " mm/h"}.items():
+                         "UV Index": a.uvi,
+                         "Atm. Pressure": str(a.pressure["press"]) + " hPa",
+                         "Precip.": str(a.rain["1h"] if "1h" in a.rain else 0) + " mm/h"
+                         # "Snow": str(a.snow) + " cm",
+                         # "Precip. chance": a.precipitation_probability
+                         }.items():
                 embedVar.add_field(name=k, value=v)
             embedVar.set_thumbnail(url=a.weather_icon_url())
             moonphases = (
@@ -518,6 +521,7 @@ class MiscallenousCog(commands.Cog):
         emote = use nitro emotes without subscription
         bakalarka = Set up notifications for FEI bachelor theses
         makelink = Make a custom link
+        coloredtext = Make a custom colored text
         mat = Solve maths problems
         ps = Calculate IP adresses
         as, aza, bool = Solve algebra problems
@@ -530,12 +534,63 @@ class MiscallenousCog(commands.Cog):
         csgo = Ping the csgo role when looking for group
         ```""")
 
-    @commands.Cog.listener()
-    async def on_typing(self, channel: discord.TextChannel, who: discord.Member, when: datetime):
-        if stunlocked:
-            if who.id == stunlocked.id:
-                await who.timeout(timedelta(seconds=15), reason="Te csak ne írjál")
-                await channel.send(f"Te csak ne írjál semmit, {who.display_name}.")
+    class ColoredAddDropdown(discord.ui.StringSelect):
+        def __init__(self, pagi):
+            super().__init__(placeholder="Select a color for your next text",
+                             options=[discord.SelectOption(label=color.name, value=color.name.lower())
+                                      for color in Colored.list().values()])
+            self.pagi: Paginator = pagi
+
+        async def callback(self, interaction: discord.Interaction):
+            clr = self.values[0]
+            await interaction.response.send_modal(self.TextInputModal(self.pagi, Colored.get_color(clr)))
+
+        class TextInputModal(discord.ui.Modal):
+            def __init__(self, pagi, color):
+                super().__init__(timeout=360, title=f"Enter your next {color.name} text")
+                self.input = discord.ui.TextInput(placeholder="Enter text here", min_length=1, max_length=1000,
+                                                  label="Text")
+                self.add_item(self.input)
+                self.pagi = pagi
+                self.color = color
+
+            async def callback(self, interaction: discord.Interaction):
+                self.pagi.inv.append((self.input.value, self.color))
+                await self.pagi.render(interaction, content=Colored.text(self.pagi.inv))
+
+    class ColoredRemoveDropdown(discord.ui.Select):
+        def __init__(self, pagi: Paginator):
+            self.pagi = pagi
+            super().__init__(placeholder="Select a text to remove", options=[
+                discord.SelectOption(label=f"{color.emoji_square} {text}", value=str(n)) for n, (text, color) in enumerate(pagi.slice_inventory(), start=pagi.page*pagi.itemsOnPage)
+            ] or [
+                discord.SelectOption(label="No text to remove", value="0")
+            ])
+
+        async def callback(self, interaction: Interaction) -> None:
+            if self.values:
+                self.pagi.inv.pop(int(self.values[0]))
+                await self.pagi.render(interaction, content=Colored.text(self.pagi.inv))
+
+    class ColoredText(discord.ui.View):
+        def __init__(self):
+            super().__init__()
+
+        @discord.ui.button(label="Finish", style=discord.ButtonStyle.green)
+        async def callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+            async with WebhookManager(interaction) as wh:  # type: discord.Webhook
+                await wh.send(content=Colored.text(button.view.inv), username=interaction.user.display_name, avatar_url=interaction.user.avatar.url)
+            await interaction.message.edit(content="done", view=None, delete_after=5)
+
+    @discord.slash_command(name="coloredtext")
+    async def colormaker(self, interaction: discord.Interaction):
+        # await interaction.response.defer()
+        pagin = Paginator(func=None, select=self.ColoredRemoveDropdown, inv=[], itemsOnPage=25)  # inv: list[tuple[str, Colored]]
+        view = discord.ui.View()
+        view.add_item(self.ColoredAddDropdown(pagin))
+        pagin.mergeview(view, row=2)
+        pagin.mergeview(self.ColoredText(), row=3)
+        await pagin.render(interaction, ephemeral=True)
 
 
 def setup(client):

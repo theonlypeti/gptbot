@@ -1,10 +1,10 @@
 import os
-import random
 from io import BytesIO
 import nextcord as discord
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 from utils.getMsgFromLink import getMsgFromLink
 from nextcord.ext import commands
+from utils.webhook_manager import WebhookManager
 
 TESTSERVER = (860527626100015154,)
 root = os.getcwd()
@@ -42,15 +42,6 @@ class Testing(commands.Cog):
         async def interaction_check(self, interaction: discord.Interaction) -> bool:
             return interaction.user.display_name == "Peti"
 
-    class TextInputModal(discord.ui.Modal):
-        def __init__(self):
-            super().__init__(title="d")
-            self.bottomtext = discord.ui.TextInput(label="Bottom Text", required=False)
-            self.add_item(self.bottomtext)
-
-        async def callback(self, interaction: discord.Interaction):
-            await interaction.response.defer()
-            await interaction.response.send_modal(self)
 
     # @discord.slash_command(name="scrape", description="testing", guild_ids=TESTSERVER)
     # async def scrape(self, ctx: discord.Interaction):
@@ -73,6 +64,7 @@ class Testing(commands.Cog):
     # @discord.slash_command(name="modaltesting", description="testing", guild_ids=TESTSERVER)
     # async def modaltesting(self, ctx):
     #     await ctx.response.send_modal(self.TextInputModal())
+
 
     async def showimg(self,
                       interface: discord.Interaction | discord.Message,
@@ -135,27 +127,14 @@ class Testing(commands.Cog):
         whs = await channel.webhooks()
         await interaction.send(content=", ".join([str(wh.url) for wh in whs]))
 
-    @discord.slash_command(name="wh", guild_ids=TESTSERVER + (800196118570205216, 601381789096738863, 409081549645152256, 691647519771328552))
+    @discord.slash_command(name="wh")
     async def whtet3(self, interaction: discord.Interaction, txt: str, name: str, pfp_link: str = None, tts: bool = False, channel: discord.TextChannel = None):
         chann: discord.PartialMessage|discord.Interaction = await getMsgFromLink(self.client, channel) if channel else interaction
         channel: discord.TextChannel = chann.channel
         self.logger.debug(f"{channel.name}, {interaction.user.display_name}, {txt}")
-        whs = [0]
-        try:
-            whs = await channel.webhooks()
-        except discord.errors.Forbidden as e:
-            print(e)
-            return
-        else:
-            if whs == [0]:
-                print("no whs")
-                return
-            else:
-                if not (wh := (discord.utils.find(lambda wh: wh.name == f"emotehijack{channel.id}", whs))):
-                    wh = await channel.create_webhook(name=f"emotehijack{channel.id}")
-                await wh.send(content=f"{txt}", username=name, avatar_url=pfp_link, tts=tts)
-                await interaction.send("done", ephemeral=True)
 
+        async with WebhookManager(interaction, channel) as wh:
+            await wh.send(content=f"{txt}", username=name, avatar_url=pfp_link, tts=tts)
 
 def setup(client):
     client.add_cog(Testing(client))

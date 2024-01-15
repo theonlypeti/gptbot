@@ -6,12 +6,10 @@ import nextcord as discord
 import os
 import json
 from bs4 import BeautifulSoup as html
-
 from utils import embedutil
 from utils.antimakkcen import antimakkcen
 
 path = "D:\\Users\\Peti.B\\Downloads\\ffmpeg-2020-12-01-git-ba6e2a2d05-full_build\\bin\\ffmpeg.exe" #TODO now this is bad
-root = os.getcwd()
 maindir = "D:\\Users\\Peti.B\\Documents\\ZSSK\\iniss_orig\\rawbank\\SK"
 # TODO parse the stranka when inputting stuff and add another param called current stanica so and i can autocomplete the stanica between from and to and then i can say ktory pokracuje smer
 
@@ -22,7 +20,7 @@ with open(r"data\vonatdb.json", "r") as file:
 
 
 class TimeTable(object):
-    def __init__(self, time: str, date:str, cities: list[str], meska: str, vlaktype: str|None):
+    def __init__(self, time: str, date: str, cities: list[str], meska: str, vlaktype: str | None):
         self.time: str = time
         self.date: str = date #TODO this is not used and make these datetime
         self.cities: list[str] = cities

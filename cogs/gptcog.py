@@ -89,7 +89,7 @@ class GptCog(commands.Cog):
     async def chatgpt(self, interaction):
         pass
 
-    @chatgpt.subcommand(name="ask")
+    @chatgpt.subcommand(name="ask", description="Uses the cutting edge GPT-4 chat model to start a conversation")
     async def query2(self, interaction: discord.Interaction,
                      query: str,
                      model: str = discord.SlashOption(name="model",
@@ -153,8 +153,8 @@ class GptCog(commands.Cog):
         msg = await interaction.send(embed=embeds[-1], view=viewObj)
         viewObj.msg = msg
 
-    @chatgpt.subcommand(name="images")
-    async def imgen(self, interaction: discord.Interaction, txt: str):
+    @chatgpt.subcommand(name="images", description="Uses the cutting edge DALL-E 3 model to generate 4 images based on your prompt")
+    async def imgen(self, interaction: discord.Interaction, prompt: str):
         await interaction.response.defer()
         from EdgeGPT.EdgeUtils import Query, Cookie
         Cookie.dir_path = r"./data/cookies"
@@ -170,7 +170,7 @@ class GptCog(commands.Cog):
         async with ImageGenAsync(all_cookies=Cookie.current_data) as image_generator:
             # async with ImageGenAsync(Cookie.image_token) as image_generator:
             try:
-                images = list(filter(lambda im: not im.endswith(".svg"), await image_generator.get_images(txt)))
+                images = list(filter(lambda im: not im.endswith(".svg"), await image_generator.get_images(prompt)))
                 await interaction.send(images[0])
                 for i in images[1:]:
                     await interaction.channel.send(i)
@@ -179,7 +179,7 @@ class GptCog(commands.Cog):
                 raise e
             # await image_generator.save_images(images, output_dir=Query.image_dir_path)
 
-    @chatgpt.subcommand()
+    @chatgpt.subcommand(description="Just a silly little experiment.")
     async def meme(self, interaction: discord.Interaction):
         await interaction.response.defer()
         from EdgeGPT.EdgeUtils import Query, Cookie
@@ -201,7 +201,7 @@ class GptCog(commands.Cog):
             self.logger.debug(resp)
             response = json.loads(resp.strip("`"))
         else:
-            response = query.code
+            response = query.code #type: dict[str, str]
         self.logger.debug(response)
         prompt = response["prompt"]
         caption = response["caption"]

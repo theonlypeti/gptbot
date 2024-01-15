@@ -8,7 +8,7 @@
             "helping_hands",
             "megapp"
         ],
-        "items": [],
+        "items": {},
         "pb": 398.42,
         "pw": 0.162,
         "cd": null,
@@ -38,24 +38,19 @@
             "breaking_bad",
             "pill_popper"
         ],
-        "items": [
-            [
-                1,
-                0
-            ],
-            [
-                2,
-                4
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 3,
+            "Calvin Extra": 2,
+            "Niagara XXL": 4
+        },
         "pill": null,
-        "pillPopTime": "2022-09-05T01:10:43.236491",
+        "pillPopTime": "2023-12-23T10:00:24.902955",
         "pb": 52869.899,
         "pw": 0.013,
-        "cd": "2022-09-05T00:38:09.459647",
+        "cd": null,
         "methods": 127,
-        "dailyStreak": 1,
-        "dailyDate": "2022-10-17T00:00:00"
+        "dailyStreak": 2,
+        "dailyDate": "2023-12-24T00:00:00"
     },
     {
         "id": 307985197926973452,
@@ -72,20 +67,11 @@
             "breaking_bad",
             "tested"
         ],
-        "items": [
-            [
-                0,
-                18
-            ],
-            [
-                1,
-                3
-            ],
-            [
-                2,
-                1
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 18,
+            "Calvin Extra": 3,
+            "Niagara XXL": 1
+        },
         "pill": null,
         "pillPopTime": "2021-02-16T14:57:33.221820",
         "pb": 634.095,
@@ -110,16 +96,10 @@
             "pill_popper",
             "tested"
         ],
-        "items": [
-            [
-                0,
-                56
-            ],
-            [
-                1,
-                1
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 56,
+            "Calvin Extra": 1
+        },
         "pill": null,
         "pillPopTime": "2021-02-14T13:57:11.527832",
         "pb": 346.206,
@@ -143,12 +123,9 @@
             "breaking_bad",
             "tested"
         ],
-        "items": [
-            [
-                0,
-                13
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 13
+        },
         "pill": null,
         "pillPopTime": "2021-02-15T17:56:39.612848",
         "pb": 160.567,
@@ -166,13 +143,10 @@
             "friend_need",
             "contributor"
         ],
-        "items": [
-            [
-                0,
-                4
-            ]
-        ],
-        "pill": "None",
+        "items": {
+            "Size Up Forte": 4
+        },
+        "pill": null,
         "pillPopTime": 0,
         "pb": 232.578,
         "pw": 0.697,
@@ -197,16 +171,10 @@
             "tested",
             "contributor"
         ],
-        "items": [
-            [
-                0,
-                3
-            ],
-            [
-                1,
-                5
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 3,
+            "Calvin Extra": 5
+        },
         "pill": null,
         "pillPopTime": "2021-02-25T08:07:06.470751",
         "pb": 619.137,
@@ -228,12 +196,9 @@
             "pill_popper",
             "tested"
         ],
-        "items": [
-            [
-                0,
-                5
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 5
+        },
         "pill": null,
         "pillPopTime": "2021-03-30T00:15:01.545833",
         "pb": 206.801,
@@ -251,17 +216,11 @@
             "micropp",
             "helping_hands"
         ],
-        "items": [
-            [
-                0,
-                21
-            ],
-            [
-                1,
-                1
-            ]
-        ],
-        "pill": "None",
+        "items": {
+            "Size Up Forte": 21,
+            "Calvin Extra": 1
+        },
+        "pill": null,
         "pillPopTime": 0,
         "pb": 223.886,
         "pw": 0.23,
@@ -281,16 +240,10 @@
             "pill_popper",
             "breaking_bad"
         ],
-        "items": [
-            [
-                0,
-                21
-            ],
-            [
-                1,
-                1
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 21,
+            "Calvin Extra": 1
+        },
         "pill": null,
         "pillPopTime": "2021-02-23T17:38:12.457106",
         "pb": 221.221,
@@ -310,13 +263,10 @@
             "helping_hands",
             "friend_need"
         ],
-        "items": [
-            [
-                0,
-                5
-            ]
-        ],
-        "pill": "None",
+        "items": {
+            "Size Up Forte": 5
+        },
+        "pill": null,
         "pillPopTime": 0,
         "pb": 108.271,
         "pw": 0.156,
@@ -342,20 +292,11 @@
             "tested",
             "contributor"
         ],
-        "items": [
-            [
-                1,
-                8
-            ],
-            [
-                2,
-                5
-            ],
-            [
-                0,
-                28
-            ]
-        ],
+        "items": {
+            "Calvin Extra": 8,
+            "Niagara XXL": 5,
+            "Size Up Forte": 28
+        },
         "pill": null,
         "pillPopTime": "2021-05-10T08:24:20.124704",
         "pb": 19674.726,
@@ -365,20 +306,6 @@
         "dailyDate": "2021-06-19T00:00:00"
     },
     {
-        "id": 367737394650152972,
-        "dailyStreak": 0,
-        "fap": 0,
-        "achi": [],
-        "items": {},
-        "pb": 174.791,
-        "pw": 174.791,
-        "cd": null,
-        "methods": 8,
-        "pill": null,
-        "pillPopTime": 0,
-        "dailyDate": "2022-08-19T00:00:00"
-    },
-    {
         "id": 689532690860474374,
         "dailyStreak": 0,
         "fap": 0,
@@ -386,27 +313,13 @@
             "one_pump",
             "helping_hands"
         ],
-        "items": [],
+        "items": {},
         "pill": null,
         "pillPopTime": "None",
         "pb": 219.855,
         "pw": 1.316,
         "cd": null,
         "methods": 5,
-        "dailyDate": "2022-08-19T00:00:00"
-    },
-    {
-        "id": 138022532338024448,
-        "dailyStreak": 0,
-        "fap": 0,
-        "achi": [],
-        "items": {},
-        "pb": 105.942,
-        "pw": 0.601,
-        "cd": null,
-        "methods": 6,
-        "pill": null,
-        "pillPopTime": 0,
         "dailyDate": "2022-08-19T00:00:00"
     },
     {
@@ -447,16 +360,10 @@
             "breaking_bad",
             "morning"
         ],
-        "items": [
-            [
-                0,
-                9
-            ],
-            [
-                1,
-                1
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 9,
+            "Calvin Extra": 1
+        },
         "pb": 182.259,
         "pw": 0.546,
         "cd": null,
@@ -476,12 +383,12 @@
             "contributor",
             "one_pump"
         ],
-        "items": [],
+        "items": {},
         "pb": 307.733,
         "pw": 0.708,
         "cd": null,
         "methods": 54,
-        "pill": 0,
+        "pill": "Size Up Forte",
         "pillPopTime": "2021-11-13T16:55:13.101617",
         "dailyDate": "2021-11-13T00:00:00",
         "dailyStreak": 1
@@ -490,7 +397,7 @@
         "id": 621371483373174814,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 86.277,
         "pw": 0.852,
         "cd": null,
@@ -508,7 +415,7 @@
             "micropp",
             "contributor"
         ],
-        "items": [],
+        "items": {},
         "pb": 264.904,
         "pw": 0.259,
         "cd": null,
@@ -520,7 +427,7 @@
     },
     {
         "id": 284764580675190784,
-        "fap": 0,
+        "fap": 1,
         "achi": [
             "pill_popper",
             "one_pump",
@@ -537,26 +444,17 @@
             "dedicated",
             "friend_need"
         ],
-        "items": [
-            [
-                0,
-                115
-            ],
-            [
-                1,
-                40
-            ],
-            [
-                2,
-                24
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 115,
+            "Calvin Extra": 40,
+            "Niagara XXL": 23
+        },
         "pb": 1702.853,
         "pw": 0.311,
         "cd": null,
-        "methods": 63,
-        "pill": 2,
-        "pillPopTime": "2023-10-20T20:30:41.146617",
+        "methods": 127,
+        "pill": "Niagara XXL",
+        "pillPopTime": "2023-12-31T17:12:01.699263",
         "dailyDate": "2023-10-20T00:00:00",
         "dailyStreak": 1
     },
@@ -569,16 +467,10 @@
             "breaking_bad",
             "friend_need"
         ],
-        "items": [
-            [
-                0,
-                1
-            ],
-            [
-                1,
-                2
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 1,
+            "Calvin Extra": 2
+        },
         "pb": 252.029,
         "pw": 0.789,
         "cd": null,
@@ -592,7 +484,7 @@
         "id": 468117100628803584,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 81.156,
         "pw": 0.1,
         "cd": null,
@@ -606,7 +498,7 @@
         "id": 241985516914999296,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 92.102,
         "pw": 18.687,
         "cd": null,
@@ -620,7 +512,7 @@
         "id": 345901480319909898,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 121.183,
         "pw": 10.6,
         "cd": null,
@@ -634,7 +526,7 @@
         "id": 786672717533020170,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 53.695,
         "pw": 53.695,
         "cd": null,
@@ -648,7 +540,7 @@
         "id": 319840737359298560,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 73.78,
         "pw": 73.78,
         "cd": null,
@@ -664,7 +556,7 @@
         "achi": [
             "helping_hands"
         ],
-        "items": [],
+        "items": {},
         "pb": 121.106,
         "pw": 11.204,
         "cd": null,
@@ -683,12 +575,9 @@
             "megapp",
             "contributor"
         ],
-        "items": [
-            [
-                0,
-                3
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 3
+        },
         "pb": 340.401,
         "pw": 2.128,
         "cd": null,
@@ -704,7 +593,7 @@
         "achi": [
             "helping_hands"
         ],
-        "items": [],
+        "items": {},
         "pb": 223.863,
         "pw": 1.714,
         "cd": "2022-10-09T22:37:50.814990",
@@ -720,7 +609,7 @@
         "achi": [
             "helping_hands"
         ],
-        "items": [],
+        "items": {},
         "pb": 67.676,
         "pw": 67.676,
         "cd": null,
@@ -736,7 +625,7 @@
         "achi": [
             "nice"
         ],
-        "items": [],
+        "items": {},
         "pb": 159.736,
         "pw": 1.278,
         "cd": null,
@@ -750,7 +639,7 @@
         "id": 478185658859651103,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 54.464,
         "pw": 54.464,
         "cd": null,
@@ -764,7 +653,7 @@
         "id": 618079591965392896,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 0,
         "pw": 500,
         "cd": null,
@@ -778,7 +667,7 @@
         "id": 437296986593427458,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 87.643,
         "pw": 17.322,
         "cd": null,
@@ -792,7 +681,7 @@
         "id": 352515892950859776,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 242.458,
         "pw": 8.397,
         "cd": null,
@@ -806,7 +695,7 @@
         "id": 948639577546063932,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 64.503,
         "pw": 64.503,
         "cd": null,
@@ -824,17 +713,14 @@
             "megapp",
             "helping_hands"
         ],
-        "items": [
-            [
-                0,
-                2
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 2
+        },
         "pb": 385.297,
         "pw": 1.332,
         "cd": "2022-05-04T16:33:12.341373",
         "methods": 39,
-        "pill": 0,
+        "pill": "Size Up Forte",
         "pillPopTime": "2022-05-04T16:22:06.667153",
         "dailyStreak": 1,
         "dailyDate": "2022-05-09T00:00:00"
@@ -852,20 +738,11 @@
             "pill_popper",
             "friend_need"
         ],
-        "items": [
-            [
-                0,
-                14
-            ],
-            [
-                1,
-                8
-            ],
-            [
-                2,
-                1
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 14,
+            "Calvin Extra": 8,
+            "Niagara XXL": 1
+        },
         "pb": 634.65,
         "pw": 0.137,
         "cd": null,
@@ -879,12 +756,9 @@
         "id": 356446176012271616,
         "fap": 0,
         "achi": [],
-        "items": [
-            [
-                0,
-                1
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 1
+        },
         "pb": 150.088,
         "pw": 5.243,
         "cd": null,
@@ -901,12 +775,9 @@
             "megapp",
             "helping_hands"
         ],
-        "items": [
-            [
-                0,
-                6
-            ]
-        ],
+        "items": {
+            "Size Up Forte": 6
+        },
         "pb": 369.945,
         "pw": 1.0,
         "cd": null,
@@ -920,7 +791,7 @@
         "id": 688092286029922310,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 0,
         "pw": 0,
         "cd": null,
@@ -937,7 +808,7 @@
             "nice",
             "pill_popper"
         ],
-        "items": [],
+        "items": {},
         "pb": 211.936,
         "pw": 5.253,
         "cd": null,
@@ -953,7 +824,7 @@
         "achi": [
             "megapp"
         ],
-        "items": [],
+        "items": {},
         "pb": 316.525,
         "pw": 316.525,
         "cd": null,
@@ -967,7 +838,7 @@
         "id": 1001658711854555136,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 0,
         "pw": 0,
         "cd": null,
@@ -983,7 +854,7 @@
         "achi": [
             "helping_hands"
         ],
-        "items": [],
+        "items": {},
         "pb": 151.137,
         "pw": 151.137,
         "cd": null,
@@ -997,7 +868,7 @@
         "id": 530757386172891169,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 72.322,
         "pw": 72.322,
         "cd": null,
@@ -1011,7 +882,7 @@
         "id": 379998476618039297,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 22.216,
         "pw": 22.216,
         "cd": null,
@@ -1025,7 +896,7 @@
         "id": 153679550625087488,
         "fap": 0,
         "achi": [],
-        "items": [],
+        "items": {},
         "pb": 92.877,
         "pw": 92.877,
         "cd": null,

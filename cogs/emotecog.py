@@ -8,8 +8,6 @@ from io import BytesIO
 from typing import Literal
 import emoji
 import nextcord as discord
-from PIL import Image
-
 import utils.embedutil
 from utils.paginator import Paginator
 from nextcord.ext import commands
@@ -18,6 +16,7 @@ from utils.getMsgFromLink import getMsgFromLink
 import imageio.v3 as iio
 import numpy as np
 from string import Template
+from utils.webhook_manager import WebhookManager
 
 root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pipik"
 
@@ -41,7 +40,7 @@ class EmoteCog(commands.Cog):
 
         # Read the image with imageio
         try:
-            img = iio.imread(file.fp, extension="."+file.filename.split(".")[-1]) #TODO sometimes gifs have no transparency so the shape is (x,y,3) then (x,y,4), fix this
+            img = iio.imread(file.fp, extension="."+file.filename.split(".")[-1])  # TODO sometimes gifs have no transparency so the shape is (x,y,3) then (x,y,4), fix this //still not fixed
         except ValueError as e:
             emotelogger.error(f"ValueError: {e=}")
             return None
@@ -133,15 +132,12 @@ class EmoteCog(commands.Cog):
             emote = self.values[0]
 
             def mycheck(reaction: discord.Reaction, user: discord.User):
-                emotelogger.debug(f"{str(reaction.emoji)=}, {emote=}")
-                emotelogger.debug(f"{not user.bot}, {self.message == reaction.message}, {str(reaction.emoji) == emote}")
                 return not user.bot and self.message == reaction.message and str(reaction.emoji) == emote
 
             emotelogger.debug(f"{interaction.user} used msg cmd add react with {emote} in {interaction.channel}")
             await self.message.add_reaction(emote)
             try:
                 _, _ = await self.client.wait_for('reaction_add', timeout=6.0, check=mycheck)
-                # a,b = await self.client.wait_for('reaction_add', timeout=6.0)
 
             except asyncio.TimeoutError:
                 pass
@@ -158,7 +154,7 @@ class EmoteCog(commands.Cog):
     async def emote(self, ctx: discord.Interaction,
                     emote = discord.SlashOption(name="emoji", #don't typehint this one, will not show the options automatically
                                                      description="An emoji name, leave blank if you want to list them all out.",
-                                                     required=False, default=None),
+                                                     required=False, default=None),  #type: str
                     msg: str = discord.SlashOption(name="message_link",
                                                    description="Use 'copy message link' to specify a message to react to.",
                                                    required=False),
@@ -205,10 +201,8 @@ class EmoteCog(commands.Cog):
                     await ctx.send(emote)
                 else:
                     await ctx.response.defer(ephemeral=True)
-                    if not (wh := (discord.utils.find(lambda wh: wh.name == f"emotehijack{channel.id}", whs))):
-                        wh = await channel.create_webhook(name=f"emotehijack{channel.id}")
-                    await wh.send(content=emote, username=ctx.user.display_name, avatar_url=ctx.user.avatar.url)
-                    await ctx.send(ephemeral=True, content="Done", delete_after=5)
+                    async with WebhookManager(ctx, channel) as wh:
+                        await wh.send(content=emote, username=ctx.user.display_name, avatar_url=ctx.user.avatar.url)
             if flipped:
                 await asyncio.sleep(2)
                 await self.emoteserver.delete_emoji(emote)
@@ -216,7 +210,7 @@ class EmoteCog(commands.Cog):
         elif text:
             whs = [0]
             try:
-                whs = await channel.webhooks()
+                whs = await channel.webhooks() #TODO remove
             except discord.errors.Forbidden:
                 await ctx.response.defer()
             else:
@@ -266,13 +260,8 @@ class EmoteCog(commands.Cog):
                     # await ctx.send(f"Hi, {ctx.user.display_name} wanted to tell you something..", delete_after=5)
                     await ctx.send(f"Done", delete_after=5)
                 else:
-                    if whs == [0]:
-                        await ctx.send(f"{text}")
-                    else:
-                        if not (wh := (discord.utils.find(lambda wh: wh.name == f"emotehijack{channel.id}", whs))):
-                            wh = await channel.create_webhook(name=f"emotehijack{channel.id}")
+                    async with WebhookManager(ctx, channel) as wh:
                         await wh.send(content=f"{text}", username=ctx.user.display_name, avatar_url=ctx.user.avatar.url)
-                        await ctx.send(ephemeral=True, content="Done", delete_after=5)
                 for i in flippedemotes + flippedemotesv:
                     await self.emoteserver.delete_emoji(i)
                 for i in emotestoflip:

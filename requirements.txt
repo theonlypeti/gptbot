@@ -23,4 +23,8 @@ pint
 tabulate
 EdgeGPT
 snakeviz
+alt-profanity-check
 
+moviepy
+moviepy[optional]
+pygame

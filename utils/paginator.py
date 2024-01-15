@@ -79,6 +79,10 @@ class Paginator(discord.ui.View):
             for ch in self.children:
                 if ch.custom_id in ("leftbutton", "rightbutton"):
                     ch.disabled = True
+        else:
+            for ch in self.children:
+                if ch.custom_id in ("leftbutton", "rightbutton"):
+                    ch.disabled = False
         if self.select:
             select = list(filter(lambda i: i.custom_id == "pagiselect", self.children))
             if select:
@@ -111,12 +115,12 @@ class Paginator(discord.ui.View):
                     self.msg = await msg.edit(view=self, **kwargs)
             except (discord.errors.InvalidArgument, TypeError): pass
             else: return
-
         # else:  # if it's an interaction or a text channel, ergo it is sent for the first time
         if self.func:
             self.msg = await interaction.send(embed=self.func(self), view=self, **kwargs)
         else:
             self.msg = await interaction.send(view=self, **kwargs)
+        #if the message is not ephemeral, check whether you have not deferred the interaction beforehand. if so, add ephemeral=True to defer too
 
 # Example usage:
 # @discord.slash_command()

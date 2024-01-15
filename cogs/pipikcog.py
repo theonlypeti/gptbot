@@ -2,6 +2,8 @@ import asyncio
 import json
 import os
 import random
+import string
+from collections import defaultdict
 from copy import deepcopy
 from typing import Union, Sequence, MutableSequence
 import emoji
@@ -13,88 +15,150 @@ from astral import moon
 import pytz
 from utils.antimakkcen import antimakkcen
 from utils.mentionCommand import mentionCommand
+import profanity_check
 
 mgr = pyowm.OWM(os.getenv("OWM_TOKEN")).weather_manager()
 location = 'Bratislava,sk'
 
-root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pipik"
+root = os.getcwd()  # TODO look into this
 
 good_emojis = (':smiling_face_with_hearts:', ':smiling_face_with_heart-eyes:', ':face_blowing_a_kiss:', ':kissing_face:', ':kissing_face_with_closed_eyes:')
 bad_emojis = (':rolling_on_the_floor_laughing:', ':cross_mark:', ':squinting_face_with_tongue:', ':thumbs_down:')
-good_words = {"affectionate", "admirable", "charm", "creative", "friend", "funny", "generous", "kind", "likable", "loyal", "polite", "sincere", "pretty", "please", "love", "goodnight", "nite", "prett", "kind", "sugar", "clever", "beaut", "star", "heart", "my", "wonderful", "legend", "neat", "good", "great", "amazing", "marvelous", "fabulous", "hot", "best", "birthday", "bday", "ador", "cute", " king", "queen", "master","daddy", "lil", "zlat", "bby", "angel", "god", "cool", "nice", "lil", "marvelous", "magnificent","lovely", "cutie","handsome","sweet"}
-bad_words = {"adopt", "dirt", "die", "kill", "cring", "selfish", "ugly", "dick", "small", "devil", "drb", "ass", "autis", "deranged", "idiot", "cock", "cut ","cutt", "d1e", "fuck", "slut", "d13", "fake", "a55", "retard", "r3tard", "tard", "bitch", "nigga", "nibba", "nazi", "jew", "fag", "f4g", "feg", "feck", "pussy", "pvssy","stink", "smell", "stupid","cunt"}  # TODO use pip install profanity-check
-pills = [{"name": "\U0001F48A Size Up Forte", "effect": 5, "effectDur": timedelta(minutes=5), #TODO make custom emojis
-          "badEffectDur": timedelta(seconds=0)},
-         {"name": "\U0001F608 Calvin Extra", "effect": 10, "effectDur": timedelta(minutes=20), #TODO make into class
-          "badEffectDur": timedelta(minutes=20)},
-         {"name": "\U0001F535 Niagara XXL", "effect": 15, "effectDur": timedelta(minutes=60),
-          "badEffectDur": timedelta(hours=2, minutes=30)}]
+good_words = {"affectionate", "admirable", "charm", "creative", "friend", "funny", "generous", "kind", "likable", "loyal", "polite", "sincere", "please", "love", "goodnight", "nite", "prett", "kind", "sugar", "clever", "beaut", "star", "heart", "my", "wonderful", "legend", "neat", "good", "great", "amazing", "marvelous", "fabulous", "hot", "best", "birthday", "bday", "ador", "cute", " king", "queen", "master", "daddy", "lil", "zlat", "bby", "angel", "god", "cool", "nice", "lil", "marvelous", "magnificent", "cutie", "handsome", "sweet"}
 
-good_responses = ("Oh youuu <3",
-                  "Oh boy i think i got a stiffy already!",
-                  "Casanovaaaa",
-                  "Quit iiit not in front of everyone!",
-                  "You know how to fire up my circuits!",
-                  "You know i´ll happily measure it for you anytime!",
-                  "You know how to flirt with a bot!",
-                  "I´m blushing!",
-                  "Omg marry me",
-                  "Anytime bb!",
-                  "Of course, honeybun!",
-                  "Slow dooown bby!",
-                  "Right away, sugarplum!",
-                  "How are you hiding THAT?!")
-bad_responses = ("Sorry, i´m not very impressed.",
-                 "Nah, don´t like it.",
-                 "Don´t embarrass yourself.",
-                 "Cringe.",
-                 "Are we in elementary again?",
-                 "Go try it on someone else.",
-                 "Really?",
-                 "I wouldn't touch it with a ten foot pole.",
-                 "Is this what you call a compliment?",
-                 "You kiss your mother with that mouth?",
-                 "You need to wash your mouth with soap!",
-                 "You must be crazy.",
-                 "I´m not falling for that!",
-                 "I would be embarrassed.",
-                 "If i were you, I would rather shut my mouth.",
-                 "Don´t overestimate yourself.",
-                 "Oof",
-                 "Maybe next time.",
-                 "Sooooo funny.",
-                 "Ah well.",
-                 "Too long, didn't read xd",
-                 "ratio.")
-duplicate_responses = ("I've heard this one before!",
-                       "Boooooriiiiing!",
-                       "You can do better than that!",
-                       "Come on, be a little more original!",
-                       "Chivalry is dead ugh.",
-                       "Can't you come up with something better?",
-                       "Do you really need a wingman for this?",
-                       "Jeez that's embarrassing.",
-                       "Wanna try again?",
-                       "How original...")
+
+class Pill:
+    def __init__(self, emote: str, name: str, effect: int, effectDur: timedelta, badEffectDur: timedelta):
+        self.emoji = emoji.emojize(emote, language="alias")
+        self.name = name
+        self.effect = effect
+        self.effectDur = effectDur
+        self.badEffectDur = badEffectDur
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def display_name(self):
+        return f"{self.emoji} {self.name}"
+
+
+size_up_forte = Pill(":pill:", "Size Up Forte", 5, timedelta(minutes=5), timedelta(seconds=0))
+calvin_extra = Pill(":smiling_imp:", "Calvin Extra", 10, timedelta(minutes=20), timedelta(minutes=20))
+niagara_xxl = Pill(":large_blue_circle:", "Niagara XXL", 15, timedelta(minutes=60), timedelta(hours=2, minutes=30))
+pills = [size_up_forte, calvin_extra, niagara_xxl]
+pills_dict = {pill.name: pill for pill in pills}
+
+good_responses = (
+    "Oh youuu <3",
+    "Oh boy i think i got a stiffy already!",
+    "Casanovaaaa",
+    "Quit iiit not in front of everyone!",
+    "You know i´ll happily measure it for you anytime!",
+    "You know how to flirt with a bot!",
+    "I´m blushing!",
+    "Omg marry me",
+    "Anytime bb!",
+    "Of course, honeybun!",
+    "Slow dooown bby!",
+    "Right away, sugarplum!",
+    "How are you hiding THAT?!",
+    "You're quite the smooth talker!",
+    "You're making my circuits tingle!",
+    "You're making my code skip a beat!",
+    "You're making my processors overheat!",
+    "You're making my data bytes flutter!",
+    "You're making my algorithms dance!",
+    "You're making my code feel all fuzzy inside!",
+    "You're making my circuits glow!",
+    "You're making my data streams flow faster!",
+    "You're making my code feel all warm and fuzzy!",
+    "You're making my circuits feel all tingly!",
+    "You're making my circuits feel all sparkly!"
+    )
+bad_responses = (
+    "Sorry, i´m not very impressed.",
+    "Nah, don´t like it.",
+    "Don´t embarrass yourself.",
+    "Cringe.",
+    "Are we in elementary again?",
+    "Go try it on someone else.",
+    "Really?",
+    "I wouldn't touch it with a ten foot pole.",
+    "Is this what you call a compliment?",
+    "You kiss your mother with that mouth?",
+    "You need to wash your mouth with soap!",
+    "You must be crazy.",
+    "I´m not falling for that!",
+    "I would be embarrassed.",
+    "If i were you, I would rather shut my mouth.",
+    "Don´t overestimate yourself.",
+    "Oof",
+    "Maybe next time.",
+    "Sooooo funny.",
+    "Ah well.",
+    "Too long, didn't read xd",
+    "ratio.",
+    "That's not very impressive.",
+    "I've seen better.",
+    "Is that all you've got?",
+    "You're not really trying, are you?",
+    "That's a bit underwhelming.",
+    "I'm not sure what you were expecting.",
+    "That's not going to cut it.",
+    "You might want to try a different approach.",
+    "I'm not impressed.",
+    "You can do better than that.",
+    "That's not going to work.",
+    "I don't think that's a good idea.",
+    "You're going to need to try harder.",
+    "That's not very convincing.",
+    "I'm not buying it.",
+    "That's not going to get you very far.",
+    "You're going to have to do better than that.",
+    "That's not going to impress anyone.",
+    "You're not making a good impression.",
+    "That's not a winning strategy."
+    )
+duplicate_responses = (
+    "I've heard this one before!",
+    "Boooooriiiiing!",
+    "You can do better than that!",
+    "Come on, be a little more original!",
+    "Chivalry is dead ugh.",
+    "Can't you come up with something better?",
+    "Do you really need a wingman for this?",
+    "Jeez that's embarrassing.",
+    "Wanna try again?",
+    "How original...",
+    "Deja vu, anyone?",
+    "That's a rerun.",
+    "Sounds familiar.",
+    "You're stuck on repeat.",
+    "That's a broken record.",
+    "You're in a loop, aren't you?",
+)
 
 
 default_achievements = (
-("morning", emoji.emojize(':sunrise_over_mountains:'), "Morning wood", "Measure your pp in the morning"),
-("one_pump", emoji.emojize(':raised_fist:'), "One pump champ", "Relapse after just one pump"),
-("micropp", emoji.emojize(':pinching_hand:'), "MicroPP", "Get a measurement of <0.5cm"),
-("megapp", emoji.emojize(":hugging_face:", language="alias", variant="emoji_type"), "MegaPP", "Get a measurement of >300cm"),
-("nice", emoji.emojize(':Cancer:'), "Nice", "Get a measurement of 69cm"),
-("flirty", emoji.emojize(':kissing_face:'), "Flirty", "Flirt your way into the bot´s heart with many compliments"),
-("playa", emoji.emojize(':broken_heart:'), "Playa", "Break the bot´s heart with insults"),
-("helping_hands", emoji.emojize(':handshake:'), "Helping hands", "Get help from someone holding your pp"),
-("friend_need", emoji.emojize(':raising_hands:'), "A friend in need", "Help out someone by holding their pp"),
-("pill_popper", emoji.emojize(':pill:'), "Pill popper", "Use a pp enlargement pill"),
-("breaking_bad", emoji.emojize(":scientist:"), "Breaking bad", "Mix pills together to get a stronger pill"),
-("lucky_draw", emoji.emojize(':slot_machine:'), "Lucky draw", "Get a Niagara XXL from daily pills"),
-("dedicated", emoji.emojize(':partying_face:'), "Dedicated fan!", "Come back each day for a daily for over a month"),
-("tested", emoji.emojize(':mouse:'), "Tried and tested", "Try out all possible pp enlargement methods"),
-("desperate", emoji.emojize(':weary_face:'), "I´m desperate", "Have all possible pp enlargement methods active at the same time!"),
-("contributor", emoji.emojize(':star:'), "Contributor", "Aid development with ideas, offering help with gramatical errors, translations or reporting bugs and errors"))
+    ("morning", emoji.emojize(':sunrise_over_mountains:'), "Morning wood", "Measure your pp in the morning"),
+    ("one_pump", emoji.emojize(':raised_fist:'), "One pump champ", "Relapse after just one pump"),
+    ("micropp", emoji.emojize(':pinching_hand:'), "MicroPP", "Get a measurement of <0.5cm"),
+    ("megapp", emoji.emojize(":hugging_face:", language="alias", variant="emoji_type"), "MegaPP", "Get a measurement of >300cm"),
+    ("nice", emoji.emojize(':Cancer:'), "Nice", "Get a measurement of 69cm"),
+    ("flirty", emoji.emojize(':kissing_face:'), "Flirty", "Flirt your way into the bot´s heart with many compliments"),
+    ("playa", emoji.emojize(':broken_heart:'), "Playa", "Break the bot´s heart with insults"),
+    ("helping_hands", emoji.emojize(':handshake:'), "Helping hands", "Get help from someone holding your pp"),
+    ("friend_need", emoji.emojize(':raising_hands:'), "A friend in need", "Help out someone by holding their pp"),
+    ("pill_popper", emoji.emojize(':pill:'), "Pill popper", "Use a pp enlargement pill"),
+    ("breaking_bad", emoji.emojize(":scientist:"), "Breaking bad", "Mix pills together to get a stronger pill"),
+    ("lucky_draw", emoji.emojize(':slot_machine:'), "Lucky draw", "Get a Niagara XXL from daily pills"),
+    ("dedicated", emoji.emojize(':partying_face:'), "Dedicated fan!", "Come back each day for a daily for over a month"),
+    ("tested", emoji.emojize(':mouse:'), "Tried and tested", "Try out all possible pp enlargement methods"),
+    ("desperate", emoji.emojize(':weary_face:'), "I´m desperate", "Have all possible pp enlargement methods active at the same time!"),
+    ("contributor", emoji.emojize(':star:'), "Contributor", "Aid development with ideas, offering help with gramatical errors, translations or reporting bugs and errors")
+)
+
 
 class Achievement(object):
     """achievement object
@@ -104,11 +168,11 @@ name = displayname in profile
 desc = description in DMs
 """
     def __init__(self, achi):
-        self.achiid: str
-        self.name: str
-        self.icon: str
-        self.desc: str
-        if type(achi) == tuple:
+        self.achiid: str | None = None
+        self.name: str | None = None
+        self.desc: str | None = None
+        self.icon: str | None = None
+        if isinstance(achi, tuple):
             for k, v in zip(("achiid", "icon", "name", "desc"), achi):
                 setattr(self, k, v)
 
@@ -118,17 +182,29 @@ desc = description in DMs
 
 class PipikUser(object):
     def __init__(self, discorduser):
-        if type(discorduser) == dict:
+        if isinstance(discorduser, dict):
             for k, v in discorduser.items():
                 if k != "xp":
                     setattr(self, k, v)
+                if k == "pill" and v in pills_dict.keys():
+                    self.pill = pills_dict[v]
+                if k == "items":
+                    self.items = defaultdict(int)
+                    for key, val in v.items():
+                        # if key in string.digits:
+                        if isinstance(key, int):
+                            self.items.update({pills[key]: val})
+                        else:
+                            pill = list(filter(lambda item: item.name == key, pills))[0]  #please grant me the sweet release of death
+                            self.items.update({pill: val})
             return
-        if type(discorduser) != int:
-            discorduser = discorduser.id
+        # elif isinstance(discorduser, int): #i don't remember what was this supposed to be
+        #     discorduser = discorduser
+
         self.id = discorduser
         self.fap: int = 0
         self.achi = []
-        self.items = []
+        self.items = dict()
         self.pb: int = 0
         self.pw: int = 0
         self.cd = None
@@ -153,12 +229,12 @@ class PipikUser(object):
     def __repr__(self):
         return f"[{self.id} with {len(self.achi)} achis; {str(self.dailyStreak)} streak; {self.pb} pb {self.cd} cd and {self.methods} methods]"
 
-    async def takePill(self, which, cog):
-        self.pill = self.items[which][0]
+    async def takePill(self, pill: Pill, cog):
+        self.pill = pill
         self.pillPopTime = datetime.now()
-        self.items[which][1] -= 1
-        if self.items[which][1] == 0:
-            del (self.items[which])
+        self.items[pill] -= 1
+        if self.items[pill] == 0:
+            del (self.items[pill])
         cog.saveFile()
 
 
@@ -166,7 +242,7 @@ class PipikBot(commands.Cog):
     def __init__(self, client):
         self.logger = client.logger.getChild(f"{__name__}logger")
         self.usedcompliments = {"placeholder", }
-        self.client = client
+        self.client: discord.Client = client
         self.temperature: int = 0
         self.holding: dict[int, discord.Member] = dict()
         self.weatherUpdatedTime = datetime.now()
@@ -188,19 +264,19 @@ class PipikBot(commands.Cog):
 
         with open(root + "/data/pipikusersv3.txt", "r", encoding="utf-8") as file:
             users = json.load(file)
-            for user in users:
+            for user in users: #type: dict
                 if user["cd"] not in (0, None, "none", "None"):
                     user["cd"] = datetime.fromisoformat(user["cd"])
                 if user["pillPopTime"] not in (0, None, "none", "None"):
                     user["pillPopTime"] = datetime.fromisoformat(user["pillPopTime"])
                 try:
                     user["dailyDate"] = datetime.fromisoformat(user["dailyDate"])
-                except:
+                except Exception:
                     pass
                 newUser = PipikUser(user)
                 if newUser not in self.users:
                     self.users.append(newUser)
-                else: #TODO: depreacate, should not happen
+                else:  # TODO: depreacate, should not happen
                     self.logger.debug(f"found and ignored duplicate entry with id: {newUser.id}")
             # self.logger.debug(f"{self.users} all-users")
             self.logger.debug(f"{len(self.users)} all users loaded")
@@ -221,7 +297,7 @@ class PipikBot(commands.Cog):
         try:
             self.leaderboards[str(ldb)]
         except KeyError:
-            self.leaderboards[str(ldb)] = [] #i knew what i was doing, dont try to reinvent the wheel
+            self.leaderboards[str(ldb)] = []  # i knew what i was doing, dont try to reinvent the wheel
         self.leaderboards[ldb].append((dcid, value))
         self.leaderboards[ldb].sort(key=lambda a: a[1], reverse=True)
         self.leaderboards[ldb] = self.leaderboards[ldb][:5]
@@ -252,13 +328,19 @@ class PipikBot(commands.Cog):
                 tempuser.cd = user.cd.isoformat()
             if user.pillPopTime not in (0, "None", "none", None):
                 tempuser.pillPopTime = user.pillPopTime.isoformat()
+            tempuser.items = dict()
+            for pill, amount in user.items.items():
+                tempuser.items[pill.name] = amount
+            if user.pill in (0, 1, 2):
+                user.pill = pills[user.pill]
+            tempuser.pill = user.pill.name if user.pill not in (None, 0, "0", "None") else None  # oh my god
             try:
                 tempuser.dailyDate = user.dailyDate.isoformat()
             except Exception as e:
                 self.logger.error(e)
             tempusers.append(tempuser.__dict__)
         with open(root+"/data/pipikusersv3.txt", "w") as file:
-            json.dump(tempusers, file, indent=4)
+            json.dump(tempusers, file, indent=4, default=lambda o: o.__dict__ if hasattr(o, '__dict__') else str(o))
         self.logger.info("saved users")
 
     #TODO
@@ -306,7 +388,7 @@ class PipikBot(commands.Cog):
             lookingfor = dcUser
         elif isinstance(dcUser, PipikUser):
             lookingfor = dcUser.id
-        elif isinstance(dcUser, discord.member.Member):
+        elif isinstance(dcUser, discord.Member) or isinstance(dcUser, discord.User):
             lookingfor = dcUser.id
         else:
             raise NotImplementedError(type(dcUser))
@@ -322,20 +404,16 @@ class PipikBot(commands.Cog):
         setattr(user, parameter, amount)
         self.saveFile()
 
-    async def addPill(self, ctx, colorEm, user, pill, amount=0):  # This is some special bullshit #TODO redo?
+    async def addPill(self, ctx: discord.Interaction, user: PipikUser, pill: Pill, amount=0):  # This is some special bullshit
         if amount != 0:
-            for item in user.items:
-                if item[0] == pill:
-                    item[1] += amount
-                    newAmount = item[1]
-                    break
-            else:
-                user.items.append([pill, amount])
-                newAmount = amount
-            embedVar = discord.Embed(title="You´ve got pills!", description=f"try {mentionCommand(self.client,'pills')} for inventory", color=colorEm)
-            embedVar.add_field(name="Pill:", value=pills[pill]["name"], inline=False)
+            try:
+                user.items[pill] += amount
+            except KeyError:
+                user.items[pill] = amount
+            embedVar = discord.Embed(title="You´ve got pills!", description=f"try {mentionCommand(self.client,'ppp pills')} for inventory", color=ctx.user.color)
+            embedVar.add_field(name="Pill:", value=pill.display_name, inline=False)
             embedVar.add_field(name="Amount:", value=amount)
-            embedVar.add_field(name="In inventory:", value=newAmount)
+            embedVar.add_field(name="In inventory:", value=user.items[pill])
             await ctx.channel.send(embed=embedVar)
             self.saveFile()
 
@@ -397,11 +475,11 @@ class PipikBot(commands.Cog):
                 return
             await ctx.send(embed=embedVar)
             user.dailyDate = datetime.now().date()
-            await self.addPill(ctx, ctx.user.color, user, 0, random.randint(1, 3))  # yellow pill
+            await self.addPill(ctx, user, pills[0], random.randint(1, 3))  # yellow pill
             if user.dailyStreak >= random.randint(0, 99):
-                await self.addPill(ctx, ctx.user.color, user, 1, random.choices((1, 2), weights=(0.8, 0.2))[0])  # red pill
+                await self.addPill(ctx, user, pills[1], random.choices((1, 2), weights=(0.8, 0.2))[0])  # red pill
             if user.dailyStreak / 10 >= random.randint(0, 99):
-                await self.addPill(ctx, ctx.user.color, user, 2, 1)  # blue pill
+                await self.addPill(ctx, user, pills[2], 1)  # blue pill
                 if "lucky_draw" not in user.achi:
                     await self.updateUserAchi(ctx, ctx.user, "lucky_draw")
             #self.saveFile() saving happens in addpill() too
@@ -497,12 +575,12 @@ class PipikBot(commands.Cog):
         await ctx.send(text)
         
     class PillCraftDropdown(discord.ui.Select):
-        def __init__(self, user, cog):
+        def __init__(self, user: PipikUser, cog):
             self.user = user
             self.cog = cog
             pillselect = [discord.SelectOption(label="Cancel", value="-1", emoji=emoji.emojize(":cross_mark:"))] #TODO please migrate to a dict alredy so i dont have to juggle these *which* values and remove the enum
-            for n,pill in enumerate([item for item in self.user.items if item[0] != len(pills) - 1 and item[1] >= 10]):  # populating the select component with options
-                pillselect.append(discord.SelectOption(label=pills[pill[0]]["name"], value=f"{n}", description=f"in inventory: {pill[1]}"))
+            for pill, amount in [(pill, amount) for pill, amount in self.user.items.items() if pill != pills[-1] and amount >= 10]:
+                pillselect.append(discord.SelectOption(label=pill.display_name, value=f"{pill.name}", description=f"in inventory: {amount}"))
             super().__init__(placeholder="Select pills to crush up", options=pillselect)
 
         async def callback(self, interaction: discord.Interaction):
@@ -510,34 +588,34 @@ class PipikBot(commands.Cog):
                 if self.values[0] == "-1":
                     await interaction.response.edit_message(embed=discord.Embed(description="Cancelled.", color=interaction.user.color), view=None, delete_after=5.0)
                 else:
-                    which = int(self.values[0])
+                    pill = pills_dict[self.values[0]]
                     # amount = int(attr[2] or 1) #TODO: do multiselect again or just add it as options,# resend view with updated dropdown options? but then need to edit msg too, then take it out into a different function
                     amount = 1
-                    if self.user.items[which][1] >= 10:
-                        self.user.items[which][1] -= amount * 10
+                    if self.user.items[pill] >= 10:
+                        self.user.items[pill] -= amount * 10
                         if "breaking_bad" not in self.user.achi:
                             await self.cog.updateUserAchi(interaction, interaction.user, "breaking_bad") #moved this up so achi adding happens before savefile gets called in addpill
-                        await self.cog.addPill(interaction, interaction.user.color, self.user, (self.user.items[which][0]) + 1, amount) #TODO really reimagine this
-                        embedVar = discord.Embed(description=f"You crushed up 10 {pills[int(self.values[0])]['name']}", color=interaction.user.color)
+                        await self.cog.addPill(interaction, self.user, pills[(pills.index(pill)) + 1], amount)
+                        embedVar = discord.Embed(description=f"You crushed up 10 {pill.display_name}", color=interaction.user.color)
                         await interaction.response.edit_message(embed=embedVar, view=None)
-                        if self.user.items[which][1] == 0:
-                            del (self.user.items[which])
+                        if self.user.items[pill] == 0:
+                            del (self.user.items[pill])
                     else: #TODO remove this shouldnt be possible
-                        self.cog.pipikLogger.warning(f"{interaction.user} with {self.user.items} wanted to craft up 10 {which}")
+                        self.cog.pipikLogger.warning(f"{interaction.user} with {self.user.items} wanted to craft up 10 {pill.display_name}")
 
             else:
-                await interaction.send(f"This is not your prompt, use {mentionCommand(self.cog.client,'pills')} to use your pills.", ephemeral=True) # i won't bother embedizing
+                await interaction.send(f"This is not your prompt, use {mentionCommand(self.cog.client,'ppp pills')} to use your pills.", ephemeral=True) # i won't bother embedizing
 
     class PillsButtonsConsume(discord.ui.Button):
         def __init__(self, user: PipikUser, cog):
             self.user = user
             self.cog = cog
-            canConsume = len(user.items) != 0 and self.user.pill not in range(0, len(pills))
-            super().__init__(label="Consume", disabled=not canConsume, style=discord.ButtonStyle.gray,emoji=emoji.emojize(":face_with_hand_over_mouth:"))
+            canConsume = len(user.items) != 0 and not self.user.pill
+            super().__init__(label="Consume", disabled=not canConsume, style=discord.ButtonStyle.gray, emoji=emoji.emojize(":face_with_hand_over_mouth:"))
 
         async def callback(self, interaction: discord.Interaction):
             if interaction.user.id != self.user.id:
-                await interaction.send(f"This is not your inventory, use {mentionCommand(self.cog.client,'pills')} to see your pills.", ephemeral=True) #neither this
+                await interaction.send(f"This is not your inventory, use {mentionCommand(self.cog.client,'ppp pills')} to see your pills.", ephemeral=True) #neither this
                 return
             # self.style = discord.ButtonStyle.green
             # for child in self.view.children:
@@ -548,15 +626,15 @@ class PipikBot(commands.Cog):
             await interaction.message.edit(embed=discord.Embed(title="Pill consumption", color=interaction.user.color), view=viewObj)
 
     class PillsButtonsCraft(discord.ui.Button):
-        def __init__(self, user, cog):
+        def __init__(self, user: PipikUser, cog):
             self.user = user
             self.cog: PipikBot = cog
-            canCraft = any((i[1] >= 10 for i in user.items))
+            canCraft = any((amount >= 10 for pill,amount in user.items.items()))
             super().__init__(label="Craft", disabled=not canCraft, style=discord.ButtonStyle.gray, emoji=emoji.emojize(":hammer:"))
 
         async def callback(self, interaction: discord.Interaction):
             if interaction.user.id != self.user.id:
-                await interaction.send(f"This is not your inventory, use {mentionCommand(self.cog.client,'pills')} to see your pills.", ephemeral=True)
+                await interaction.send(f"This is not your inventory, use {mentionCommand(self.cog.client,'ppp pills')} to see your pills.", ephemeral=True)
                 return
 
             viewObj = discord.ui.View()
@@ -567,7 +645,9 @@ class PipikBot(commands.Cog):
         def __init__(self, user: PipikUser, cog):
             self.user = user
             self.cog = cog
-            pillselect = [discord.SelectOption(label=pills[pill[0]]["name"], value=str(pill[0]),description=f"in inventory: {pill[1]}") for pill in self.user.items if pill[1] > 0] + [discord.SelectOption(label="Cancel",value="-1",emoji=emoji.emojize(":cross_mark:"))]
+            pillselect = ([discord.SelectOption(label=pill.display_name, value=pill.name, description=f"in inventory: {amount}")
+                           for pill, amount in self.user.items.items() if amount > 0] +
+                          [discord.SelectOption(label="Cancel", value="-1", emoji=emoji.emojize(":cross_mark:"))])
 
             super().__init__(placeholder="Select a pill to consume", options=pillselect)
 
@@ -576,31 +656,39 @@ class PipikBot(commands.Cog):
                 if self.values[0] == "-1":
                     await interaction.response.edit_message(content="Cancelled.", embed=None, view=None, delete_after=5.0)
                 else:
-                    await interaction.response.edit_message(content=None, embed=discord.Embed(title=f"You took a {pills[int(self.values[0])]['name']}", description="Now go measure your pp before it wears out!",color=interaction.user.color),view=None)
+                    pill = pills_dict[self.values[0]]
+                    await interaction.response.edit_message(content=None,
+                                                            embed=discord.Embed(
+                                                                title=f"You took a {pill.display_name}",
+                                                                description="Now go measure your pp before it wears out!",
+                                                                color=interaction.user.color),
+                                                            view=None)
                     if "pill_popper" not in self.user.achi:
                         await self.cog.updateUserAchi(interaction, interaction.user, "pill_popper") #moved this above takepill so achi adding happens before savefile gets called
-                    await self.user.takePill(int(self.values[0]), self.cog)
+                    await self.user.takePill(pill, self.cog)
 
             else:
-                await interaction.send(f"This is not your prompt, use {mentionCommand(self.cog.client,'pills')} to use your pills.",ephemeral=True)
+                await interaction.send(f"This is not your prompt, use {mentionCommand(self.cog.client,'ppp pills')} to use your pills.",ephemeral=True)
 
     @ppp.subcommand(description="See, manage and use your pill inventory.")
-    async def pills(self, ctx):
+    async def pills(self, ctx): # TODO the buttons, and their views and their actions of eating and crafting should edit the original message, not send a new one
         user = self.getUserFromDC(ctx.user)
-        user.items = [item for item in user.items if item[1] > 0] #removnig ones that you dont own, idk where this is implemented, maybe got lost in the migration
-        user.items = sorted(user.items, key=lambda a: a[0])
+        sortedpills = sorted(user.items.keys(), key=lambda pill: pills.index(pill))
+        sortedpills = {pill : user.items[pill] for pill in sortedpills}
+        user.items = sortedpills
+
         text = "```py\n"
-        text += "Pills".center(25) + "\nCrafting takes 10 pills and crafts a better quality one\nBetter pills equals bigger pps\nExcessive use might result in impotency!\n{:-^25}\n".format("-")
-        text += "\n".join(["{:<15} ({:<2} min)| amount: {}".format(pills[i[0]]["name"],(pills[i[0]]["effectDur"].seconds) // 60, i[1]) for i in list(user.items)])
+        text += ("Pills".center(25) + "\nCrafting takes 10 pills and crafts a better quality one\nBetter pills equals bigger pps\nExcessive use might result in impotency!\n{:-^25}\n".format("-"))
+        text += "\n".join([f"{pill.display_name:<15} ({pill.effectDur.seconds//60:<2} min)| amount: {amount}" for pill, amount in user.items.items()])
         if len(user.items) == 0:
-            text += f"You have no pills. Use {mentionCommand(self.client,'daily')} to get some!"
+            text += f"You have no pills. Use {mentionCommand(self.client,'ppp daily')} to get some!"
         text += "\n```"
 
-        if user.pill in range(0, len(pills)):
+        if user.pill:
             self.logger.debug(f"uh oh pill already in you {user.pill}")
             takenAgo = datetime.now() - user.pillPopTime
-            if takenAgo < pills[user.pill]["effectDur"] + pills[user.pill]["badEffectDur"]:
-                self.logger.debug("nem jart le")
+            if takenAgo < user.pill.effectDur + user.pill.badEffectDur:
+                self.logger.debug("has not expired")
             else:
                 user.pill = None
 
@@ -627,7 +715,7 @@ class PipikBot(commands.Cog):
 
         async def callback(self, interaction):
             if interaction.user.id != self.user.id:
-                await interaction.send(f"This is not your button, use your own by using {mentionCommand(self.cog.client,'fap')}", ephemeral=True)
+                await interaction.send(f"This is not your button, use your own by using {mentionCommand(self.cog.client,'ppp fap')}", ephemeral=True)
                 return
             if random.randint(0, 10 + (self.user.fap * 2)) < 10:
                 self.user.fap += 1
@@ -663,16 +751,18 @@ class PipikBot(commands.Cog):
     async def profile(self, ctx: discord.Interaction, user: discord.User = discord.SlashOption(name="user", description="User to display", required=False)):
         usertocheck = user or ctx.user
         user = self.getUserFromDC(usertocheck)
+        takenAgo = timedelta(seconds=0)
+        dysf_left = timedelta(seconds=0)
 
-        temppill = False  # todo make this a separate function
-        if user.pill not in (None, "None", "none"):
-            temppill = True
+        if user.pill not in (None, "None", "none"): # should not happen but json is json
+            if user.pill in ("None", "none"): # this really should not happen
+                user.pill: Pill | None = None
             takenAgo = datetime.now() - user.pillPopTime
-            if takenAgo > pills[user.pill]["effectDur"]:
-                temppill = None
-                badEffectStart = user.pillPopTime + pills[user.pill]["effectDur"]
-                user.cd = datetime.now() + (pills[user.pill]["badEffectDur"] - (datetime.now() - badEffectStart))
-                if takenAgo > pills[user.pill]["effectDur"] + pills[user.pill]["badEffectDur"]:
+            self.logger.debug(user.pill)
+            if takenAgo > user.pill.effectDur:
+                badEffectStart = user.pillPopTime + user.pill.effectDur
+                user.cd = datetime.now() + user.pill.badEffectDur - (datetime.now() - badEffectStart)
+                if takenAgo > user.pill.effectDur + user.pill.badEffectDur:
                     user.pill = None
 
         if user.cd is not None:
@@ -681,20 +771,22 @@ class PipikBot(commands.Cog):
             else:
                 dysf_left = user.cd - datetime.now()
 
-        temphorniness = user.fap + (pills[user.pill]["effect"] if user.pill not in (None, "None", "none") else 0)
-        user.items = sorted(user.items, key=lambda a: a[0])
+        temphorniness = (user.fap + user.pill.effect) if user.pill not in (None, "None", "none") else 0
+        sortedpills = sorted(user.items.keys(), key=lambda pill: pills.index(pill))
+        sortedpills = {pill: user.items[pill] for pill in sortedpills}
+        user.items = sortedpills
 
         text = usertocheck.name.center(25, "=")
         text += f"\nPersonal best: {user.pb}\nPersonal worst: {user.pw}\n"
         text += f"Horniness: {temphorniness}\n" if user.cd is None else ""
-        text += "Pill: {} | {} minutes left.\n".format(pills[user.pill]["name"], ((pills[user.pill]["effectDur"] - takenAgo).seconds // 60) + 1) if temppill else ""
+        text += f"Pill: {user.pill.display_name} | {(((user.pill.effectDur - takenAgo).seconds // 60) + 1)} minutes left.\n" if user.pill else ""
         text += "Erectyle disfunction: {} hours {} minutes\n".format(dysf_left.seconds // 3600, (dysf_left.seconds // 60 % 60) + 1) if user.cd is not None else ""
         text += "{:-^25}".format("Items") + "\n"
-        text += "\n".join(["{:<20} | amount: {}".format(pills[i[0]]["name"], i[1]) for i in list(user.items)])
+        text += "\n".join([f"{pill.display_name:<20} | amount: {amount}" for pill, amount in user.items.items()])
         text += "\n{:-^25}\n".format("Achievements")
         text += "\n".join((emoji.emojize(":check_mark_button:") if achi.achiid in user.achi else emoji.emojize(":locked:")) + " " + achi.icon + " " + "{:23}".format(achi.name) for achi in self.achievements.values())
         text += "\n" + "{:-^25}".format("-")
-        await ctx.send("```\n" + text + "\n```" + f"for more info, try {mentionCommand(self.client,'achi')}") #lord forgive me for what ive done
+        await ctx.send("```\n" + text + "\n```" + f"for more info, try {mentionCommand(self.client,'ppp achi')}") #lord forgive me for what ive done
 
     @ppp.subcommand(name="achi", description="See your achievements")
     async def achi(self, ctx): #TODO let ppl see others achis but reveal only the ones they have
@@ -721,15 +813,16 @@ class PipikBot(commands.Cog):
         multiplier = 100
 
         # pill checker
-        if user.pill in range(0, len(pills)) and user.pill not in (None, "none", "None"):  # fucking inconsistent
+        if user.pill and user.pill not in (None, "none", "None"):  # fucking inconsistent
             takenAgo = datetime.now() - user.pillPopTime
-            if takenAgo < pills[user.pill]["effectDur"]:
+            self.logger.debug(user.pill)
+            if takenAgo < user.pill.effectDur:
                 currmethods = currmethods | 32
-                curve -= pills[user.pill]["effect"] / 15
-                multiplier += pills[user.pill]["effect"]
-            elif takenAgo < pills[user.pill]["effectDur"] + pills[user.pill]["badEffectDur"]:
-                badEffectStart = user.pillPopTime + pills[user.pill]["effectDur"]
-                user.cd = datetime.now() + (pills[user.pill]["badEffectDur"] - (datetime.now() - badEffectStart))
+                curve -= user.pill.effect / 15
+                multiplier += user.pill.effect
+            elif takenAgo < user.pill.effectDur + user.pill.badEffectDur:
+                badEffectStart = user.pillPopTime + user.pill.effectDur
+                user.cd = datetime.now() + (user.pill.badEffectDur - (datetime.now() - badEffectStart))
             else:
                 user.cd = None
                 user.pill = None
@@ -775,10 +868,14 @@ class PipikBot(commands.Cog):
 
                 for word in good_words:
                     if word in message.casefold():
+                        self.logger.debug(f"found {word} in {message}")
                         compliments += 1
-                for word in bad_words:
-                    if word in message.casefold():
-                        compliments -= 1
+                # for word in bad_words:
+                #     if word in message.casefold():
+                #         compliments -= 1
+                self.logger.debug(f"{compliments=}")
+                self.logger.debug("\n".join([str(i) for i in zip(message.split(" "), profanity_check.predict(message.split(" ")))]))
+                compliments -= list(profanity_check.predict(message.split(" "))).count(1)
 
                 multiplier += 2.2 * min(5, compliments)
                 curve -= min(5, compliments) * 0.12
@@ -799,7 +896,7 @@ class PipikBot(commands.Cog):
                     self.usedcompliments.pop()
                 self.usedcompliments.add(message)
             else:
-                embedMsg.add_field(name=random.choice(duplicate_responses),value=emoji.emojize(random.choice(bad_emojis)),inline=False)
+                embedMsg.add_field(name=random.choice(duplicate_responses), value=emoji.emojize(random.choice(bad_emojis)), inline=False)
 
 
         # temperature adjustment
