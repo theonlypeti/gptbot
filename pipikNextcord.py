@@ -1,21 +1,24 @@
 import sys
+from collections import defaultdict
+from typing import Coroutine
 import nextcord as discord
-import random
+import nextcord.ext.commands
 from nextcord.ext import commands
-from datetime import datetime, timedelta
+from datetime import datetime
+# from tqdm import tqdm
 from utils.antimakkcen import antimakkcen
 import emoji
 import os
 import argparse
 import time as time_module
-import logging
 from dotenv import load_dotenv
-import coloredlogs
-from sympy import Sum
-from utils.mentionCommand import mentionCommand
+from utils.mentionCommand import mentionCommand #used in /run
+from utils.getMsgFromLink import getMsgFromLink
+from utils import mylogger
+
 
 start = time_module.perf_counter()
-version = 3.5
+version = "3.10"
 load_dotenv(r"./credentials/main.env")
 
 parser = argparse.ArgumentParser(prog=f"PipikBot V{version}", description='A fancy discord bot.', epilog="Written by theonlypeti.")
@@ -23,56 +26,49 @@ parser = argparse.ArgumentParser(prog=f"PipikBot V{version}", description='A fan
 for cog in os.listdir("./cogs"):
     if cog.endswith("cog.py"):
         parser.add_argument(f"--no_{cog.removesuffix('cog.py')}", action="store_true", help=f"Disable {cog} extension.")
+        parser.add_argument(f"--only_{cog.removesuffix('cog.py')}", action="store_true", help=f"Enable only the {cog} extension.")
 
 parser.add_argument("--minimal", action="store_true", help="Disable most of the extensions.")
 parser.add_argument("--debug", action="store_true", help="Enable debug mode.")
 parser.add_argument("--no_testing", action="store_true", help="Disable testing module.")
+parser.add_argument("--only_testing", action="store_true", help="Add testing module.")
+parser.add_argument("--logfile", action="store_true", help="Turns on logging to a text file.")
+parser.add_argument("--no_linecount", action="store_true", help="Turns off line counting.")
+parser.add_argument("--profiling", action="store_true", help="Measures the bootup time and outputs it to profile.prof.")
 args = parser.parse_args()
 
-pipikLogger = logging.getLogger("Base")
+mylogger.main(args) #initializing the logger
+from utils.mylogger import baselogger as pipikLogger
 
-#FORMAT = "[{asctime}][{filename}][{lineno:4}][{funcName}][{levelname}] {message}"
-#formatter = logging.Formatter(FORMAT, style="{")  #this is for default logger
-
-fmt = "[ %(asctime)s %(filename)s %(lineno)d %(funcName)s %(levelname)s ] %(message)s"
-coloredlogs.DEFAULT_FIELD_STYLES = {'asctime': {'color': 'green'}, 'lineno': {'color': 'magenta'}, 'levelname': {'bold': True, 'color': 'black'}, 'filename': {'color': 'blue'},'funcname': {'color': 'cyan'}}
-coloredlogs.DEFAULT_LEVEL_STYLES = {'critical': {'bold': True, 'color': 'red'}, 'debug': {'bold': True, 'color': 'black'}, 'error': {'color': 'red'}, 'info': {'color': 'green'}, 'notice': {'color': 'magenta'}, 'spam': {'color': 'green', 'faint': True}, 'success': {'bold': True, 'color': 'green'}, 'verbose': {'color': 'blue'}, 'warning': {'color': 'yellow'}}
-
-#std = logging.StreamHandler()
-#std.setFormatter(formatter)
-#fl = logging.FileHandler("pipikLog.txt")
-#fl.setFormatter(formatter)
-if args.debug:
-    pipikLogger.setLevel(logging.DEBUG)
-    #std.setLevel(logging.DEBUG)
-    #fl.setLevel(logging.INFO)
-    coloredlogs.install(level='DEBUG', logger=pipikLogger, fmt=fmt)
-else:
-    pipikLogger.setLevel(logging.INFO)
-    #std.setLevel(logging.INFO)
-    #fl.setLevel(logging.INFO)
-    coloredlogs.install(level='INFO', logger=pipikLogger, fmt=fmt)
-#pipikLogger.addHandler(std)
-#pipikLogger.addHandler(fl)
+if args.logfile:
+    pipikLogger.setLevel(5)
 
 if not args.minimal and not args.no_sympy:
-    import MyScripts.matstatMn
-    prikazy = list(filter(lambda a: not a.startswith("_"), dir(MyScripts.matstatMn)))
+    import utils.matstatMn
+    prikazy = list(filter(lambda a: not a.startswith("_"), dir(utils.matstatMn)))
     [prikazy.remove(i) for i in ("lru_cache", "graf", "plt", "prod", "kocka", "minca", "napoveda")]
 
-    from MyScripts.matstatMn import *
-    from utils.bf import *
+    from utils.matstatMn import *
 
-root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pipik"
+# root = os.getcwd()
+root = (os.path.dirname(os.path.abspath(__file__)))
 
-protocol = False
-spehmode = True
 already_checked = []
+discord_emotes = {}
+timeouts = defaultdict(int)
+us = set()
 
-# TODO play with this @commands.has_permissions(manage_server=True)
-# TODO colored ansi text
-# TODO video.py
-# TODO json module has parse_int inside it
+intents = discord.Intents.all() #TODO remember what do i use members intent for?!?!! update: members is used when checking if guild is premium for example
+intents.presences = True
+intents.typing = True
+
+#bot = commands.Bot(intents=intents, chunk_guilds_at_startup=False, member_cache_flags=nextcord.MemberCacheFlags.none())
+client = commands.Bot(command_prefix='&', intents=intents, chunk_guilds_at_startup=True, status=discord.Status.offline, activity=discord.Game(name="Booting up...")) #TODO chunk_guilds_at_startup=False might help me
+client.remove_command('help')
+client.logger = pipikLogger
+client.root = root
+
+# TODO play with this @commands.has_permissions(manage_server=True) only applicable to prefix commands, slash has smth else
 # TODO orjson
 # TODO add modal to pill taking and crafting asking how many to use
 # TODO continue the gifsaver add a normal command without reply
@@ -81,238 +77,124 @@ already_checked = []
 # TODO make a better help command
 # TODO make pipikbot users a dict of id:user instead of a list of users, also redo the getUserFromDC func then
 # TODO make an actual lobby extension
-# TODO make pills buttons edit message not reply
-# TODO In math when returning the latex, invert the black text in pillow? that takes time tho to upload
-# TODO merge caesar, clownize, t9 ize into one context command
 # TODO maybe make some mafia type game but rebrand it to some discord admins and mods vs spammers and use right click user commands
-
-intents = discord.Intents.all() #TODO remember what do i use members intent for?!?!! update: members is used when checking if guild is premium for example
-intents.presences = False
-
-client = commands.Bot(command_prefix='&', intents=intents,chunk_guilds_at_startup=True) #TODO chunk_guilds_at_startup=False might help me
-client.remove_command('help')
-
-
-#T9 = ({key * i: letter for i, key, letter in zip([(num % 3) + 1 for num in range(0, 26)], [str(q // 3) for q in range(6, 30)],sorted({chr(a) for a in range(ord("A"), ord("Z") + 1)} - {"S", "Z"}))} | {"7777": "S", "9999": "Z","0": " "})
-#T9rev = {v: k for k, v in T9.items()}
-
-##@client.message_command(name="T9ize",guild_ids=[860527626100015154])
-##async def t9(interaction, text):
-##    await interaction.send(" ".join([T9rev[letter.upper()] for letter in text.content]))
-##
-##@client.message_command(name="T9rev",guild_ids=[860527626100015154])
-##async def t9r(interaction, text):
-##    await interaction.send("".join([T9[letters] for letters in text.content.split(" ")]))
-
+# TODO play with this  if interaction.user.guild_permissions.administrator
+# TODO play with ClientCog and its application_commands property
+# TODO command maker for users, and like on message command maker
+# TODO replace every list typehint with Sequence or MutableSequence or smth or Iterable
+# TODO a database abstraction for myself
+# TODO selectmenu for bp temy to open their desc and availability in a embed, then the pagi arrows would cycle through the bp temy one by one + button for english
+# TODO zssk listok buyer
+# TODO include license files for my projects
 
 #-------------------------------------------------#
 
-# @client.message_command(name="En-/Decrypt")
-# async def caesar(interaction, text):
-#     if text.type == discord.MessageType.chat_input_command and text.embeds[0].title == "Message":
-#         text = text.embeds[0].description
-#     else:
-#         text = text.content
-#     await interaction.send("".join([chr(((ord(letter) - 97 + 13) % 26) + 97) if letter.isalpha() and letter.islower() else chr(((ord(letter) - 65 + 13) % 26) + 65) if letter.isalpha() and letter.isupper() else letter for letter in text]))
+@client.event
+async def on_ready():
+    print(f"Signed in at {datetime.now()}")
+    pipikLogger.info(f"{time_module.perf_counter() - start} Bootup time")
+    if args.profiling:
+        os.system("snakeviz profile.prof")
+        exit(0)
+    game = discord.CustomActivity(
+        name="Custom Status",
+        state=f"{linecount} lines of code; V{version}!"
+    )
+    # game = discord.Game(f"{linecount} lines of code; V{version}! Use /help")  # dont even try to move this believe me ive tried
+    await client.change_presence(activity=game)
 
-class CaesarModal(discord.ui.Modal):
-    def __init__(self, title):
-        super().__init__(title=title)
-        self.inputtext = discord.ui.TextInput(label="Input the text", style=discord.TextInputStyle.paragraph)
-        self.add_item(self.inputtext)
+@client.event
+async def on_disconnect():
+    global start
+    start = time_module.perf_counter()
 
-    async def callback(self, ctx):
-        text = self.inputtext.value
-        textik = ("".join([chr(((ord(letter) - 97 + 13) % 26) + 97) if letter.isalpha() and letter.islower() else chr(((ord(letter) - 65 + 13) % 26) + 65) if letter.isalpha() and letter.isupper() else letter for letter in text]))
-        embedVar = discord.Embed(title="Message", type="rich", description=textik)
-        embedVar.set_author(name=ctx.user.display_name, icon_url=ctx.user.avatar.url)
-        await ctx.send(embed=embedVar)
 
-@client.slash_command(description="Encrypt/Decrypt", name="caesar")
-async def caesar_modal(ctx):
-    modal = CaesarModal(title="ROT13 cypher")
-    await ctx.response.send_modal(modal)
+@client.event
+async def on_message_delete(msg: nextcord.Message):
+    if not msg.author.bot:
+        if args.logfile:
+            tolog = f"{msg.author} deleted ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.name} at {str(datetime.now())}"
+            tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
+            pipikLogger.log(25, tolog)
+        if msg.attachments:
+            for att in msg.attachments:
+                ...  # todo implement image saving? but only on prepinač
 
-class BfModal(discord.ui.Modal):
-    def __init__(self, title):
-        super().__init__(title=title)
-        self.codetext = discord.ui.TextInput(label="Input the code", style=discord.TextInputStyle.paragraph,default_value="+[-->-[>>+>-----<<]<--<---]>-.>>>+.>>..+++[.>]<<<<.+++.------.<<-.>>>>+.")
-        self.add_item(self.codetext)
 
-        self.inputtext = discord.ui.TextInput(label="input from user (if any)", required=False,style=discord.TextInputStyle.paragraph, placeholder="123")
-        self.add_item(self.inputtext)
+@client.event
+async def on_message(msg: nextcord.Message):
+    if True:
+        if msg.guild:
+            if msg.guild.id in []:
+                tolog = f"{msg.author} sent: ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel} at {str(datetime.now())}"
+                tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
+                pipikLogger.log(25, tolog)
+        else:
+            tolog = f"{msg.author} sent dm: ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.recipient} at {str(datetime.now())}"
+            tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
+            pipikLogger.warning(tolog)
 
-    async def callback(self, ctx):
-        output = bf(self.codetext.value, self.inputtext.value)
-        embedVar = discord.Embed(title="Brainfuck code output", type="rich", description=output)
-        embedVar.set_author(name=ctx.user.display_name, icon_url=ctx.user.avatar.url)
-        await ctx.send(embed=embedVar)
+    await client.process_commands(msg)
 
-@client.slash_command(description="Brainfuck interpreter", name="brainfuck")
-async def bf_modal(ctx):
-    modal = BfModal(title="Brainfuck")
-    await ctx.response.send_modal(modal)
 
-#@commands.has_permissions(manage_server=True)
-@client.slash_command(name="pfp", description="chooses a random emote for the servers profile pic.",guild_ids=[860527626100015154, 552498097528242197], dm_permission=False)
-async def pfp(interaction: discord.Interaction):
-    os.chdir("D:\\Users\\Peti.B\\Pictures\\microsoft\\emotes")
-    emotes = [emote for emote in os.listdir() if not emote.endswith(".gif") or interaction.guild.premium_tier]
-    await interaction.send(f"Picking from {len(emotes)} emotes...")
-    img = random.choice(emotes)
-    print(img)
-    with open(img, "rb") as file:
-        await interaction.guild.edit(icon=file.read())
-    os.chdir(root)
-
-@client.slash_command(name="time", description="/time help for more info")
-async def time(ctx,
-               time:str =discord.SlashOption(name="time", description="Y.m.d H:M or H:M or relative (minutes=30 etc...)"),
-               arg:str = discord.SlashOption(name="format", description="raw = copypasteable, full = not relative", required=False,choices=["raw", "full", "raw+full"],default=""),
-               message:str =discord.SlashOption(name="message",description="Your message to insert the timestamp into, use {} as a placeholder",required=False)):
-    try:
-        if "." in time and ":" in time:  # if date and time is given
-            timestr = datetime.strptime(time, "%Y.%m.%d %H:%M")
-        elif "H:M" in time:
-            await ctx.send("Nono, you need to input actual TIME in there not the string H:M")
-            return
-        elif ":" in time:  # if only time is given
-            timestr = datetime.now().replace(**{"hour": int(time.split(":")[0]), "minute": int(time.split(":")[1]),"second": 0})  # i could have done strptime %H:%M but it would have given me a 1970 date
-        elif "=" in time:  # if relative
-            timestr = datetime.now() + timedelta(**{k.strip(): int(v.strip()) for k, v in [i.split("=") for i in time.split(",")]})
-        else:  # if no time is given
-            embedVar = discord.Embed(title="Timestamper", description="Usage examples", color=ctx.user.color)
-            embedVar.add_field(name="/time 12:34", value="Today´s date with time given")
-            embedVar.add_field(name="/time 2022.12.31 12:34", value="Full date format")
-            embedVar.add_field(name="/time hours=1,minutes=30", value="Relative to current time")
-            embedVar.add_field(name="optional arg: raw/full/raw+full",value="raw= Copy pasteable timestamp\nfull= Written out date instead of relative time")
-            embedVar.add_field(name="optional message:", value="Brb {}; Meeting starts at {} be there!")
-            await ctx.send(embed=embedVar)
-            return
-        style = 'F' if "full" in arg else 'R'
-        israw = "raw" in arg
-        mention = f"{'`' if israw else ''}{discord.utils.format_dt(timestr,style=style)}{'`' if israw else ''}"
-        await ctx.send(message.format(mention) if message and "{}" in message else f"{message} {mention}" if message else mention)
-    except Exception as e:
-        await ctx.send(e)
-
-#@client.slash_command(name="muv", description="semi", guild_ids=[860527626100015154, 601381789096738863])
-#async def movebogi(ctx, chanel: discord.abc.GuildChannel):
-#    await ctx.user.move_to(chanel)
-
-# @client.slash_command(name="muvraw", description="semi", guild_ids=[860527626100015154, 601381789096738863])
-# async def movebogi2(ctx, chanel):
-#     chanel = ctx.guild.get_channel(int(chanel))
-#     await ctx.user.move_to(chanel)
-
-@client.message_command(name="Unemojize")
-async def unemojize(interaction, message):
-    await interaction.response.send_message(f"`{emoji.demojize(message.content)}`", ephemeral=True)
-
-@client.message_command(name="Spongebob mocking")  # pelda jobbklikk uzenetre commandra
-async def randomcase(interaction, message):
-    assert message.content
-    await interaction.send("".join(random.choice([betu.casefold(), betu.upper()]) for betu in message.content) + " <:pepeclown:803763139006693416>")
-
-@client.command()
-async def initiatespeh(ctx):
-    global spehmode
-    spehmode = not spehmode
-    print("speh initiated")
+@client.event
+async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
+    tolog = f"[{user}] reacted [{(reaction.emoji if isinstance(reaction.emoji, str) else reaction.emoji.name)}] on message: [{reaction.message.content or reaction.message.jump_url}], in: [{reaction.message.guild.name}/{reaction.message.channel}], at [{str(datetime.now())}]"
+    tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
+    pipikLogger.log(25, tolog)
 
 @client.slash_command(name="run", description="For running python code")
-async def run(ctx: discord.Interaction, command):
+async def run(ctx: discord.Interaction, command: str):
     if "@" in command and ctx.user.id != 617840759466360842:
         await ctx.send("oi oi oi we pinging or what?")
         return
-    if any((word in command for word in ("open(","os.","eval(","exec("))) and ctx.user.id != 617840759466360842:
+    if any((word in command for word in ("open(", "os.", "eval(", "exec("))) and ctx.user.id != 617840759466360842:
         await ctx.send("oi oi oi we hackin or what?")
         return
     elif "redditapi" in command and ctx.user.id != 617840759466360842:
         await ctx.send("Lol no sorry not risking anyone else doing stuff with MY reddit account xDDD")
         return
     try:
-        #async with ctx.channel.typing():
         await ctx.response.defer()
         a = eval(command)
         await ctx.send(a)
     except Exception as a:
-        await ctx.send(a)
+        await ctx.send(f"{a}")
 
-discord_emotes = {}
 
-@client.event
-async def on_ready():
-    game = discord.Game(f"{linecount} lines of code; V{version}! use /help")
-    await client.change_presence(status=discord.Status.online, activity=game)
-    print(f"Signed in at {datetime.now()}")
-    pipikLogger.info(f"{time_module.perf_counter() - start} Bootup time")
-
-@client.event
-async def on_message(ctx):
-    if not ctx.author.bot:
-        #if spehmode:
-            #print("message at:",str(datetime.now()),"content:",ctx.content,"by:",ctx.author,"in:",ctx.channel.name)
-        if "free nitro" in antimakkcen(ctx.content).casefold():
-            await ctx.channel.send("bitch what the fok **/ban**")
-    await client.process_commands(ctx)
-
-@client.event
-async def on_reaction_add(reaction: discord.Reaction, user):
-    if reaction.message.author.bot:
+@client.slash_command(name="arun", description="For running async python code")
+async def arun(ctx: discord.Interaction, command: str):
+    if "@" in command and ctx.user.id != 617840759466360842:
+        await ctx.send("oi oi oi we pinging or what?")
         return
+    if any((word in command for word in
+            ("open(", "os.", "eval(", "exec("))) and ctx.user.id != 617840759466360842:
+        await ctx.send("oi oi oi we hackin or what?")
+        return
+    elif "redditapi" in command and ctx.user.id != 617840759466360842:
+        await ctx.send("Lol no sorry not risking anyone else doing stuff with MY reddit account xDDD")
+        return
+    try:
+        await ctx.response.defer()
+        commands = command.split(";")
+        for command in commands:
+            if isinstance(command, str):
+                if command.startswith("*"):
+                    commands.extend(eval(command[1:]))
+                    continue
+                try:
+                    a = await eval(command)
+                except TypeError:
+                    a = eval(command)
+                except Exception as e:
+                    await ctx.send(f"{e}")
+                    continue
+            elif isinstance(command, Coroutine):
+                a = await command
+            await ctx.send(a)
+    except Exception as e:
+        await ctx.send(f"{e}")
 
-    good_responses = ("Azta de vicces valaki <:hapi:889603218273878118> 👌",
-                      f"Gratulálunk, ez vicces volt, {reaction.message.author.display_name}. {emoji.emojize(':clap:')} {emoji.emojize(':partying_face:')}",
-                      "Damn, you got the whole squad laughing <:hapi:889603218273878118>",
-                      "Hát ez odabaszott xd",
-                      "xddd",
-                      "Kiégtem",
-                      "Bruh miafasz xd",
-                      "Hát ilyet még nem baszott a világ <:kekcry:956217725880000603> <:hapi:889603218273878118>",
-                      "Azért ennyire ne <:kekcry:956217725880000603>",
-                      "Jolvan nembirom xdddd",
-                      "Hát ez a földhöz baszott <:kekcry:956217725880000603>",
-                      "Sikítok xddd",
-                      "Ez sok nekem <:kekcry:956217725880000603>",
-                      "Sípolok xdd",
-                      "Beszarok gec <:kekcry:956217725880000603> <:kekcry:956217725880000603>",
-                      "Leköptem a laptopom xddd",
-                      "Mekkora komedista <:hapi:889603218273878118>"
-                      )
-    global already_checked
-
-    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>", "<:hapi:889603218273878118>", ":joy:"):
-        if reaction.message.author.id == 569937005463601152:
-            if user.id == 569937005463601152:
-                kapja: discord.Member = reaction.message.author
-                already_checked.append(reaction.message.id)
-                await kapja.timeout(timedelta(minutes=2), reason="Saját magára rakta a keket")
-                uzenet = "Imagine saját vicceiden nevetni. <:bonkdoge:950439465904644128> <a:catblushy:913875026606948393>"
-                await reaction.message.reply(uzenet)
-
-    if reaction.emoji == emoji.emojize(":thumbs_down:"):
-        #if reaction.message.author.id == 569937005463601152:
-        if True:
-            kapja = reaction.message.author
-            if reaction.count >= 3:
-                if reaction.message.id not in already_checked:
-                    already_checked.append(reaction.message.id)
-                    await kapja.timeout(timedelta(minutes=2), reason="Nem volt vicces")
-                    uzenet = f"Nem volt vicces, {reaction.message.author.display_name} <:nothapi:1007757789629796422>."
-                    await reaction.message.reply(uzenet)
-
-    if str(reaction.emoji) in ("<:kekcry:871410695953059870>", "<:kekw:800726027290148884>",  "<:hapi:889603218273878118>"):
-        #if reaction.message.author.id == 569937005463601152:
-        if True:
-            if reaction.count >= 3:
-                if reaction.message.id not in already_checked:
-                    already_checked.append(reaction.message.id)
-                    uzenet = random.choice(good_responses)
-                    await reaction.message.reply(uzenet)
-
-    if spehmode:
-        print("react at:", str(datetime.now()), (emoji.demojize(reaction.emoji) if isinstance(reaction.emoji, str) else reaction.emoji.name), "by:",user, "on message:", reaction.message.content)
 
 @client.command(aliases=("angy", "angry"))
 async def upset(ctx):
@@ -339,40 +221,64 @@ async def rename(ctx, name):
 #-------------------------------------------------#
 
 os.chdir(root)
-if not args.minimal and not args.no_sympy:
-    utils = os.listdir(r"./utils")
-    files = utils + [r"../pipikNextcord.py"]
+if not args.minimal and not args.no_sympy: #TODO does not take into consideration the only_ keyword arguments
+    utils = [file for file in os.listdir(r"./utils") if file.endswith(".py")]
+    files = utils + [__file__]
     linecount = 197  # matstatMn is added manually cuz i have a million commented lines after if __name__ == __main__
 else:
-    files = (r"../pipikNextcord.py",)
+    files = (__file__,)
     linecount = 0
 for file in files:
     if file.endswith(".py"):
-        with open(root+r"/utils/"+file, "r", encoding="UTF-8") as f:
-            linecount += len(f.readlines())
+        try:
+            with open(root+r"/utils/"+file, "r", encoding="UTF-8") as f:
+                linecount += len(f.readlines())
+        except OSError:
+            with open(file, "r", encoding="UTF-8") as f:
+                linecount += len(f.readlines())
 
-allcogs = [cog for cog in os.listdir("./cogs") if cog.endswith(".py")]
-if args.minimal:
-    cogs = ["testing.py"]
-else:
-    cogs = allcogs[:]
-    for cog in reversed(cogs):
-        if cog.endswith("cog.py"):
-            if args.__getattribute__(f"no_{cog.removesuffix('cog.py')}") or args.minimal:
-                cogs.remove(cog)
-cogs.remove("testing.py") if args.no_testing else None
+allcogs = [cog for cog in os.listdir("./cogs") if cog.endswith("cog.py")] + ["testing.py"]
+cogcount = len(allcogs)
+cogs = []
+if not args.minimal:  # if not minimal
+    if not [not cogs.append(cog) for cog in allcogs if args.__getattribute__(f"only_{cog.removesuffix('cog.py').removesuffix('.py')}")]: #load all the cogs that are marked to be included with only_*
+        cogs = allcogs[:]  # if no cogs are marked to be exclusively included, load all of them
+        for cog in reversed(cogs):  # remove the cogs that are marked to be excluded with no_*
+            if args.__getattribute__(f"no_{cog.removesuffix('cog.py').removesuffix('.py')}"):  # if the cog is marked to be excluded
+                cogs.remove(cog)  # remove it from the list of cogs to be loaded
+# cogs.remove("testing.py") if args.no_testing else None  # remove testing.py from the list of cogs to be loaded if testing is disabled
 
 for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know how many cogs to load and so dont know how to format loading bar
-    with open("./cogs/"+file, "r", encoding="UTF-8") as f:
-        linecount += len(f.readlines())
-    client.load_extension("cogs." + file[:-3], extras={"baselogger":pipikLogger})
-    sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.2f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
-    sys.stdout.flush()
-sys.stdout.write(f"\r{len(cogs)}/{len(allcogs)} cogs loaded.                    \n")
+    if not args.no_linecount:
+        with open("./cogs/"+file, "r", encoding="UTF-8") as f:
+            linecount += len(f.readlines())
+    client.load_extension("cogs." + file[:-3])
+    if not args.debug:
+        sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.02f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
+        sys.stdout.flush()
+
+sys.stdout.write(f"\r{len(cogs)}/{cogcount} cogs loaded.".ljust(50)+"\n")
 sys.stdout.flush()
 os.chdir(root)
 
-client.run(os.getenv("MAIN_DC_TOKEN"))  # bogibot
+# for file in tqdm(cogs):
+#     if not args.no_linecount:
+#         with open("./cogs/"+file, "r", encoding="UTF-8") as f:
+#             linecount += len(f.readlines())
+#     client.load_extension("cogs." + file[:-3])  #breaks
+
+if __name__ == "__main__":
+    if args.profiling:
+        import cProfile
+        import pstats
+        with cProfile.Profile() as pr:
+            client.run(os.getenv("MAIN_DC_TOKEN"))
+        stats = pstats.Stats(pr)
+        # stats.sort_stats(pstats.SortKey.TIME)
+        # stats.print_stats()
+        stats.dump_stats(filename="profile.prof")
+    else:
+        client.run(os.getenv("MAIN_DC_TOKEN"))
 
 # 277129587776 reduced perms
 # https://discord.com/api/oauth2/authorize?client_id=618079591965392896&permissions=543652576368&scope=bot%20applications.commands bogibot
