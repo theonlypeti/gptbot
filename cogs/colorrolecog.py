@@ -13,9 +13,15 @@ import emoji
 # TODO add ratelimit emoji
 # TODO maybe keep last used colors on server
 # TODO add cooldown
+# TODO nextcord.roleselect
+# TODO make a color preview image instead of emojis
+# TODO make buttons for nudging the colors by 1 or 5 or so for each RGB
+
 
 class ColorRoleCog(commands.Cog):
     def __init__(self, client):
+        global logger
+        logger = client.logger.getChild(f"{__name__}logger")
         self.colorstopick = 4
         self.client = client
         self.getemoteserver.start()  #funky workaround but works
@@ -23,28 +29,29 @@ class ColorRoleCog(commands.Cog):
     @tasks.loop(count=1)
     async def getemoteserver(self):
         await self.client.wait_until_ready()
-        self.emoteserver: discord.Guild = self.client.get_guild(957469186798518282)
+        self.emoteserver: discord.Guild = self.client.get_guild(1040628832857759804)
 
-    @discord.slash_command(name="mycolor", guild_ids=[860527626100015154, 601381789096738863, 409081549645152256, 552498097528242197], dm_permission=False)
-    async def mycolor(self):
+    @discord.slash_command(name="mycolor", guild_ids=[691647519771328552, 860527626100015154, 601381789096738863, 409081549645152256, 552498097528242197, 800196118570205216], dm_permission=False)
+    async def mycolor(self, interaction):
         pass
 
     class HexModal(discord.ui.Modal):
         def __init__(self, cog):
             self.cog = cog
-            super().__init__(title="Pick your color")
+            super().__init__(title="Pick your role color")
             self.hextext = discord.ui.TextInput(label="#", style=discord.TextInputStyle.short, placeholder="aabbcc", min_length=6, max_length=6)
             self.add_item(self.hextext)
 
         async def callback(self, ctx):
-            dccolor = discord.Color.from_rgb(*[int(self.hextext.value[i:i + 2], 16) for i in range(0, 5, 2)])
+            dccolor = discord.Color(int(self.hextext.value, 16))
+            # dccolor = discord.Color.from_rgb(*[int(self.hextext.value[i:i + 2], 16) for i in range(0, 5, 2)])
             await self.cog.setcustomcolor(ctx, dccolor)
             await ctx.send(embed=discord.Embed(title="Color changed", color=dccolor), ephemeral=True)
 
     class RGBModal(discord.ui.Modal):
         def __init__(self, cog):
             self.cog = cog
-            super().__init__(title="Pick your server name color")
+            super().__init__(title="Pick your role color")
             self.rtext = discord.ui.TextInput(label="R", style=discord.TextInputStyle.short, placeholder="0-255", max_length=3)
             self.add_item(self.rtext)
             self.gtext = discord.ui.TextInput(label="G", style=discord.TextInputStyle.short, placeholder="0-255", max_length=3)
@@ -53,9 +60,12 @@ class ColorRoleCog(commands.Cog):
             self.add_item(self.btext)
 
         async def callback(self, ctx):
-            dccolor = discord.Color.from_rgb(int(self.rtext.value), int(self.gtext.value), int(self.btext.value))
-            await self.cog.setcustomcolor(ctx, dccolor)
-            await ctx.send(embed=discord.Embed(title="Color changed", color=dccolor), ephemeral=True)
+            try:
+                dccolor = discord.Color.from_rgb(int(self.rtext.value), int(self.gtext.value), int(self.btext.value))
+                await self.cog.setcustomcolor(ctx, dccolor)
+                await ctx.send(embed=discord.Embed(title="Color changed", color=dccolor), ephemeral=True)
+            except Exception as e:
+                await ctx.send(embed=discord.Embed(title="Invalid color", description=str(e)), ephemeral=True)
 
     class MyColorSelect(discord.ui.Select):
         def __init__(self, palette, emojis, cog):
@@ -71,11 +81,13 @@ class ColorRoleCog(commands.Cog):
                 color = self.palette[int(self.values[0])]
                 dccolor = discord.Color.from_rgb(*color)
                 await self.cog.setcustomcolor(interaction, dccolor)
-                await interaction.edit(view=None, embed=discord.Embed(title="Color changed", color=dccolor))
+                await interaction.edit(view=None, embed=discord.Embed(title="Color changed", color=dccolor), delete_after=60)
             else:
                 await interaction.edit(view=None, embed=discord.Embed(title="Cancelled", color=interaction.user.color), delete_after=5)
             emotes = [e for e in self.cog.emoteserver.emojis if e.name in ["a".join(map(str, color)) for color in self.palette]]
-            for emote in emotes:
+            logger.debug(emotes)
+            for emote in emotes: #todo maybe remove all emojis that match the naming scheme if sometime ago they werent deleted?
+                logger.debug(f"removing {emote}")
                 await self.cog.emoteserver.delete_emoji(emote)
 
     class MyColorView(discord.ui.View):
@@ -88,10 +100,10 @@ class ColorRoleCog(commands.Cog):
         async def on_timeout(self):
             emotes = [e for e in self.cog.emoteserver.emojis if e.name in ["+".join(map(str, color)) for color in self.palette]]
             for emote in emotes:
-                await self.cog.emoteserver.delete_emoji(emote)
+                await self.cog.emoteserver.delete_emoji(emote) #todo delete message too
 
-        async def interaction_check(self, interaction: discord.Interaction) -> bool:
-            return interaction.user == self.user
+        # async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        #     return interaction.user == self.user
 
     async def setcustomcolor(self, interaction: discord.Interaction, dccolor) -> bool:
         highest_role = interaction.user.roles[-1]
@@ -112,6 +124,7 @@ class ColorRoleCog(commands.Cog):
         if oldRole:
             oldRole = oldRole[0]
             await oldRole.delete()
+            return True
 
     @mycolor.subcommand(name="reset", description="Removes your pfp role color")
     async def mycolorreset(self, interaction: discord.Interaction):
@@ -129,22 +142,25 @@ class ColorRoleCog(commands.Cog):
         await interaction.response.send_modal(modal)
 
     async def pickColorFromPic(self, interaction: discord.Interaction, image: discord.File):
-        color_thief = ColorThief(image.fp)
-        palette = list(set(color_thief.get_palette(color_count=self.colorstopick)))
-        emojis = []
-        if not self.emoteserver:
-            self.emoteserver = self.client.get_guild(957469186798518282)
-        assert self.emoteserver.emoji_limit - len(self.emoteserver.emojis) > self.colorstopick #TODO add if, warning and make separate emojis
-        for n, color in enumerate(palette):
-            im1 = npzeros((100, 100, 3), dtype='uint8')
-            im1[:, :] = color
-            with BytesIO() as image_binary:
-                imsave(image_binary, im1, format="png")
-                image_binary.seek(0)
-                emojis.append(await self.emoteserver.create_custom_emoji(name="a".join(map(str, color)), image=discord.File(fp=image_binary)))
-        viewObj = self.MyColorView(palette, self, interaction.user)
-        viewObj.add_item(self.MyColorSelect(palette, emojis, self))
-        await interaction.send(view=viewObj)
+        try:
+            color_thief = ColorThief(image.fp)
+            palette = list(set(color_thief.get_palette(color_count=self.colorstopick)))
+            emojis = []
+            if not self.emoteserver:
+                self.emoteserver = self.client.get_guild(1040628832857759804)
+            assert self.emoteserver.emoji_limit - len(self.emoteserver.emojis) > self.colorstopick #TODO add if, warning and make separate emojis
+            for n, color in enumerate(palette):
+                im1 = npzeros((100, 100, 3), dtype='uint8')
+                im1[:, :] = color
+                with BytesIO() as image_binary:
+                    imsave(image_binary, im1, format="png")
+                    image_binary.seek(0)
+                    emojis.append(await self.emoteserver.create_custom_emoji(name="a".join(map(str, color)), image=discord.File(fp=image_binary)))
+            viewObj = self.MyColorView(palette, self, interaction.user)
+            viewObj.add_item(self.MyColorSelect(palette, emojis, self))
+            await interaction.send(view=viewObj)
+        except Exception as e:
+            await interaction.send(embed=discord.Embed(title="Error", description=str(e), color=discord.Color.red()), delete_after=60)
 
     @mycolor.subcommand(description="Lets you pick your color from any uploaded picture.")
     async def image(self, interaction, uploaded: discord.Attachment = discord.SlashOption(name="image", description="The image from which the colors are picked from.", required=True)):
@@ -161,12 +177,12 @@ class ColorRoleCog(commands.Cog):
     @mycolor.subcommand(description="Export a role color for easy sharing and use on other roles or servers.")
     async def export(self, interaction, role: discord.Mentionable = discord.SlashOption(name="role", description="The role to export the color of.", required=False, default=None)):
         if role:
-            color = role.color
+            color: discord.Color = role.color
         else:
-            color = interaction.user.color
-        hexcode = f"{hex(color.r)[2:].zfill(2)}{hex(color.g)[2:].zfill(2)}{hex(color.b)[2:].zfill(2)}".upper()
+            color: discord.Color = interaction.user.color
+        hexcode = str(color)
         embedVar = discord.Embed(title="Color", color=color)
-        embedVar.add_field(name="#", value=hexcode, inline=False)
+        embedVar.add_field(name="hex", value=hexcode, inline=False)
         colors = (emoji.emojize(i) for i in [":red_square:", ":green_square:", ":blue_square:"])
         for key, val in zip(colors, color.to_rgb()):
             embedVar.add_field(name=f"{key}", value=f"{val}", inline=True)
@@ -174,5 +190,5 @@ class ColorRoleCog(commands.Cog):
         embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}", icon_url=interaction.user.avatar.url)
         await interaction.send(embed=embedVar)
 
-def setup(client, baselogger): #TODO maybe add some logging messages
+def setup(client): #TODO maybe add some logging messages
     client.add_cog(ColorRoleCog(client))

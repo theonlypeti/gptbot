@@ -3,13 +3,15 @@ import nextcord as discord
 from nextcord.ext import commands
 from utils.ps import Adress, broadcasty
 
-#TODO broadcast calc does not always come up with unique adresses #ok but when #low priority
+#broadcast calc does not always come up with unique adresses #ok but when #low priority
+# The issue arises from the specific input given to the broadcasty function. In real-life scenarios, the last byte of an IP address, which is used in the calculation of the address range, would typically be a number that can be evenly divided by the number of addresses. If this is not the case, it could lead to overlapping address ranges and thus duplicate addresses. However, this situation is unlikely to occur in a real-world setting where IP addresses are assigned following certain standards and conventions
+
 
 class PsCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         global pslogger
         self.client = client
-        pslogger = baselogger.getChild("PsLogger")
+        pslogger = client.logger.getChild(f"{__name__}logger")
 
     class BroadcastCalcModal(discord.ui.Modal):
         def __init__(self):
@@ -23,7 +25,7 @@ class PsCog(commands.Cog):
                 gener = broadcasty(ip)
             except ValueError as e:
                 pslogger.error(e)
-                return interaction.send(f"Oopsie {e}")
+                return interaction.send(f"Oopsie \n{e}")
             embedVar = discord.Embed(title="Broadcast kalkulačka", description=f"pre adresu {ip}", color=interaction.user.color, timestamp=datetime.now())
             broadcaststr, idstr = "", ""
             for ip in gener:
@@ -91,7 +93,7 @@ class PsCog(commands.Cog):
             embedVar.set_footer(text=f"{interaction.user.name}#{interaction.user.discriminator}", icon_url=interaction.user.avatar.url)
             await interaction.send(embed=embedVar)
 
-    @discord.slash_command(name="ps", description="Kalkulačky IP pre predmet počítačové systémy",guild_ids=(860527626100015154,))
+    @discord.slash_command(name="ps", description="Kalkulačky IP pre predmet počítačové systémy")
     async def psbase(self, ctx):
         pass
 
@@ -109,5 +111,6 @@ class PsCog(commands.Cog):
     async def vysvetlivka(self, ctx):
         await ctx.send("https://cdn.discordapp.com/attachments/892054308563091456/998385704117731418/Subnetting.mp4?size=4096")
 
-def setup(client, baselogger):
-    client.add_cog(PsCog(client, baselogger))
+
+def setup(client):
+    client.add_cog(PsCog(client))

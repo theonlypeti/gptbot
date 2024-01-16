@@ -2,14 +2,15 @@ import re
 from datetime import datetime
 from io import BytesIO
 from math import inf
-from typing import List
 import imageio
 import nextcord as discord
+from PIL import Image, ImageDraw, ImageFont
 from nextcord.ext import commands
 from nextcord.utils import escape_markdown
 from sympy import latex, Integral, Limit, Derivative, Rational, Symbol, Sum
 import sympy.logic.boolalg as alg
 from sympy.stats import Die, Bernoulli, P, density, FiniteRV
+from utils.azasolver import piautomat
 
 #TODO more translation tables for == and stuff
 #TODO probabilita za predpoklad P subfix A (B), či su suvisle
@@ -27,27 +28,29 @@ def correctboolean(expr):
     return expr.replace("!", "~").replace("||","|").replace("&&", "&")
 
 def addbackground(url: str):
-    img = imageio.imread_v2(url)
+    img = imageio.v2.imread(url, pilmode='RGBA')
     img[:, :, 3] = 255
     return img
 
 
-async def sendmsg(ctx, embedVar, img: List[imageio.core.Array]):
+async def sendmsg(ctx, embedVar, img: list[imageio.core.Array]):
     with BytesIO() as image_binary:
+        # img[0]._meta.clear() #idk why this hacky shit works
+        # img[1]._meta.clear()
         imageio.imsave(image_binary, img[0], "png")
         image_binary.seek(0)
-        with BytesIO() as another_image:
-            imageio.imsave(another_image, img[1], "png")
-            another_image.seek(0)
-            await ctx.send("Result of:", embed=embedVar, files=[discord.File(fp=image_binary, filename='question.png'),
-                                                  discord.File(fp=another_image, filename="result.png")])
+        await ctx.send("Result of:", embed=embedVar, file=discord.File(fp=image_binary, filename='question.png'))
+    with BytesIO() as another_image:
+        imageio.imsave(another_image, img[1], "png")
+        another_image.seek(0)
+        await ctx.send("Result of:", embed=embedVar, file=discord.File(fp=another_image, filename='result.png'))
 
 
 class SympyCog(commands.Cog):
-    def __init__(self, client, baselogger):
+    def __init__(self, client):
         self.client = client
         global sympylogger
-        sympylogger = baselogger.getChild("SympyLogger")
+        sympylogger = client.logger.getChild("SympyLogger")
 
     class SimplifyModal(discord.ui.Modal):
         def __init__(self):
@@ -84,7 +87,8 @@ class SympyCog(commands.Cog):
             try:
                 subs = {a[0]: int(a[1]) for a in [a.strip(" ").split("=") for a in subs.split(",")]}
                 result = str(alg.simplify_logic(myexpression).subs(subs)).replace("~", "!")
-                embedVar = discord.Embed(title=f'Result of {escape_markdown(expression)}', description=escape_markdown(str(result)), color=ctx.user.color)
+                # embedVar = discord.Embed(title=f'Result of {escape_markdown(expression)}', description=escape_markdown(str(result)), color=ctx.user.color)
+                embedVar = discord.Embed(title=f'Result of {escape_markdown(expression)}', description=f"if {self.subs.value}\n{escape_markdown(str(result))}", color=ctx.user.color)
                 await ctx.send(embed=embedVar)
             except Exception as e:
                 sympylogger.error(e)
@@ -130,6 +134,7 @@ class SympyCog(commands.Cog):
             except Exception as e:
                 sympylogger.error(e)
                 await ctx.send(embed=discord.Embed(title="Error", description=e, color=ctx.user.color))
+                raise e
 
     class DiffModal(discord.ui.Modal):
         def __init__(self):
@@ -192,7 +197,7 @@ class SympyCog(commands.Cog):
             except Exception as e:
                 sympylogger.error(e)
                 result = "Error"
-            embedVar = discord.Embed(title=f"Result of lim({escape_markdown(expression)}) {going_from}->{going_to}", description=escape_markdown(str(result)),color=ctx.user.color)
+            embedVar = discord.Embed(title=f"Result of lim({escape_markdown(expression)}) {going_from}->{going_to}", description=escape_markdown(str(result)), color=ctx.user.color)
             latexed = latex(result).replace(" ", "%20")
             questionpic = addbackground(f"https://latex.codecogs.com/png.image?{question if question else 'Error'}")
             img = addbackground(f'https://latex.codecogs.com/png.image?{latexed}')
@@ -238,13 +243,12 @@ class SympyCog(commands.Cog):
             #zapravd = eval(zapravd) if zapravd else None
             sympylogger.debug(zapravd)
             try:
-                result = P(expression, condition=eval(zapravd) if zapravd else None)
+                result = P(expression, given_condition=eval(zapravd) if zapravd else None)
             except Exception as e:
                 sympylogger.debug(e)
                 try:
                     result = density(expression, condition=eval(zapravd) if zapravd else None)
                     sympylogger.debug(result)
-                    sympylogger.debug(result.items())
                     result = {j: Rational(i.p * (max([j.q for j in result.values()]) / i.q), max([j.q for j in result.values()]), gcd=1) for j, i in result.items()}
                     result = "\n".join((f"{k}={v}" for k, v in result.items()))
                 except Exception as f:
@@ -252,6 +256,36 @@ class SympyCog(commands.Cog):
                     result = f"{e}\n{f}"
             embedVar = discord.Embed(description=escape_markdown(f"Result of {n} * {obj} where {self.expression.value} {'if' if zapravd else ''} {self.zapravd.value}:\n----------\n{result} ") , color=ctx.user.color)
             await ctx.send(embed=embedVar)
+
+    class AzaModal(discord.ui.Modal):
+        def __init__(self):
+            super().__init__(title="Automat calculator")
+            self.pstring = discord.ui.TextInput(label="P string", required=True)
+            self.add_item(self.pstring)
+            # self.tofind = discord.ui.TextInput(label="Hladany string", required=True)
+            # self.add_item(self.tofind)
+
+        async def callback(self, ctx: discord.Interaction):
+            await ctx.response.defer()
+            pstring = self.pstring.value
+            tab = piautomat(pstring)
+            rows = tab.split("\n")
+            width = len(rows[0])
+            height = len(rows)
+            ni = Image.new("RGB", (width * 10, height * 20), (0, 0, 0, 255))
+            d = ImageDraw.Draw(ni)
+            textsize = 18
+            fnt = ImageFont.truetype('consola.ttf', size=textsize)
+            textconfig = {"font": fnt, "stroke_fill": (0, 0, 0), "stroke_width": 0,
+                          "fill": (255, 255, 255), "anchor": "mm"}
+            d.multiline_text((ni.width // 2, ni.height // 2), tab, **textconfig)
+            embedVar = discord.Embed(title=pstring)
+            embedVar.set_footer(text=ctx.user.name, icon_url=ctx.user.avatar.url)
+            embedVar.timestamp = datetime.now()
+            with BytesIO() as image_binary:
+                ni.save(image_binary, "png")
+                image_binary.seek(0)
+                await ctx.send(embed=embedVar, file=discord.File(fp=image_binary, filename=f'table.png'))
             
     @discord.slash_command(name="mat", description="Kalkulačky pre predmet MAT")
     async def mat(self, ctx):
@@ -295,5 +329,14 @@ class SympyCog(commands.Cog):
         modal = self.ProbModal()
         await ctx.response.send_modal(modal)
 
-def setup(client, baselogger):
-    client.add_cog(SympyCog(client, baselogger))
+    @discord.slash_command(name="aza", description="Kalkulačky pre predmet AZA")
+    async def azatools(self, ctx: discord.Interaction):
+        pass
+
+    @azatools.subcommand(name="automat", description="tabulka konecneho automatu spolu s pi tabulkou")
+    async def azapitable(self, ctx: discord.Interaction):
+        modal = self.AzaModal()
+        await ctx.response.send_modal(modal)
+
+def setup(client):
+    client.add_cog(SympyCog(client))

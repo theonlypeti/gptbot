@@ -51,7 +51,8 @@
                     ":100:",
                     ":woman_gesturing_ok:",
                     ":nail_care:",
-                    ":bowling:"
+                    ":bowling:",
+                    ":person_with_probing_cane:"
                 ],
                 "pipikachis": [
                     ":sunrise_over_mountains:",
@@ -89,13 +90,15 @@
                 ],
                 "hearts": [
                     ":green_heart:",
-                    ":brown_heart:"
+                    ":brown_heart:",
+                    ":heart_decoration:"
                 ],
                 "foods": [
                     ":tomato:",
                     ":icecream:",
                     ":coconut:",
-                    ":bacon:"
+                    ":bacon:",
+                    ":bell_pepper:"
                 ],
                 "professions": [
                     ":artist:",
@@ -118,13 +121,13 @@
             "Second places": 4,
             "Third places": 0,
             "Dice thrown": 945,
-            "Spins": 59,
-            "Default icons owned": 61,
+            "Spins": 62,
+            "Default icons owned": 64,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":radioactive:",
         "ready": false,
-        "dailyDate": "2022-09-25",
+        "dailyDate": "2023-10-16",
         "inLobby": null
     },
     {
@@ -256,7 +259,8 @@
                     ":heart_eyes:",
                     ":stuck_out_tongue_winking_eye:",
                     ":disguised_face:",
-                    ":smirk_cat:"
+                    ":smirk_cat:",
+                    ":zany_face:"
                 ],
                 "plants": [
                     ":tulip:",
@@ -439,13 +443,13 @@
             "Second places": 0,
             "Third places": 0,
             "Dice thrown": 105,
-            "Spins": 185,
-            "Default icons owned": 154,
+            "Spins": 186,
+            "Default icons owned": 155,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":vampire:",
         "ready": false,
-        "dailyDate": "2022-08-08T00:00:00",
+        "dailyDate": "2023-01-29T00:00:00",
         "inLobby": null
     },
     {
@@ -540,7 +544,8 @@
                 "items": [
                     ":compass:",
                     ":pick:",
-                    ":magnet:"
+                    ":magnet:",
+                    ":battery:"
                 ],
                 "symbols": [
                     ":mute:"
@@ -574,13 +579,13 @@
             "Second places": 0,
             "Third places": 0,
             "Dice thrown": 86,
-            "Spins": 22,
-            "Default icons owned": 31,
+            "Spins": 23,
+            "Default icons owned": 32,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":face_with_monocle:",
         "ready": false,
-        "dailyDate": "2022-05-17T00:00:00",
+        "dailyDate": "2022-10-27T00:00:00",
         "inLobby": null
     },
     {
@@ -647,7 +652,7 @@
         "name": "kagi",
         "inv": {
             "items": {
-                "spinToken": 0,
+                "spinToken": 1,
                 "premSpinToken": 0,
                 "spinShards": 0
             },
@@ -703,7 +708,7 @@
         },
         "icon": ":thermometer:",
         "ready": false,
-        "dailyDate": "2022-03-22T00:00:00",
+        "dailyDate": "2022-10-27T00:00:00",
         "inLobby": null
     },
     {
@@ -733,7 +738,9 @@
                     ":tulip:"
                 ],
                 "animals": [],
-                "foods": [],
+                "foods": [
+                    ":cut_of_meat:"
+                ],
                 "items": [],
                 "symbols": [],
                 "hearts": [],
@@ -752,13 +759,13 @@
             "Second places": 0,
             "Third places": 0,
             "Dice thrown": 0,
-            "Spins": 1,
-            "Default icons owned": 10,
+            "Spins": 2,
+            "Default icons owned": 11,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":black_circle:",
         "ready": false,
-        "dailyDate": "2022-05-09T00:00:00",
+        "dailyDate": "2022-10-27T00:00:00",
         "inLobby": null
     },
     {
@@ -900,7 +907,8 @@
                 "hearts": [],
                 "horoscope": [],
                 "flags": [
-                    ":flag_za:"
+                    ":flag_za:",
+                    ":flag_ke:"
                 ],
                 "meme": [],
                 "professions": []
@@ -915,13 +923,13 @@
             "Second places": 0,
             "Third places": 0,
             "Dice thrown": 0,
-            "Spins": 1,
-            "Default icons owned": 10,
+            "Spins": 2,
+            "Default icons owned": 11,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":red_circle:",
         "ready": false,
-        "dailyDate": "2022-04-06T00:00:00",
+        "dailyDate": "2022-10-27T00:00:00",
         "inLobby": null
     },
     {
@@ -1225,6 +1233,165 @@
         "icon": ":orange_circle:",
         "ready": false,
         "dailyDate": "2022-06-05T00:00:00",
+        "inLobby": null
+    },
+    {
+        "userid": 790577541462884392,
+        "name": "WikiGameBot",
+        "inv": {
+            "items": {
+                "spinToken": 0,
+                "premSpinToken": 0,
+                "spinShards": 0
+            },
+            "defaults": {
+                "defaults": [
+                    ":white_circle:",
+                    ":black_circle:",
+                    ":red_circle:",
+                    ":blue_circle:",
+                    ":brown_circle:",
+                    ":purple_circle:",
+                    ":green_circle:",
+                    ":yellow_circle:",
+                    ":orange_circle:"
+                ],
+                "smileys": [],
+                "hands": [],
+                "plants": [],
+                "animals": [],
+                "foods": [],
+                "items": [],
+                "symbols": [],
+                "hearts": [],
+                "horoscope": [],
+                "flags": [],
+                "meme": [],
+                "professions": []
+            },
+            "customs": {}
+        },
+        "stats": {
+            "Steps taken": 0,
+            "Players kicked out": 0,
+            "Times kicked out": 0,
+            "First places": 0,
+            "Second places": 0,
+            "Third places": 0,
+            "Dice thrown": 0,
+            "Spins": 0,
+            "Default icons owned": 9,
+            "Custom server icons owned": "Coming Soon"
+        },
+        "icon": ":yellow_circle:",
+        "ready": false,
+        "dailyDate": "2022-11-12T00:00:00",
+        "inLobby": null
+    },
+    {
+        "userid": 1001658711854555136,
+        "name": "BogiKisakk",
+        "inv": {
+            "items": {
+                "spinToken": 0,
+                "premSpinToken": 0,
+                "spinShards": 0
+            },
+            "defaults": {
+                "defaults": [
+                    ":white_circle:",
+                    ":black_circle:",
+                    ":red_circle:",
+                    ":blue_circle:",
+                    ":brown_circle:",
+                    ":purple_circle:",
+                    ":green_circle:",
+                    ":yellow_circle:",
+                    ":orange_circle:"
+                ],
+                "smileys": [],
+                "hands": [],
+                "plants": [],
+                "animals": [],
+                "foods": [],
+                "items": [],
+                "symbols": [],
+                "hearts": [],
+                "horoscope": [],
+                "flags": [],
+                "meme": [],
+                "professions": []
+            },
+            "customs": {}
+        },
+        "stats": {
+            "Steps taken": 0,
+            "Players kicked out": 0,
+            "Times kicked out": 0,
+            "First places": 0,
+            "Second places": 0,
+            "Third places": 0,
+            "Dice thrown": 0,
+            "Spins": 0,
+            "Default icons owned": 9,
+            "Custom server icons owned": "Coming Soon"
+        },
+        "icon": ":white_circle:",
+        "ready": false,
+        "dailyDate": "2022-11-26T00:00:00",
+        "inLobby": null
+    },
+    {
+        "userid": 302142965009088514,
+        "name": "Zoz\u00f3",
+        "inv": {
+            "items": {
+                "spinToken": 0,
+                "premSpinToken": 0,
+                "spinShards": 0
+            },
+            "defaults": {
+                "defaults": [
+                    ":white_circle:",
+                    ":black_circle:",
+                    ":red_circle:",
+                    ":blue_circle:",
+                    ":brown_circle:",
+                    ":purple_circle:",
+                    ":green_circle:",
+                    ":yellow_circle:",
+                    ":orange_circle:"
+                ],
+                "smileys": [],
+                "hands": [],
+                "plants": [],
+                "animals": [],
+                "foods": [],
+                "items": [],
+                "symbols": [],
+                "hearts": [],
+                "horoscope": [],
+                "flags": [],
+                "meme": [],
+                "professions": []
+            },
+            "customs": {}
+        },
+        "stats": {
+            "Steps taken": 0,
+            "Players kicked out": 0,
+            "Times kicked out": 0,
+            "First places": 0,
+            "Second places": 0,
+            "Third places": 0,
+            "Dice thrown": 0,
+            "Spins": 0,
+            "Default icons owned": 9,
+            "Custom server icons owned": "Coming Soon"
+        },
+        "icon": ":white_circle:",
+        "ready": false,
+        "dailyDate": "2022-12-09T00:00:00",
         "inLobby": null
     }
 ]

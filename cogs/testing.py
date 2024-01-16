@@ -1,24 +1,27 @@
-import asyncio
 import os
-import random
 from io import BytesIO
-from typing import Union
 import nextcord as discord
-from PIL import Image, ImageOps
+from PIL import Image
+from utils.getMsgFromLink import getMsgFromLink
 from nextcord.ext import commands
+from utils.webhook_manager import WebhookManager
 
 TESTSERVER = (860527626100015154,)
+root = os.getcwd()
+
 
 class Selection:
-    def __init__(self,img: Image, boundary: tuple):
+    def __init__(self, img: Image, boundary: tuple):
         copy = img.copy()
         self.image = copy.crop(boundary)
         self.boundary = boundary
 
+
 class Testing(commands.Cog):
-    def __init__(self,client, baselogger):
+    def __init__(self, client):
+        self.logger = client.logger.getChild(__name__)
         self.selection = None
-        self.client = client
+        self.client: discord.Client = client
 
     class testvw(discord.ui.View):
         def __init__(self):
@@ -26,7 +29,7 @@ class Testing(commands.Cog):
             super().__init__(timeout=0)
 
         @discord.ui.button(label="test")
-        async def test(self,button,interaction):
+        async def test(self, button, interaction):
             print("test")
             button.style = discord.ButtonStyle.green
             await self.msg.edit(view=self)
@@ -39,71 +42,36 @@ class Testing(commands.Cog):
         async def interaction_check(self, interaction: discord.Interaction) -> bool:
             return interaction.user.display_name == "Peti"
 
-    class TextInputModal(discord.ui.Modal):
-        def __init__(self):
-            super().__init__(title="d")
-            self.bottomtext = discord.ui.TextInput(label="Bottom Text", required=False)
-            self.add_item(self.bottomtext)
 
-        async def callback(self,interaction: discord.Interaction):
-            await interaction.response.defer()
-            await interaction.response.send_modal(self)
+    # @discord.slash_command(name="scrape", description="testing", guild_ids=TESTSERVER)
+    # async def scrape(self, ctx: discord.Interaction):
+    #     await ctx.response.defer()
+    #     channel: discord.TextChannel = ctx.channel
+    #     counter = 0
+    #     async for message in channel.history(limit=220):
+    #         if message.content.startswith("https://discord.com/channels"):
+    #             print(message.content)
+    #             counter += 1
+    #     #await channel.purge(limit=220,check= lambda a: a.content.startswith("https://discord.com/channels") and a.created_at().month >= 4,bulk=True)
+    #     await ctx.send("done")
+    #     print(counter)
 
-    @discord.slash_command(name="scrape", description="testing", guild_ids=TESTSERVER)
-    async def scrape(self, ctx: discord.Interaction):
-        await ctx.response.defer()
-        channel: discord.TextChannel = ctx.channel
-        counter = 0
-        async for message in channel.history(limit=220):
-            if message.content.startswith("https://discord.com/channels"):
-                print(message.content)
-                counter += 1
-        #await channel.purge(limit=220,check= lambda a: a.content.startswith("https://discord.com/channels") and a.created_at().month >= 4,bulk=True)
-        await ctx.send("done")
-        print(counter)
+    # @discord.slash_command(name="testingvw", description="testing")
+    # async def testing(self, ctx):
+    #     viewObj = self.testvw()
+    #     viewObj.msg = await ctx.send(content="Hello", view=viewObj, tts=True)
 
-    @discord.slash_command(name="testingvw",description="testing")
-    async def testing(self, ctx):
-        viewObj = self.testvw()
-        viewObj.msg = await ctx.send(view=viewObj)
+    # @discord.slash_command(name="modaltesting", description="testing", guild_ids=TESTSERVER)
+    # async def modaltesting(self, ctx):
+    #     await ctx.response.send_modal(self.TextInputModal())
 
-    @discord.slash_command(name="modaltesting", description="testing", guild_ids=TESTSERVER)
-    async def modaltesting(self, ctx):
-        await ctx.response.send_modal(self.TextInputModal())
-
-    @discord.slash_command(name="pick",description="pick",guild_ids=TESTSERVER)
-    async def fut(self,ctx):
-        await ctx.response.defer()
-        if ctx.user.id != 617840759466360842:
-            return
-        os.chdir(r"D:\Users\Peti.B\Pictures\microsoft\Windows\shop")
-        sample = [file for file in os.listdir() if not file.endswith(".mp4")]
-        await ctx.send(files=[discord.File(random.choice(sample))])
-
-    @discord.slash_command(name="testselections", description="Image editor in development")
-    async def testimageeditorcommand(self, interaction: discord.Interaction,
-                                 img: discord.Attachment = discord.SlashOption(name="image",
-                                                                               description="The image to edit.",
-                                                                               required=True)):
-        await interaction.response.defer()
-        filetype = img.content_type.split("/")[1]
-        image = await img.read()
-        img = Image.open(BytesIO(image))
-        img = img.convert("RGB")  # .point(lambda x: 255 - x)
-        selection = Selection(img, (0, 0, img.size[0]/2, img.size[1]/2))   #left top right bottom
-        selection.image = ImageOps.invert(selection.image)
-        img.paste(selection.image, box=selection.boundary)
-        with BytesIO() as image_binary:
-            img.save(image_binary, filetype)
-            image_binary.seek(0)
-            await interaction.send(file=discord.File(fp=image_binary, filename=f'image.{filetype}'))
 
     async def showimg(self,
-                    interface: Union[discord.Interaction, discord.Message],
-                    img: Image,
-                    filetype: str,
-                    view: discord.ui.View = None,
-                    txt:str = None) -> discord.Message:
+                      interface: discord.Interaction | discord.Message,
+                      img: Image,
+                      filetype: str,
+                      view: discord.ui.View = None,
+                      txt: str = None) -> discord.Message:
 
         with BytesIO() as image_binary:
             if img:
@@ -123,38 +91,50 @@ class Testing(commands.Cog):
                 raise NotImplementedError("interface must be either discord.Interaction or discord.Message")
         return msg
 
-    class TestDeleteButton(discord.ui.View):
-        def __init__(self, cog, img=None):
-            self.message = None
-            self.img = img
-            self.cog = cog
-            super().__init__(timeout=None)
+    @discord.slash_command(name="imgtest", guild_ids=TESTSERVER)
+    async def imgtest(self, interaction: discord.Interaction, img: discord.Attachment):
+        # with BytesIO() as file_binary:
+        #     await img.save(file_binary)
+        #     await interaction.send(file=discord.File(fp=file_binary, filename="img.png"))
 
-        @discord.ui.button(label="Delete me")
-        async def removeeview(self, button, interaction):
-            print(interaction.message, "\n", self.message)
-            print(interaction.message.id, self.message.id, interaction.message == self.message)
+        fp = BytesIO(await img.read())
+        await interaction.send(file=discord.File(fp, "test.png"))
 
-            await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=None,txt="Removing view via inter.message with a file present")  # this one will not remove the view
-            await asyncio.sleep(4)
-            await self.cog.showimg(interaction.message, img=None, filetype="png", view=None, txt="Removing view via inter.message with file not included")  # this one will remove the view
-            await asyncio.sleep(4)
-            await self.cog.showimg(interaction.message, img=self.img, filetype="png", view=self, txt="lets try again")
-            await asyncio.sleep(2)
-            await self.cog.showimg(self.message, img=self.img, filetype="png", view=None, txt="Removing view via a saved var:WebhookMessage with a file present")  # this one will remove the view
-            await asyncio.sleep(4)
-            await self.cog.showimg(self.message, img=self.img, filetype="png", view=self, txt="lets try again")
-            await asyncio.sleep(2)
-            await self.cog.showimg(self.message, img=None, filetype="png", view=None, txt="Removing view via a saved var:WebhookMessage without a file")  # this one will remove the view
+    # @discord.message_command(name="En-/Decrypt")
+    # async def caesar(self, interaction: discord.Interaction, text: discord.Message):
+    #     if text.type == discord.MessageType.chat_input_command and text.embeds[0].title == "Message":
+    #         text = text.embeds[0].description
+    #     else:
+    #         text = text.content
+    #     await interaction.send("".join([chr(((ord(letter) - 97 + 13) % 26) + 97) if letter.isalpha() and letter.islower() else chr(((ord(letter) - 65 + 13) % 26) + 65) if letter.isalpha() and letter.isupper() else letter for letter in text]))
 
-    @discord.slash_command(name="testeditview", description="bug maybe")
-    async def testimageeditorcommand(self, interaction: discord.Interaction, img: discord.Attachment):
-        await interaction.response.defer()
-        image = await img.read()
-        img = Image.open(BytesIO(image))
-        view = self.TestDeleteButton(self, img)
-        msg = await self.showimg(interaction, img, "png", view, txt="Hi")
-        view.message = msg
+    # @discord.slash_command(name="muv", description="semi", guild_ids=[860527626100015154, 601381789096738863])
+    # async def movebogi(self, ctx, chanel: discord.abc.GuildChannel):
+    #    await ctx.user.move_to(chanel)
 
-def setup(client,baselogger):
-    client.add_cog(Testing(client, baselogger))
+    # @discord.slash_command(name="muvraw", description="semi", guild_ids=[860527626100015154, 601381789096738863])
+    # async def movebogi2(self, ctx, chanel):
+    #     chanel = ctx.guild.get_channel(int(chanel))
+    #     await ctx.user.move_to(chanel)
+
+    # @discord.message_command(name="Unemojize")
+    # async def unemojize(self, interaction: discord.Interaction, message):
+    #     await interaction.response.send_message(f"`{emoji.demojize(message.content)}`", ephemeral=True)
+
+    @discord.slash_command(name="whtest2", guild_ids=TESTSERVER)
+    async def whtest2(self, interaction: discord.Interaction):
+        channel: discord.TextChannel = interaction.channel
+        whs = await channel.webhooks()
+        await interaction.send(content=", ".join([str(wh.url) for wh in whs]))
+
+    @discord.slash_command(name="wh")
+    async def whtet3(self, interaction: discord.Interaction, txt: str, name: str, pfp_link: str = None, tts: bool = False, channel: discord.TextChannel = None):
+        chann: discord.PartialMessage|discord.Interaction = await getMsgFromLink(self.client, channel) if channel else interaction
+        channel: discord.TextChannel = chann.channel
+        self.logger.debug(f"{channel.name}, {interaction.user.display_name}, {txt}")
+
+        async with WebhookManager(interaction, channel) as wh:
+            await wh.send(content=f"{txt}", username=name, avatar_url=pfp_link, tts=tts)
+
+def setup(client):
+    client.add_cog(Testing(client))

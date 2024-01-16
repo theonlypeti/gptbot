@@ -1,4 +1,4 @@
-def bf(code,inputs):
+def bf(code, inputs):
     pc = 0
     outputstring = ""
     inputpointer = 0
@@ -6,11 +6,11 @@ def bf(code,inputs):
     pointer = 0
     jumppoints = []
     openbraces = 0
-    i=0
+    i = 0
     while i != len(code):
         #print(mem)
-        i+=1
-        pc+=1
+        i += 1
+        pc += 1
         char = code[i-1]
         if openbraces:
             if char == "[":
@@ -20,20 +20,20 @@ def bf(code,inputs):
             continue
         if char == "<":
             if pointer == 0:
-                mem.insert(0,0)
+                mem.insert(0, 0)
             else:
-                pointer-=1
+                pointer -= 1
 
         elif char == ">":
             if pointer == len(mem)-1:
-                mem.insert(len(mem)+1,0)
-            pointer+=1
+                mem.insert(len(mem)+1, 0)
+            pointer += 1
 
         elif char == "+":
-            mem[pointer] = (mem[pointer]+1) %256
+            mem[pointer] = (mem[pointer]+1) % 256
 
         elif char == "-":
-            mem[pointer] = (mem[pointer]-1) %256
+            mem[pointer] = (mem[pointer]-1) % 256
 
         elif char == "[":
             if mem[pointer] == 0:
@@ -47,7 +47,7 @@ def bf(code,inputs):
             else:
                 i = jumppoints[-1]
 
-        elif char==",":
+        elif char == ",":
             mem[pointer] = ord(inputs[inputpointer])
             inputpointer += 1
         elif char == ".":
@@ -58,15 +58,17 @@ def bf(code,inputs):
         if pc > 10000000:
             raise MaxIterationLimitExceeded()
 
-    print(pc)
+    print(f"brainfuck program counter: {pc}")
     return outputstring
+
 
 class MaxIterationLimitExceeded(Exception):
     def __init__(self):
         super().__init__("Execution stopped because the iteration limit has been exceeded.")
 
+
 if __name__ == "__main__":
-    print(bf(",.","6"))
+    print(bf(",.", "6"))
     print(bf("+[-->-[>>+>-----<<]<--<---]>-.>>>+.>>..+++[.>]<<<<.+++.------.<<-.>>>>+.",""))
     
 #>++++++++++>+>+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<<]>.>>[[-]<[>+<-]>>[<<+>+>-]<[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>[-]>+>+<<<-[>+<-]]]]]]]]]]]+>>>]<<<]

@@ -2,31 +2,32 @@ import random
 import nextcord as discord
 from nextcord.ext import commands
 
+
 class Wordlecog(commands.Cog):
-    def __init__(self,client,baselogger):
-        self.wordleLogger = baselogger.getChild('wordleLogger')
+    def __init__(self, client):
+        self.wordleLogger = client.logger.getChild('wordleLogger')
         self.client = client
-        with open("./data/wordlewords.txt","r") as file:
+        with open("./data/wordlewords.txt", "r") as file:
             self.words = file.readlines()
             self.wordleLogger.debug(f"{len(self.words)} wordle words loaded")
         self.games = []
 
     class WordleGame(discord.ui.View):
-        def __init__(self, correct: str ,guess:str):
+        def __init__(self, correct: str, guess: str):
             self.word = correct
             super().__init__(timeout=1800)
             self.verifyGuess(guess)
             self.message = None
             self.embed = None
 
-        def verifyGuess(self,guess:str): #this hurts
+        def verifyGuess(self, guess: str): #this hurts
             if guess.lower() == self.word: #if the guess is correct
-                self.embed = discord.Embed(title="Good job!",description=f"You guessed correctly, it was {self.word.upper()}",color=discord.Color.green())
+                self.embed = discord.Embed(title="Good job!", description=f"You guessed correctly, it was {self.word.upper()}", color=discord.Color.green())
                 for child in self.children:
                     child.disabled = True
                 return
             if len(self.children) == 25: #if the guess is wrong and the game is over
-                self.embed = discord.Embed(title="Too bad!",description=f"You guessed {guess.upper()}. \nThe word was {self.word.upper()}",color=discord.Color.red())
+                self.embed = discord.Embed(title="Too bad!", description=f"You guessed {guess.upper()}. \nThe word was {self.word.upper()}", color=discord.Color.red())
                 for child in self.children:
                     child.disabled = True
             else: #if the guess is wrong and the game is not over
@@ -81,5 +82,5 @@ class Wordlecog(commands.Cog):
         self.games.append(game)
         game.message = await ctx.send("Click on any of the letters to continue guessing.", view=game)
 
-def setup(client,baselogger):
-    client.add_cog(Wordlecog(client,baselogger))
+def setup(client):
+    client.add_cog(Wordlecog(client))

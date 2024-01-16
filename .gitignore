@@ -1,3 +1,8 @@
 /credentials/
 /backup/
 /temyLogs/
+/logs/
+/cogs/peticog.py
+/lavalink/Lavalink.jar
+/lavalink/plugins/
+/lavalink/logs/
