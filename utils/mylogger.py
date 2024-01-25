@@ -22,7 +22,7 @@ def main(args=None):
         makedirs(r"./logs", exist_ok=True)
         with open(filename, "w", encoding="utf-8") as _:
             pass
-        fl = WatchedFileHandler(filename, encoding="utf-8")
+        fl = WatchedFileHandler(filename, encoding="utf-8") #not for windows but if i ever switch to linux
         fl.setFormatter(formatter)
         fl.setLevel(logging.DEBUG)
         fl.addFilter(lambda rec: rec.levelno == 25)

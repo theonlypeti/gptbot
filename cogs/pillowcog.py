@@ -82,7 +82,7 @@ class PillowCog(commands.Cog):
             viewObj = self.cog.CorrectionsView(self)
             await self.message.edit(view=viewObj)  # contrast, saturation, brightness, hue?, gamma?
 
-        @discord.ui.button(label="Crop", style=discord.ButtonStyle.gray, emoji=emoji.emojize(':scissors:'), disabled=True)
+        @discord.ui.button(label="Crop", style=discord.ButtonStyle.gray, emoji=emoji.emojize(':scissors:'), disabled=True, custom_id="cropbutton")
         async def cropbutton(self, button, interaction):
             await interaction.response.defer()
             if self.selection is not None:
@@ -129,12 +129,23 @@ class PillowCog(commands.Cog):
                 cutout = remove(self.img)
                 w, h = cutout.size
                 self.selection = self.cog.Selection(cutout, (0, 0, w, h))
+            for ch in self.children:
+                if ch.custom_id == "cropbutton":
+                    discord.ui.Button = ch.disabled = False
+                    break
             th = self.cog.makeThumbnail(self)
             await self.cog.show(interaction.message, th, self.filetype, view=self)
 
         @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"))
         async def finishbutton(self, button, interaction):
             await interaction.response.defer()
+            if self.selection:
+                if self.selection.image.size == self.img.size:
+                    # logger.info("same size, masked")
+                    self.img.paste(self.selection.image, box=self.selection.boundary, mask=self.selection.image)
+                else:
+                    # logger.info("smaller size, just paste")
+                    self.img.paste(self.selection.image, box=self.selection.boundary)
             await self.cog.show(self.message, self.img, self.filetype, view=None) #note to self, using interaction.message here would not work for some reason # note: fixed in nextcord 2.x something
 
         @discord.ui.button(label="Upload to", style=discord.ButtonStyle.green)#, emoji=emoji.emojize(":check_mark_button:"))
@@ -438,7 +449,7 @@ class PillowCog(commands.Cog):
                 self.img = self.returnView.img.copy()
                 self.selection.rotateBoundary()
                 self.selection.image = self.selection.image.transpose(method=Image.Transpose.ROTATE_90)
-                self.img = Image.alpha_composite(self.img, self.selection.image)
+                self.img = Image.alpha_composite(self.img, self.selection.image) #TODO must not composite
                 # self.img.paste(self.selection.image, box=self.selection.boundary)
             else:
                 self.img = self.img.transpose(method=Image.Transpose.ROTATE_90)
@@ -545,16 +556,20 @@ class PillowCog(commands.Cog):
 
         @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"), row=2)
         async def finalizeselectingbutton(self, button, interaction):
+            for ch in self.returnView.children:
+                if ch.custom_id == "cropbutton":
+                    button: discord.ui.Button = ch
+                    break
             if self.boundaries:
                 try:
                     self.returnView.selection = self.cog.Selection(self.img, self.boundaries)
-                    self.returnView.children[4].disabled = False  # enabling crop button #TODO redo this with custom_id so if i move the buttons this would still work
+                    button.disabled = False
                 except ValueError as e:
                     await interaction.send(e, delete_after=10)
                     return
             else:
                 self.returnView.selection = None
-                self.returnView.children[4].disabled = True  # disabling crop button
+                button.disabled = True
 
             await self.cog.returnMenu(self.returnView)
 
@@ -753,7 +768,7 @@ class PillowCog(commands.Cog):
             if self.widthbox.value:
                 neww = int(self.widthbox.value)
             else:
-                neww = int(self.heightbox.value)*aspectratio
+                neww = int(int(self.heightbox.value)*(1/aspectratio))
 
             if self.heightbox.value:
                 newh = int(self.heightbox.value)
@@ -838,7 +853,7 @@ class PillowCog(commands.Cog):
             image = Image.open(img)
             filetype = image.format.lower()
         msg = interaction.message if isinstance(interaction, discord.Interaction) else interaction
-        logger.info(f"{filetype=}")
+        # logger.info(f"{filetype=}")
         viewObj = self.EditorView(self, msg, image, filetype)
         th = self.makeThumbnail(viewObj)
         message = await self.show(interaction, th, filetype, viewObj)
@@ -851,33 +866,29 @@ class PillowCog(commands.Cog):
         copy.thumbnail(THUMBNAIL_SIZE)
         return copy
 
-    def drawSelection(self, img: Image, sel: Selection) -> Image:
-        copy: Image = img.copy()
-        # drawctx = ImageDraw.Draw(copy)
+    def drawSelection(self, img: Image, sel: Selection):  # thanks https://stackoverflow.com/users/18529538/xavier-valette <3
+        img = img.copy()
+        sel.image = sel.image.convert("RGBA")
+        # Set the border and color
+        borderSize = 20
+        color = (255, 0, 0)
 
-        # boundary lines
-        bordersize = 16 if copy.size[0] > 400 else 8
-        logger.info(f"{sel.image.size=}")
-        border: Image = sel.image.resize((sel.image.width + bordersize, sel.image.height + bordersize))
-        logger.info(f"{border.size=}")
-        border = border.crop((bordersize // 2, bordersize // 2, border.width - bordersize // 2, border.height - bordersize // 2))
-        # empty = Image.new("RGBA", copy.size, (255, 125, 0, 0))
-        # empty.paste(border, box=sel.boundary)
-        logger.info(f"{border.size=}")
-        newborder = Image.new("RGBA", copy.size, (255, 125, 0, 255))
-        logger.info(f"{newborder.size=}")
-        left, top = sel.boundary[0] - bordersize // 2, sel.boundary[1] - bordersize // 2
-        copy.paste(newborder, box=(left, top), mask=border)
-        left, top = sel.boundary[0], sel.boundary[1]
-        copy.paste(sel.image, box=(left, top), mask=sel.image)
-        logger.info(f"{copy.size=}")
-        # copy.alpha_composite(ImageOps.expand(sel.image, border=bordersize, fill=(255, 125, 0)), mask=sel.image)
-        # copy.show()
-        # drawctx.rectangle(sel.boundary,
-        #                   outline=(255, 125, 0),
-        #                   width=6 if copy.size[0] > 400 else 2)
-        copy.thumbnail(THUMBNAIL_SIZE)
-        return copy
+        # Open original image and extract the alpha channel
+        alpha = sel.image.getchannel('A')
+
+        # Create red image the same size and copy alpha channel across
+        background = Image.new('RGBA', sel.image.size, color=color)
+        background.putalpha(alpha)
+
+        # Make the background bigger
+        background = background.resize((background.size[0] + borderSize, background.size[1] + borderSize))
+
+        # Merge the targeted image (foreground) with the background
+        foreground = sel.image
+        background.paste(foreground, (int(borderSize / 2), int(borderSize / 2)), foreground.convert("RGBA"))
+        img.paste(background, (sel.boundary[0], sel.boundary[1]), background)
+        img.thumbnail(THUMBNAIL_SIZE)
+        return img
 
     async def returnMenu(self, view: SelectionView | CorrectionsView | EditorView):
         ft = view.filetype
@@ -888,10 +899,25 @@ class PillowCog(commands.Cog):
         await self.show(view.message, img=th, filetype=ft, view=view)
 
     async def show(self, interface: discord.Interaction | discord.Message, img: Image, filetype: str, view: discord.ui.View = None) -> discord.Message:
+        # if img.mode == "RGBA":
+        #     filetype = "png"
+        #check if whole image is opaque
         if img.mode == "RGBA":
-            filetype = "png"
+            extrema = img.getextrema()
+            if extrema[3][0] < 255:  # TODO still false positive sometimes, logger the extrema
+                # logger.info("aw")
+                filetype = "png"
+            else:
+                # logger.info("oye")
+                img = img.convert("RGB")
+
         with BytesIO() as image_binary:
-            img.save(image_binary, filetype)
+            try:
+                img.save(image_binary, filetype)
+            except Exception as e:
+                logger.error(e.__class__)
+                logger.error(e)
+                img.save(image_binary, "png")
             image_binary.seek(0)
 
             if isinstance(interface, discord.Interaction):

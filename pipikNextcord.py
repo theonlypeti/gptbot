@@ -113,7 +113,7 @@ async def on_disconnect():
 async def on_message_delete(msg: nextcord.Message):
     if not msg.author.bot:
         if args.logfile:
-            tolog = f"{msg.author} deleted ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.name} at {str(datetime.now())}"
+            tolog = f"{msg.author} deleted ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.name}"
             tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
             pipikLogger.log(25, tolog)
         if msg.attachments:
@@ -126,11 +126,11 @@ async def on_message(msg: nextcord.Message):
     if True:
         if msg.guild:
             if msg.guild.id in []:
-                tolog = f"{msg.author} sent: ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel} at {str(datetime.now())}"
+                tolog = f"{msg.author} sent: ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel}"
                 tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
                 pipikLogger.log(25, tolog)
         else:
-            tolog = f"{msg.author} sent dm: ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.recipient} at {str(datetime.now())}"
+            tolog = f"{msg.author} sent dm: ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} "
             tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
             pipikLogger.warning(tolog)
 
@@ -139,7 +139,7 @@ async def on_message(msg: nextcord.Message):
 
 @client.event
 async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
-    tolog = f"[{user}] reacted [{(reaction.emoji if isinstance(reaction.emoji, str) else reaction.emoji.name)}] on message: [{reaction.message.content or reaction.message.jump_url}], in: [{reaction.message.guild.name}/{reaction.message.channel}], at [{str(datetime.now())}]"
+    tolog = f"[{user}] reacted [{(reaction.emoji if isinstance(reaction.emoji, str) else reaction.emoji.name)}] on message: [{reaction.message.content or reaction.message.jump_url}], in: [{reaction.message.guild.name}/{reaction.message.channel}]"
     tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
     pipikLogger.log(25, tolog)
 
@@ -219,47 +219,48 @@ async def rename(ctx, name):
     await ctx.message.guild.me.edit(nick=name)
 
 #-------------------------------------------------#
+client.logger.debug(__name__)
+if __name__ == "__main__":
+    os.chdir(root)
+    if not args.minimal and not args.no_sympy: #TODO does not take into consideration the only_ keyword arguments
+        utils = [file for file in os.listdir(r"./utils") if file.endswith(".py")]
+        files = utils + [__file__]
+        linecount = 197  # matstatMn is added manually cuz i have a million commented lines after if __name__ == __main__
+    else:
+        files = (__file__,)
+        linecount = 0
+    for file in files:
+        if file.endswith(".py"):
+            try:
+                with open(root+r"/utils/"+file, "r", encoding="UTF-8") as f:
+                    linecount += len(f.readlines())
+            except OSError:
+                with open(file, "r", encoding="UTF-8") as f:
+                    linecount += len(f.readlines())
 
-os.chdir(root)
-if not args.minimal and not args.no_sympy: #TODO does not take into consideration the only_ keyword arguments
-    utils = [file for file in os.listdir(r"./utils") if file.endswith(".py")]
-    files = utils + [__file__]
-    linecount = 197  # matstatMn is added manually cuz i have a million commented lines after if __name__ == __main__
-else:
-    files = (__file__,)
-    linecount = 0
-for file in files:
-    if file.endswith(".py"):
-        try:
-            with open(root+r"/utils/"+file, "r", encoding="UTF-8") as f:
+    allcogs = [cog for cog in os.listdir("./cogs") if cog.endswith("cog.py")] + ["testing.py"]
+    cogcount = len(allcogs)
+    cogs = []
+    if not args.minimal:  # if not minimal
+        if not [not cogs.append(cog) for cog in allcogs if args.__getattribute__(f"only_{cog.removesuffix('cog.py').removesuffix('.py')}")]: #load all the cogs that are marked to be included with only_*
+            cogs = allcogs[:]  # if no cogs are marked to be exclusively included, load all of them
+            for cog in reversed(cogs):  # remove the cogs that are marked to be excluded with no_*
+                if args.__getattribute__(f"no_{cog.removesuffix('cog.py').removesuffix('.py')}"):  # if the cog is marked to be excluded
+                    cogs.remove(cog)  # remove it from the list of cogs to be loaded
+    # cogs.remove("testing.py") if args.no_testing else None  # remove testing.py from the list of cogs to be loaded if testing is disabled
+
+    for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know how many cogs to load and so dont know how to format loading bar
+        if not args.no_linecount:
+            with open("./cogs/"+file, "r", encoding="UTF-8") as f:
                 linecount += len(f.readlines())
-        except OSError:
-            with open(file, "r", encoding="UTF-8") as f:
-                linecount += len(f.readlines())
+        client.load_extension("cogs." + file[:-3])
+        if not args.debug:
+            sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.02f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
+            sys.stdout.flush()
 
-allcogs = [cog for cog in os.listdir("./cogs") if cog.endswith("cog.py")] + ["testing.py"]
-cogcount = len(allcogs)
-cogs = []
-if not args.minimal:  # if not minimal
-    if not [not cogs.append(cog) for cog in allcogs if args.__getattribute__(f"only_{cog.removesuffix('cog.py').removesuffix('.py')}")]: #load all the cogs that are marked to be included with only_*
-        cogs = allcogs[:]  # if no cogs are marked to be exclusively included, load all of them
-        for cog in reversed(cogs):  # remove the cogs that are marked to be excluded with no_*
-            if args.__getattribute__(f"no_{cog.removesuffix('cog.py').removesuffix('.py')}"):  # if the cog is marked to be excluded
-                cogs.remove(cog)  # remove it from the list of cogs to be loaded
-# cogs.remove("testing.py") if args.no_testing else None  # remove testing.py from the list of cogs to be loaded if testing is disabled
-
-for n, file in enumerate(cogs, start=1): #its in two only because i wouldnt know how many cogs to load and so dont know how to format loading bar
-    if not args.no_linecount:
-        with open("./cogs/"+file, "r", encoding="UTF-8") as f:
-            linecount += len(f.readlines())
-    client.load_extension("cogs." + file[:-3])
-    if not args.debug:
-        sys.stdout.write(f"\rLoading... {(n / len(cogs)) * 100:.02f}% [{(int((n/len(cogs))*10)*'=')+'>':<10}]")
-        sys.stdout.flush()
-
-sys.stdout.write(f"\r{len(cogs)}/{cogcount} cogs loaded.".ljust(50)+"\n")
-sys.stdout.flush()
-os.chdir(root)
+    sys.stdout.write(f"\r{len(cogs)}/{cogcount} cogs loaded.".ljust(50)+"\n")
+    sys.stdout.flush()
+    os.chdir(root)
 
 # for file in tqdm(cogs):
 #     if not args.no_linecount:
@@ -267,7 +268,6 @@ os.chdir(root)
 #             linecount += len(f.readlines())
 #     client.load_extension("cogs." + file[:-3])  #breaks
 
-if __name__ == "__main__":
     if args.profiling:
         import cProfile
         import pstats

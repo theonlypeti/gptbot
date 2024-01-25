@@ -64,14 +64,14 @@ class ListenerCog(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def profanity(self, msg: discord.Message):
-        if msg.guild.id in []:
+        if msg.guild and msg.guild.id in []:
             if not msg.author.bot:
                 if any(profanity_check.predict(msg.content.split(" "))):
                     await msg.reply("This is a christian minecraft server! No naughty words!")
 
     @commands.Cog.listener("on_message")
     async def amogus(self, msg: discord.Message):
-        if msg.guild.id not in (800196118570205216,):
+        if msg.guild and msg.guild.id not in (800196118570205216,):
             words = msg.content.split(" ")
             for word in words:
                 if (word.lower().endswith("us") or word.lower().endswith("usz")) and len(word) in range(4, 15) and word.lower() not in self.us:
