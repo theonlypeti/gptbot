@@ -71,7 +71,8 @@
                     ":fire_extinguisher:",
                     ":bulb:",
                     ":paperclip:",
-                    ":drop_of_blood:"
+                    ":drop_of_blood:",
+                    ":hammer:"
                 ],
                 "flags": [
                     ":flag_jp:",
@@ -105,7 +106,8 @@
                     ":singer:",
                     ":farmer:",
                     ":ninja:",
-                    ":man_wearing_turban:"
+                    ":man_wearing_turban:",
+                    ":detective:"
                 ],
                 "cloveceachis": [
                     ":chess_pawn:"
@@ -121,13 +123,13 @@
             "Second places": 4,
             "Third places": 0,
             "Dice thrown": 945,
-            "Spins": 62,
-            "Default icons owned": 64,
+            "Spins": 64,
+            "Default icons owned": 66,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":radioactive:",
         "ready": false,
-        "dailyDate": "2023-10-16",
+        "dailyDate": "2024-02-10",
         "inLobby": null
     },
     {

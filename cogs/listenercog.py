@@ -45,6 +45,7 @@ class ListenerCog(commands.Cog):
             self.logger.error(e)
             with open(r"data/us.txt", "w") as file:
                 json.dump([], file, indent=4)
+
     @commands.Cog.listener("on_message")
     async def free_nitro(self, msg: discord.Message):
         # if msg.guild.id not in []:

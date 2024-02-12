@@ -33,21 +33,23 @@ class FujkinCog(commands.Cog):
                 self.does_it_fujkin = False
                 self.fujkinLogger.info(f"nemfujkin ({wind} km/h)")
 
-            if rain and not self.does_it_esik:
-                self.does_it_esik = True
-                for channel in self.channels:
-                    gif = choice((
-                         "https://tenor.com/view/bill-wurtz-weather-update-rain-raining-gif-17835062102625163877",
-                        "https://tenor.com/view/good-morning-humid-raining-duck-need-umbrella-gif-5877669406246809546",
-                        "https://tenor.com/view/heavy-rain-dog-drop-umbrella-gif-15721755",
-                        "https://tenor.com/view/yelynnn-rain-yelynnn-yelynn-troi-mua-yelynn-rain-yelynnn-troi-mua-gif-15054810487328860910",
-                        "https://tenor.com/view/raining-rain-gif-24812227",
-                        "https://tenor.com/view/mice-cute-gif-12813574423840616030"
-                    ))
-                    await channel.send(gif)
-                    await channel.send(f"{rain['1h']} mm/h")
+            if rain:
+                if not self.does_it_esik:
+                    self.does_it_esik = True
+                    for channel in self.channels:
+                        gif = choice((
+                             "https://tenor.com/view/bill-wurtz-weather-update-rain-raining-gif-17835062102625163877",
+                            "https://tenor.com/view/good-morning-humid-raining-duck-need-umbrella-gif-5877669406246809546",
+                            "https://tenor.com/view/heavy-rain-dog-drop-umbrella-gif-15721755",
+                            "https://tenor.com/view/yelynnn-rain-yelynnn-yelynn-troi-mua-yelynn-rain-yelynnn-troi-mua-gif-15054810487328860910",
+                            "https://tenor.com/view/raining-rain-gif-24812227",
+                            "https://tenor.com/view/mice-cute-gif-12813574423840616030"
+                        ))
+                        await channel.send(gif)
+                        await channel.send(f"{rain['1h']} mm/h")
             else:
                 self.does_it_esik = False
+                self.fujkinLogger.info(f"nemesik {rain['1h']} mm/h")
 
     @fujkin.before_loop
     async def before_fujkin(self):

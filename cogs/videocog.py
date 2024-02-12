@@ -66,7 +66,6 @@ def writevid(mov: str, filename: str, target_filesize: int = 25000, info: dict =
         bitrate_kbps = min(bitrate, bitrate_kbps, orig_bitrate)
 
         subclip.write_videofile(filename, fps=subclip.fps, bitrate=f"{bitrate_kbps}k",
-                                audio_bitrate="64k",
                                 threads=cpu_count()-1, ffmpeg_params=params, codec='h264_nvenc')
         return "done"
 
@@ -393,7 +392,7 @@ class VideoCog(commands.Cog):
 
     class EditModal(discord.ui.Modal):
         def __init__(self, view: "VideoCog.EditorView"):
-            super().__init__(timeout=float(view.timeout), title="Edit video start/end")
+            super().__init__(timeout=float(view.timeout), title="Edit video start/end") #TODO limit end to secret absolute end
             self.view = view
             self.info = deepcopy(view.info)
             self.start = self.info.get("start", 0)

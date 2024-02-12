@@ -24,15 +24,18 @@ class Testing(commands.Cog):
         self.client: discord.Client = client
 
     class testvw(discord.ui.View):
-        def __init__(self):
+        def __init__(self, client: discord.Client):
             self.msg = None
-            super().__init__(timeout=0)
+            self.client = client
+            super().__init__(timeout=50)
 
         @discord.ui.button(label="test")
-        async def test(self, button, interaction):
+        async def test(self, button: discord.Button, interaction: discord.Interaction):
             print("test")
             button.style = discord.ButtonStyle.green
-            await self.msg.edit(view=self)
+            [await v.on_timeout() for v in self.client.all_views if isinstance(v, self.__class__)]
+
+            # await self.msg.edit(view=self)
 
         async def on_timeout(self) -> None:
             print("timeout")
@@ -56,10 +59,17 @@ class Testing(commands.Cog):
     #     await ctx.send("done")
     #     print(counter)
 
-    # @discord.slash_command(name="testingvw", description="testing")
-    # async def testing(self, ctx):
-    #     viewObj = self.testvw()
-    #     viewObj.msg = await ctx.send(content="Hello", view=viewObj, tts=True)
+    @discord.slash_command(name="testingvw", description="testing", guild_ids=TESTSERVER)
+    async def testing(self, ctx):
+        viewObj = self.testvw(self.client)
+        viewObj.msg = await ctx.send(content="Hello", view=viewObj, tts=True)
+        self.logger.info(self.client.all_views)
+
+    @discord.slash_command(name="testingvwstop", description="testing", guild_ids=TESTSERVER)
+    async def testingstop(self, ctx):
+        for v in self.client.all_views:
+            await v.on_timeout()
+        await ctx.send("done")
 
     # @discord.slash_command(name="modaltesting", description="testing", guild_ids=TESTSERVER)
     # async def modaltesting(self, ctx):

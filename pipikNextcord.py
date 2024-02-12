@@ -18,7 +18,7 @@ from utils import mylogger
 
 
 start = time_module.perf_counter()
-version = "3.10"
+version = "3.11"
 load_dotenv(r"./credentials/main.env")
 
 parser = argparse.ArgumentParser(prog=f"PipikBot V{version}", description='A fancy discord bot.', epilog="Written by theonlypeti.")
@@ -108,7 +108,6 @@ async def on_disconnect():
     global start
     start = time_module.perf_counter()
 
-
 @client.event
 async def on_message_delete(msg: nextcord.Message):
     if not msg.author.bot:
@@ -137,9 +136,20 @@ async def on_message(msg: nextcord.Message):
     await client.process_commands(msg)
 
 
-@client.event
-async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
+@client.listen("on_reaction_add")
+async def reaction_add(reaction: discord.Reaction, user: discord.User):
+    if reaction.message.author.bot or user.bot:
+        return
     tolog = f"[{user}] reacted [{(reaction.emoji if isinstance(reaction.emoji, str) else reaction.emoji.name)}] on message: [{reaction.message.content or reaction.message.jump_url}], in: [{reaction.message.guild.name}/{reaction.message.channel}]"
+    tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
+    pipikLogger.log(25, tolog)
+
+
+@client.listen("on_reaction_remove")
+async def react_remove(reaction: discord.Reaction, user: discord.Member):
+    if reaction.message.author.bot or user.bot:
+        return
+    tolog = f"[{user}] removed react [{(reaction.emoji if isinstance(reaction.emoji, str) else reaction.emoji.name)}] on message: [{reaction.message.content or reaction.message.jump_url}], in: [{reaction.message.guild.name}/{reaction.message.channel}]"
     tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
     pipikLogger.log(25, tolog)
 
@@ -191,7 +201,7 @@ async def arun(ctx: discord.Interaction, command: str):
                     continue
             elif isinstance(command, Coroutine):
                 a = await command
-            await ctx.send(a)
+            await ctx.send(str(a)[:2000])
     except Exception as e:
         await ctx.send(f"{e}")
 

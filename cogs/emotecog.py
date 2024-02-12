@@ -115,40 +115,40 @@ class EmoteCog(commands.Cog):
     async def reloadEmotes(self, ctx):
         self.readEmotes()
 
-    class ReactSelect(discord.ui.Select):
-        def __init__(self, message, client, emotes):
-            self.optionen = []
-            self.client = client
-            self.emotes = emotes
-            self.message = message
-            for k in ["mood", "pog", "true", "same", "mmshrug", "kekcry", "tiny",
-                      "peepoheart", "tired", "jerrypanik", "hny", "minor_inconvenience", "hapi", "funkyjam",
-                      "business", "business2", "tavozz", "concern", "amusing"]: #,
-                      #"ohgod", "blunder"]:  # populating the select component with options
-                self.optionen.append(discord.SelectOption(label=k, value=self.emotes[k], emoji=self.emotes[k]))
-            super().__init__(placeholder="Select an emote", options=self.optionen)
+    # class ReactSelect(discord.ui.Select):
+    #     def __init__(self, message, client, emotes):
+    #         self.optionen = []
+    #         self.client = client
+    #         self.emotes = emotes
+    #         self.message = message
+    #         for k in ["mood", "pog", "true", "same", "mmshrug", "kekcry", "tiny",
+    #                   "peepoheart", "tired", "jerrypanik", "hny", "minor_inconvenience", "hapi", "funkyjam",
+    #                   "business", "business2", "tavozz", "concern", "amusing"]: #,
+    #                   #"ohgod", "blunder"]:  # populating the select component with options
+    #             self.optionen.append(discord.SelectOption(label=k, value=self.emotes[k], emoji=self.emotes[k]))
+    #         super().__init__(placeholder="Select an emote", options=self.optionen)
+    #
+    #     async def callback(self, interaction: discord.Interaction):
+    #         emote = self.values[0]
+    #
+    #         def mycheck(reaction: discord.Reaction, user: discord.User):
+    #             return not user.bot and self.message == reaction.message and str(reaction.emoji) == emote
+    #
+    #         emotelogger.debug(f"{interaction.user} used msg cmd add react with {emote} in {interaction.channel}")
+    #         await self.message.add_reaction(emote)
+    #         try:
+    #             _, _ = await self.client.wait_for('reaction_add', timeout=6.0, check=mycheck)
+    #
+    #         except asyncio.TimeoutError:
+    #             pass
+    #         finally:
+    #             await self.message.remove_reaction(emote, self.client.user)
 
-        async def callback(self, interaction: discord.Interaction):
-            emote = self.values[0]
-
-            def mycheck(reaction: discord.Reaction, user: discord.User):
-                return not user.bot and self.message == reaction.message and str(reaction.emoji) == emote
-
-            emotelogger.debug(f"{interaction.user} used msg cmd add react with {emote} in {interaction.channel}")
-            await self.message.add_reaction(emote)
-            try:
-                _, _ = await self.client.wait_for('reaction_add', timeout=6.0, check=mycheck)
-
-            except asyncio.TimeoutError:
-                pass
-            finally:
-                await self.message.remove_reaction(emote, self.client.user)
-
-    @discord.message_command(name="Add reaction")
-    async def react(self, interaction, message):
-        viewObj = discord.ui.View()
-        viewObj.add_item(self.ReactSelect(message, self.client, self.discord_emotes))
-        await interaction.send("Don't forget to click the react yourself too! Also spamming emotes might trip up the anti-spam filter.", ephemeral=True, view=viewObj)
+    # @discord.message_command(name="Add reaction")
+    # async def react(self, interaction, message):
+    #     viewObj = discord.ui.View()
+    #     viewObj.add_item(self.ReactSelect(message, self.client, self.discord_emotes))
+    #     await interaction.send("Don't forget to click the react yourself too! Also spamming emotes might trip up the anti-spam filter.", ephemeral=True, view=viewObj)
 
     @discord.slash_command(name="emote", description="For using special emotes")  # TODO split these to subcommands, react, send and list? #im kinda happy with this rn
     async def emote(self, ctx: discord.Interaction,
@@ -195,26 +195,17 @@ class EmoteCog(commands.Cog):
 
             else:
                 try:
-                    whs = await channel.webhooks()
-                except discord.errors.Forbidden:
-                    await ctx.response.defer()
-                    await ctx.send(emote)
-                else:
                     await ctx.response.defer(ephemeral=True)
                     async with WebhookManager(ctx, channel) as wh:
                         await wh.send(content=emote, username=ctx.user.display_name, avatar_url=ctx.user.avatar.url)
+                except discord.errors.Forbidden:
+                    await ctx.send(emote)
             if flipped:
                 await asyncio.sleep(2)
                 await self.emoteserver.delete_emoji(emote)
 
         elif text:
-            whs = [0]
-            try:
-                whs = await channel.webhooks() #TODO remove
-            except discord.errors.Forbidden:
-                await ctx.response.defer()
-            else:
-                await ctx.response.defer(ephemeral=True)
+            await ctx.response.defer(ephemeral=True)
             try:
                 flips = [m.start() for m in re.finditer('\+flipH', text)] #ends of emotes
                 emotestoflip = [(text.rfind("{",0,i),i) for i in flips] #beginnings of toflip emotes
@@ -335,7 +326,7 @@ class EmoteCog(commands.Cog):
             self.word = discord.ui.TextInput(label="Word")
             self.add_item(self.word)
 
-        async def callback(self, interaction):  # TODO add question mark (and exclamation mark)
+        async def callback(self, interaction):
             word = ""
             emotelogger.info(f"{interaction.user} word-reacts {self.word.value} on message {self.message.content}")
             myword = antimakkcen(self.word.value)
@@ -354,13 +345,17 @@ class EmoteCog(commands.Cog):
                     word += chr(127359)
                 elif letter == " ":
                     word += emoji.emojize(":blue_square:")
+                elif letter == "?":
+                    word += emoji.emojize(":white_question_mark:")# emoji.emojize(":red_question_mark:")
+                elif letter == "!":
+                    word += emoji.emojize(":white_exclamation_mark:") #emoji.emojize(":red_exclamation_mark:")
                 else:
                     word += chr(127397 + ord(letter.upper()))
             word = list(dict.fromkeys(antimakkcen(word))) #what the hell is this doing is this just a set() but with extra steps? ACTUALLY YES set is unordered, dict is ordered!!!!
             if len(word) != len(myword):
                 await interaction.send("Word has duplicate letter, can't make out the whole word", ephemeral=True)
             else:
-                await interaction.send("On it...", ephemeral=True)
+                await interaction.send("Working on it...", ephemeral=True)
 
             for letter in word:
                 await self.message.add_reaction(letter)

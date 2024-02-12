@@ -12,6 +12,7 @@ from BingImageCreator import ImageGenAsync
 from EdgeGPT.EdgeGPT import Chatbot
 from nextcord.ext import commands
 from textwrap import TextWrapper
+from EdgeGPT.EdgeUtils import Cookie
 
 import utils.embedutil
 
@@ -97,12 +98,10 @@ class GptCog(commands.Cog):
                                                       choices=("Creative", "Balanced", "Precise"),
                                                       default="Balanced",
                                                       required=False)):
-        from EdgeGPT.EdgeUtils import Cookie
         await interaction.response.defer()
         Cookie.dir_path = r"./data/cookies"
         Cookie.import_data()
         try:
-            self.logger.debug(Cookie.current_data)
             bot = await Chatbot.create(cookies=Cookie.current_data)
             # bot = await Chatbot.create()
         except Exception as e:
@@ -137,6 +136,12 @@ class GptCog(commands.Cog):
                 replacewith = f"[ [{toreplace}]]({link})"
                 combined_text = combined_text.replace(match, replacewith)
         # combined_text = response["text"] + "\n" + response["sources_text"]
+
+        tables = re.findall(r"(?:^(?:\|.+?\|)+$\n?)+", combined_text, re.MULTILINE)
+        if tables:
+            for table in tables:
+                combined_text = combined_text.replace(table, f"```md\n{table}```")
+
         for text in TextWrapper(width=4000, break_long_words=False, replace_whitespace=False).wrap(combined_text):
             embed = discord.Embed(title=query[:253] + "..." if len(query)>256 else query, description=text, color=interaction.user.color)
             embeds.append(embed)
@@ -152,6 +157,30 @@ class GptCog(commands.Cog):
         embeds[-1].set_footer(text=f"Message limit: {msgnum}/{maxnum-1}")
         msg = await interaction.send(embed=embeds[-1], view=viewObj)
         viewObj.msg = msg
+
+    async def askbotraw(self, interaction: discord.Interaction, bot: EdgeGPT.EdgeGPT.Chatbot, model: str, query: str, title: str = None):
+        model = model.lower()
+        try:
+            response = await bot.ask(prompt=query, conversation_style=model, simplify_response=True)
+        except Exception as e:
+            embed = discord.Embed(title=title or (query[:253] + "...") if len(query) > 255 else query, description=e, color=discord.Color.red())
+            await interaction.send(embed=embed, delete_after=180)
+            raise e
+        embeds = []
+
+        out = response["text"]
+
+        tables = re.findall(r"(?:^(?:\|.+?\|)+$\n?)+", out, re.MULTILINE)
+        if tables:
+            for table in tables:
+                out = out.replace(table, f"```md\n{table}```")
+
+        for text in TextWrapper(width=4000, break_long_words=False, replace_whitespace=False).wrap(out):
+            embed = discord.Embed(title=title or (query[:253] + "...") if len(query) > 255 else query, description=text, color=interaction.user.color)
+            embeds.append(embed)
+
+        for emb in embeds:
+            await interaction.send(embed=emb)
 
     @chatgpt.subcommand(name="images", description="Uses the cutting edge DALL-E 3 model to generate 4 images based on your prompt")
     async def imgen(self, interaction: discord.Interaction, prompt: str):
@@ -233,6 +262,26 @@ class GptCog(commands.Cog):
                 img.save(output, format="PNG")
                 output.seek(0)
                 await interaction.send(file=discord.File(output, "meme.png"))
+
+    @discord.slash_command(name="summarize")
+    async def summarize_convo(self, interaction: discord.Interaction, num_msgs: int = 25):
+        await interaction.response.defer()
+        ch: discord.TextChannel = interaction.channel
+        prompt = "Summarize the following chat:\n"
+        for message in reversed(await ch.history(limit=num_msgs+1, oldest_first=False).flatten())[:-1]:
+            prompt += f"{message.author.global_name or message.author.name}: {message.content}" + (f"({len(message.attachments)} attachments)" if message.attachments else "") + (f"({len(message.embeds)} embeds: {[i.title for i in message.embeds]})" if message.embeds else "") + "\n"
+
+        self.logger.debug(f"Resulting prompt: {len(prompt)} chars/4000 long.")
+        Cookie.dir_path = r"./data/cookies"
+        Cookie.import_data()
+        try:
+            bot = await Chatbot.create(cookies=Cookie.current_data)
+            # bot = await Chatbot.create()
+        except Exception as e:
+            embed = discord.Embed(title=prompt, description=e, color=discord.Color.red())
+            await interaction.send(embed=embed, delete_after=180)
+            raise e
+        await self.askbotraw(interaction, bot, "Creative", prompt, "Summary")
 
 
 def setup(client):
