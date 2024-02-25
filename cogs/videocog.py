@@ -18,6 +18,7 @@ import utils.embedutil
 # from rembg import remove
 import tempfile
 import time as time_module
+from utils.permcheck import can_i
 
 
 def writevid(mov: str, filename: str, target_filesize: int = 25000, info: dict = None):
@@ -53,10 +54,9 @@ def writevid(mov: str, filename: str, target_filesize: int = 25000, info: dict =
         print(subclip.size)
         # if 0.5 < asp < 0.6:
         #     self.logger.debug("9:16 aspect ratio")
-        #     params.extend(['-aspect', '9:16']) # i dont know what about this
+        #     params.extend(['-aspect', '9:16']) # i don't know what about this
         orig_bitrate = ((os.path.getsize(mov) / dur) * 8) // 1000
         bitrate_kbps = (target_filesize // dur) * 8
-
 
         print(f"orig bitrate: {orig_bitrate} kbps")
         print(f"target filesize: {target_filesize} kbps")
@@ -68,8 +68,6 @@ def writevid(mov: str, filename: str, target_filesize: int = 25000, info: dict =
         subclip.write_videofile(filename, fps=subclip.fps, bitrate=f"{bitrate_kbps}k",
                                 threads=cpu_count()-1, ffmpeg_params=params, codec='h264_nvenc')
         return "done"
-
-
 
 
 THUMBNAIL_SIZE = (720, 480)
@@ -144,9 +142,10 @@ class VideoCog(commands.Cog):
         @discord.ui.button(label="Finish", style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"))
         async def finishbutton(self, button, interaction: discord.Interaction):
             await interaction.response.defer()
+            await interaction.edit(view=None)
             await self.sendmovie(interaction, self.message, self.vid, filesize_lim=interaction.guild.filesize_limit // 1000 - 500)
 
-        async def sendmovie(self, interaction: discord.Interaction,msg: discord.Message, vid: str, filesize_lim: int = None):
+        async def sendmovie(self, interaction: discord.Interaction, msg: discord.Message, vid: str, filesize_lim: int = None):
             newfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4", dir="./tempdata")
             newfile.close()
 
@@ -184,7 +183,7 @@ class VideoCog(commands.Cog):
             return "done"
 
         async def on_timeout(self) -> None:
-            """Called when the paginator times out."""
+            """Called when the view times out."""
             for ch in self.children:
                 ch.disabled = True
             await self.message.edit(view=self)
@@ -225,7 +224,7 @@ class VideoCog(commands.Cog):
             val = int(self.values[0])
             await self.cog.makeEditor(interaction.message, (val, self.attachments[val]))
 
-    async def filter_images(self, urls: list[str]) -> dict[str, BytesIO]:
+    async def filter_videos(self, urls: list[str]) -> dict[str, BytesIO]:
         imgs = dict()
         async with aiohttp.ClientSession() as session:
             for url in urls:
@@ -236,14 +235,14 @@ class VideoCog(commands.Cog):
                             imgs[url] = BytesIO(await res.read())
         return imgs
 
-    @discord.message_command(name="Video editor")
+    @discord.message_command(name="Video editor", guild_ids=(601381789096738863, 860527626100015154))
     async def videditor(self, interaction: discord.Interaction, msg: discord.Message):
         await interaction.response.defer()
         if not msg.attachments:
             url_regex = 'http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
             # Find matches
             vidlinks: list[str] = re.findall(url_regex, msg.content)
-            vids = await self.filter_images(vidlinks)
+            vids = await self.filter_videos(vidlinks)
             if not vids:
                 await utils.embedutil.error(interaction, "No links found in this message.")
                 return
@@ -262,11 +261,18 @@ class VideoCog(commands.Cog):
             await self.makeEditor(interaction, vid)
 
     @discord.slash_command(name="videoeditor", description="Video editor in development")
-    async def videoeditorcommand(self, interaction: discord.Interaction, img: discord.Attachment = discord.SlashOption(name="image", description="The image to edit.", required=True)):
+    async def videoeditorcommand(self, interaction: discord.Interaction, img: discord.Attachment = discord.SlashOption(name="video", description="The video to edit.", required=True)):
         await interaction.response.defer()
         await self.makeEditor(interaction, img)
 
     async def makeEditor(self, interaction: discord.Interaction | discord.Message, vid: discord.Attachment | tuple[str, BytesIO]):
+        if not can_i(interaction).send_messages:
+            await utils.embedutil.error(interaction, "Missing permissions: Send messages")
+            return
+        if not can_i(interaction).attach_files:
+            await utils.embedutil.error(interaction, "Missing permissions: Attach files")
+            return
+
         if isinstance(vid, discord.Attachment):
             vidf = BytesIO(await vid.read())
             url = vid.url

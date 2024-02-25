@@ -16,9 +16,15 @@ from utils.mentionCommand import mentionCommand #used in /run
 from utils.getMsgFromLink import getMsgFromLink
 from utils import mylogger
 
+# root = os.getcwd()
+# print(root) #wrong
+
+root = (os.path.dirname(os.path.abspath(__file__)))
+# print(root)
+os.chdir(root)
 
 start = time_module.perf_counter()
-version = "3.11"
+version = "3.12"
 load_dotenv(r"./credentials/main.env")
 
 parser = argparse.ArgumentParser(prog=f"PipikBot V{version}", description='A fancy discord bot.', epilog="Written by theonlypeti.")
@@ -49,9 +55,6 @@ if not args.minimal and not args.no_sympy:
     [prikazy.remove(i) for i in ("lru_cache", "graf", "plt", "prod", "kocka", "minca", "napoveda")]
 
     from utils.matstatMn import *
-
-# root = os.getcwd()
-root = (os.path.dirname(os.path.abspath(__file__)))
 
 already_checked = []
 discord_emotes = {}
@@ -112,7 +115,7 @@ async def on_disconnect():
 async def on_message_delete(msg: nextcord.Message):
     if not msg.author.bot:
         if args.logfile:
-            tolog = f"{msg.author} deleted ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.name}"
+            tolog = f"[{msg.author}] deleted ['{msg.content}']{(' +' + ','.join([i.proxy_url for i in msg.attachments])) if msg.attachments else ''} in {msg.channel.name}"
             tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
             pipikLogger.log(25, tolog)
         if msg.attachments:
@@ -150,6 +153,25 @@ async def react_remove(reaction: discord.Reaction, user: discord.Member):
     if reaction.message.author.bot or user.bot:
         return
     tolog = f"[{user}] removed react [{(reaction.emoji if isinstance(reaction.emoji, str) else reaction.emoji.name)}] on message: [{reaction.message.content or reaction.message.jump_url}], in: [{reaction.message.guild.name}/{reaction.message.channel}]"
+    tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
+    pipikLogger.log(25, tolog)
+
+
+@client.listen("on_interaction")
+async def oninter(inter: discord.Interaction):
+    cmd = inter.application_command
+    if isinstance(cmd, discord.SlashApplicationSubcommand):
+        cmd = cmd.parent_cmd.name + "/" + cmd.name
+        opts = [f'{a["name"]} = {a["value"]}' for a in inter.data.get("options", [])[0]["options"]]
+    elif isinstance(cmd, discord.SlashApplicationCommand):
+        cmd = cmd.name
+        opts = [f'{a["name"]} = {a["value"]}' for a in inter.data.get("options", [])]
+    else:
+        ...  #probably buttons
+        return
+
+    # pipikLogger.debug(inter.data.get("options", []))
+    tolog = f"[{inter.user}] called [{cmd} with {opts}]  in: [{inter.guild}/{inter.channel}]"
     tolog = emoji.demojize(antimakkcen(tolog)).encode('utf-8', "ignore").decode()
     pipikLogger.log(25, tolog)
 

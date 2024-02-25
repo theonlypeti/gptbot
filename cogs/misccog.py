@@ -180,7 +180,6 @@ class MiscallenousCog(commands.Cog):
                 return
             style = 'F' if "full" in arg else 'R'
             israw = "raw" in arg
-            logger.debug(f"{ctx.user} used /time as {time} for {timestr}")
             mention = f"{'`' if israw else ''}{discord.utils.format_dt(timestr, style=style)}{'`' if israw else ''}"
             await ctx.send(message.format(
                 mention) if message and "{}" in message else f"{message} {mention}" if message else mention)

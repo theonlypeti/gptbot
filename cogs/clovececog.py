@@ -9,8 +9,10 @@ from datetime import datetime, date, timedelta
 import emoji
 from random import randint, choice, choices, shuffle
 from copy import deepcopy
+from utils import embedutil
 from utils.mentionCommand import mentionCommand
 
+# TODO retrofit this cog with my newfound knowledge of lobbies
 #TODO redo emoji selection to paginators
 #TODO import unittest
 #from unittest.mock import Mock
@@ -41,8 +43,8 @@ achi_emojis_dict = {k:v for k,v in allemojis_dict.items() if k in ("pipikachis",
 
 class LobbyCog(commands.Cog):
     def __init__(self, client):
-        global cloveceLogger
-        cloveceLogger = client.logger.getChild("CloveceLogger")
+        global logger
+        logger = client.logger.getChild("CloveceLogger")
         self.users = []
 
         try:
@@ -54,13 +56,13 @@ class LobbyCog(commands.Cog):
                 except:
                     pass
                 self.users.append(self.User(user))
-            cloveceLogger.debug(self.users)
+            logger.debug(f"{len(self.users)=}")
         except OSError as e:
-            cloveceLogger.error(e)
+            logger.error(e)
             with open(root + r"/data/cloveceUsers.txt", "w") as f:
                 pass
         except json.decoder.JSONDecodeError as e:
-            cloveceLogger.error(e)
+            logger.error(e)
             pass
         self.client = client
         self.lobbies = []
@@ -91,11 +93,11 @@ class LobbyCog(commands.Cog):
     async def claimdaily(self, ctx: discord.Interaction):
         user = self.getUserFromDC(ctx.user)
         try:
-            cloveceLogger.debug(f"user daily date, {user.dailyDate}, {type(user.dailyDate)}")
-            if type(user.dailyDate) == datetime: #what is this line and the one below?!?!
+            logger.debug(f"user daily date, {user.dailyDate}, {type(user.dailyDate)}")
+            if isinstance(user.dailyDate, datetime): #what is this line and the one below?!?!
                 user.dailyDate = user.dailyDate.date()
-            elif type(user.dailyDate) == str: #TODO consider instanceof?
-                cloveceLogger.warning("str?!?!?!! while claiming daily")
+            elif isinstance(user.dailyDate, str):
+                logger.warning("str?!?!?!! while claiming daily")
                 user.dailyDate = (datetime.now() - timedelta(days=1)).date()
         except KeyError or ValueError:
             user.dailyDate = (datetime.now() - timedelta(days=1)).date()
@@ -113,7 +115,7 @@ class LobbyCog(commands.Cog):
                 embedVar.add_field(name="You've got:", value=f"{spinTokenIcon} **1** x **Spin token**")
                 await ctx.send(embed=embedVar, view=self.SpinButton(self))
             else:
-                cloveceLogger.error(f"something is wrong,{user.dailyDate},{date.today()},{user.dailyDate - date.today()}")
+                logger.error(f"something is wrong,{user.dailyDate},{date.today()},{user.dailyDate - date.today()}")
                 return
             user.dailyDate = datetime.now().date() 
             user.addItem("spinToken", 1)
@@ -231,7 +233,7 @@ class LobbyCog(commands.Cog):
             with open(root + r"/data/awaiting_review.txt", "r") as file:
                 pending = json.load(file)
             if str(ctx.guild.id) in privates.keys() or str(ctx.guild.id) in public.keys() or str(ctx.guild.id) in pending.keys():
-                cloveceLogger.error(f"{ctx.guild.id} alredy has emotes in")
+                logger.error(f"{ctx.guild.id} alredy has emotes in")
                 await ctx.channel.send(embed=discord.Embed(title="You already have custom emotes in.", color=discord.Color.red()))
                 return
             if attr[0].lower() == "private":
@@ -289,7 +291,7 @@ class LobbyCog(commands.Cog):
             super().__init__(options=options,placeholder="Select an emoji category")
 
         async def callback(self, interaction):
-            cloveceLogger.debug(self.values[0])
+            logger.debug(self.values[0])
             if self.values[0] == "0":
                 await interaction.response.edit_message(content="Cancelled", view=None, embed=None, delete_after=5.0) #TODO make it go back to cutsom emoji select #what do you mean?
                 return
@@ -342,7 +344,7 @@ class LobbyCog(commands.Cog):
     async def customization(self, interaction):
         player = self.getUserFromDC(interaction.user)
         viewObj = discord.ui.View()
-        player.syncpipikachis(self.client)
+        await player.syncpipikachis(interaction)
 ##        with open("emojis.txt","r") as file:
 ##            emojis = json.load(file)
         viewObj.add_item(self.DefaultsCategorySelectDropdown(player, self))
@@ -441,7 +443,7 @@ class LobbyCog(commands.Cog):
             if len(accepted) > 0:
                 with open(root + r"/data/public_serveremojis.txt", "r+") as file:
                     accepted.update(json.load(file))
-                    file.truncate(0) # oh my god, what are you doing here
+                    file.truncate(0)  # oh my god, what are you doing here
                     file.seek(0)
                     json.dump(accepted, file, indent=4)
                     print("dumped")
@@ -458,26 +460,26 @@ class LobbyCog(commands.Cog):
         async def joinbutton(self, button, ctx):
             player = self.cog.getUserFromDC(ctx.user)
             await self.lobby.addPlayer(player, ctx)
-            cloveceLogger.debug(f"{ctx.user.name} joined")
+            logger.debug(f"{ctx.user.name} joined")
 
         @discord.ui.button(style=discord.ButtonStyle.red, emoji=emoji.emojize(":outbox_tray:"))
         async def leavebutton(self, button, ctx):
             player = self.cog.getUserFromDC(ctx.user)
             await self.lobby.removePlayer(ctx, player)
             await self.lobby.managemsg.edit(view=self.cog.MngmntView(self.lobby, self.cog))  # removing the player from the kick dropdown
-            cloveceLogger.debug(f"{ctx.user.name} left")
+            logger.debug(f"{ctx.user.name} left")
 
         @discord.ui.button(style=discord.ButtonStyle.grey, emoji=emoji.emojize(":artist_palette:"), disabled=False)
         async def customizebutton(self, button, ctx):
             player = self.cog.getUserFromDC(ctx.user)
             if player.ready:
-                await ctx.send("You cannot change your icon while you are marked ready!", ephemeral=True)
+                await embedutil.error(ctx, "You cannot change your icon while you are marked ready!", delete=10)
                 return
             if not player.inLobby:
-                await ctx.send("You are not in a lobby!", ephemeral=True)
+                await embedutil.error(ctx, "You are not in a lobby!")
                 return
             await self.cog.customization(ctx)
-            cloveceLogger.debug(f"{ctx.user.name} clicked customize")
+            logger.debug(f"{ctx.user.name} clicked customize")
 
         @discord.ui.button(style=discord.ButtonStyle.green, emoji=emoji.emojize(":check_mark_button:"))
         async def readybutton(self, button, ctx):
@@ -490,10 +492,10 @@ class LobbyCog(commands.Cog):
                     return
                 player.ready = not player.ready
                 await self.lobby.readyCheck()
-                cloveceLogger.debug(f"{ctx.user.name} requested ready/unready")
+                logger.debug(f"{ctx.user.name} requested ready/unready")
             else:
                 await ctx.send(embed=discord.Embed(title="You are not in this lobby.", color=discord.Color.red()), ephemeral=True)
-                cloveceLogger.debug(f"{ctx.user.name} clicked ready on not joined lobby")
+                logger.debug(f"{ctx.user.name} clicked ready on not joined lobby")
 
         @discord.ui.button(style=discord.ButtonStyle.blurple,emoji=emoji.emojize(":right_arrow:"), disabled=True)
         async def startbutton(self, button, ctx):
@@ -503,7 +505,7 @@ class LobbyCog(commands.Cog):
                 await self.lobby.start(ctx)
             else:
                 await ctx.send(embed=discord.Embed(title="You are not the leader of this lobby.", color=discord.Color.red()), ephemeral=True)
-                cloveceLogger.info(f"{ctx.user.name} wanted to start game when not lobbyleader")
+                logger.info(f"{ctx.user.name} wanted to start game when not lobbyleader")
 
     class DiffcultyDropdown(discord.ui.Select):
         def __init__(self, lobby, cog):
@@ -535,7 +537,7 @@ class LobbyCog(commands.Cog):
         async def callback(self, inter):
             result = self.values[0]
             if result != "-1":
-                cloveceLogger.debug(f"kicking player number {result}")
+                logger.debug(f"kicking player number {result}")
                 tokick = self.lobby.players[int(result)]
                 if isinstance(tokick, LobbyCog.Bot):
                     self.lobby.bot_icons.append(tokick.icon)
@@ -601,8 +603,8 @@ class LobbyCog(commands.Cog):
             self.cog = cog
             self.players = []
             self.private = private
-            while (code := "".join([choice(string.ascii_uppercase) for _ in range(4)])) in [lobby.code for lobby in self.cog.lobbies.values()]:
-                cloveceLogger.info(f"generating lobbycode {code}")
+            while (code := "".join([choice(string.ascii_uppercase) for _ in range(4)])) in [lobby.code for lobby in self.cog.lobbies]:
+                logger.info(f"generating lobbycode {code}")
                 continue
             self.code = code
             self.ongoing = False
@@ -638,12 +640,12 @@ class LobbyCog(commands.Cog):
             if not self.ongoing:
                 if all(readys) and len(readys) > 1 and uniqueIcons:
                     viewObj.children[-1].disabled = False
-                    cloveceLogger.debug("all players ready to go")
+                    logger.debug("all players ready to go")
                     await self.messageid.edit(embed=self.show(), view=viewObj) #KEEP THIS HERE!!! NOT DUPLICATE
                     return True
                 else:
                     viewObj.children[-1].disabled = True
-                    cloveceLogger.debug("not all players ready to go")
+                    logger.debug("not all players ready to go")
             else:
                 for child in viewObj.children:
                     child.disabled = True
@@ -663,7 +665,7 @@ class LobbyCog(commands.Cog):
                     self.cog.savePlayers()
                 else:  #should not be achievable as the start button should be disabled when game is ongoing, maybe delete
                     await ctx.send(embed=discord.Embed(title="A game is already running.", color=discord.Color.red()), ephemeral=True)
-                    cloveceLogger.warning("ongoing game")
+                    logger.warning("ongoing game")
         
         async def addPlayer(self, player, ctx) -> None:
             if len(self.players) < 4:
@@ -674,13 +676,13 @@ class LobbyCog(commands.Cog):
                             await ctx.send(embed=discord.Embed(title="Joined", color=discord.Color.green()), ephemeral=True)
                         else:
                             await ctx.send(embed=discord.Embed(title=f"You are already in a lobby. Try {mentionCommand(self.cog.client,'clovece leave')}", color=discord.Color.red()), ephemeral=True)
-                            cloveceLogger.debug("already in lobby")
+                            logger.debug("already in lobby")
                             return
                     #await self.messageid.edit(embed=self.show()) #redundant: gets updated in readyCheck again too so
                     self.players.append(player)
                     await self.readyCheck()
                 else:
-                    cloveceLogger.error("ongoing game") #shouldnt be a possibility, remove buttons from lobbymsg after start
+                    logger.error("ongoing game") #shouldnt be a possibility, remove buttons from lobbymsg after start
             else:
                 await ctx.send(embed=discord.Embed(title="Lobby is already full!", color=discord.Color.red()), ephemeral=True)
 
@@ -729,7 +731,7 @@ class LobbyCog(commands.Cog):
                 if lobby.code == lobbyid:
                     break
             else:
-                cloveceLogger.info("lobby not found inside findlobby") #NO need to print. it is done a few lines lower, line 678 if nothing moved
+                logger.info("lobby not found inside findlobby") #NO need to print. it is done a few lines lower, line 678 if nothing moved
                 return None
         return lobby
 
@@ -780,11 +782,11 @@ class LobbyCog(commands.Cog):
             try:
                 tempuser["dailyDate"] = tempuser["dailyDate"].isoformat()
             except Exception as s:
-                cloveceLogger.error(s)
+                logger.error(s)
             tempusers.append(tempuser)
         with open(root + r"/data/cloveceUsers.txt", "w") as file:
             json.dump(tempusers,file,indent=4)
-        cloveceLogger.info("saved")
+        logger.info("saved")
 
     class Bot:
         def __init__(self, lobby, diff):
@@ -820,14 +822,17 @@ class LobbyCog(commands.Cog):
                 self.icon = choice(self.inv["defaults"]["defaults"])
                 self.ready = False
                 self.dailyDate = (datetime.now() - timedelta(days=1)).date()
-                cloveceLogger.debug(f"{self.dailyDate},{type(self.dailyDate)}")
+                logger.debug(f"{self.dailyDate},{type(self.dailyDate)}")
                 self.inLobby = False
 
         def __str__(self):
             return self.name+" | icon: "+self.icon
 
-        def syncpipikachis(self, client):
-            pipikcog = client.cogs["PipikBot"]
+        async def syncpipikachis(self, interaction: discord.Interaction):
+            pipikcog = interaction.client.cogs.get("PipikBot", None)
+            if not pipikcog:
+                await embedutil.error(interaction, "Could not sync PP achievements, rerun the bot with pp extension enabled.", delete=10)
+                return
             pipikuser = pipikcog.getUserFromDC(self.userid)
             for achi in pipikuser.achi:
                 achiobj = pipikcog.achievements[achi]
@@ -872,7 +877,7 @@ class LobbyCog(commands.Cog):
                 self.user = user
                 self.cog = cog
                 self.choices = [discord.SelectOption(label="Cancel", emoji=emoji.emojize(":cross_mark:"), value="-1")]
-                cloveceLogger.debug(f'{user.inv["items"]["spinToken"]},{type(user.inv["items"]["spinToken"])}')
+                logger.debug(f'{user.inv["items"]["spinToken"]},{type(user.inv["items"]["spinToken"])}')
                 if user.inv["items"]["spinToken"]:
                     self.choices.append(discord.SelectOption(label="Spin Token", emoji=spinTokenIcon, description="Get any random emoji",value="basic"))
                 if user.inv["items"]["premSpinToken"]:
@@ -931,7 +936,7 @@ class LobbyCog(commands.Cog):
                         cat = self.values[0]
                         got = choice(allemojis_dict[cat])
                         err = self.user.addEmoji("defaults", cat, got)
-                        cloveceLogger.info(f"{err},emoji adding outcome")
+                        logger.info(f"{err},emoji adding outcome")
                         if not err:
                             await interaction.edit(embed=discord.Embed(title=f"You recieved {got}", description=f"You can now use this emoji as an icon in a clovece game. Try it in {mentionCommand(self.cog.client,'clovece play')}", color=interaction.user.color), view=None)
                             self.user.stats["Default icons owned"] += 1
@@ -1101,7 +1106,7 @@ class CloveceGame(object):
                     await chosen.move(throw)
                     await self.infomsg.channel.send(embed=discord.Embed(title=f"{player.name} has gone AFK. A bot is taking their place.", description="Stats and rewards disabled.", color=discord.Color.red()),delete_after=60.0)
                     await self.infomsg.edit(view=None)
-                    cloveceLogger.info("player is cpu now")
+                    logger.info("player is cpu now")
             else:
                 if player.diffculty == "Hard":
                     chosen = await self.pickPanakBot(player, throw)
@@ -1111,16 +1116,16 @@ class CloveceGame(object):
         availablePanaciky = sorted([i for i in player.panaky if (await i.canMove(throw))], reverse=True)
         for panak in availablePanaciky:
             if panak.inSpawn and type(self.polia[panak.startpos]) != Empty: #make sure not our own? maybe it can not canMove?
-                cloveceLogger.debug("picking startpos kicker")
+                logger.debug("picking startpos kicker")
                 return panak
             if not panak.inSpawn and not panak.homePos and panak.currPos:
                 if type(self.polia[(panak.currPos + throw)%self.pocet_poli]) == Panak:
                     if self.polia[(panak.currPos + throw)%self.pocet_poli].team != panak.team:
-                        cloveceLogger.debug("picking one that will be kicked from walking into")
+                        logger.debug("picking one that will be kicked from walking into")
                         return panak
             if throw == 6 and not panak.inSpawn and not panak.homePos and panak.stepsTaken > self.pocet_poli *0.6: #favour new panaky if nearing home
                 for i in reversed(availablePanaciky):
-                    cloveceLogger.debug("picking new cuz almost finishd")
+                    logger.debug("picking new cuz almost finishd")
                     if i.inSpawn:
                         return i
         else:

@@ -136,7 +136,8 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             # await reaction.message.channel.send(redditapi.reddithandler.getPostFromID(reaction.message.embeds[0].footer.text))
             embedVar = reddithandler.comments(await reddithandler.getPostFromID(ID), interaction.user.color)
             viewObj = discord.ui.View()
-            viewObj.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="More", url="https://redd.it/" + ID))
+            ui_button = discord.ui.Button(style=discord.ButtonStyle.link, label="More", url="https://redd.it/" + ID)
+            viewObj.add_item(ui_button)
             await interaction.send(embed=embedVar, view=viewObj)
             logger.debug(f"{interaction.user.name} requested comments")
 

@@ -29,7 +29,7 @@ class Testing(commands.Cog):
             self.client = client
             super().__init__(timeout=50)
 
-        @discord.ui.button(label="test")
+        @discord.ui.button(label="test", emoji="<:spin:957469682917572728>")
         async def test(self, button: discord.Button, interaction: discord.Interaction):
             print("test")
             button.style = discord.ButtonStyle.green
@@ -74,7 +74,6 @@ class Testing(commands.Cog):
     # @discord.slash_command(name="modaltesting", description="testing", guild_ids=TESTSERVER)
     # async def modaltesting(self, ctx):
     #     await ctx.response.send_modal(self.TextInputModal())
-
 
     async def showimg(self,
                       interface: discord.Interaction | discord.Message,

@@ -38,7 +38,6 @@ class ConverterCog(commands.Cog):
             async with session.get(f'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/{fromcurr}/{to}.json') as req:
                 rate = await req.json()
         rate = rate.get(to)
-        self.converterLogger.debug(f"{interaction.user} used {fromcurr=} {to=} {rate=}")
         converted = float(rate) * amount
 
         embedVar = discord.Embed(description=f"{amount} {self.currencylist[fromcurr]} = {converted} {self.currencylist[to]}", color=interaction.user.color, timestamp=datetime.now())
@@ -62,7 +61,6 @@ class ConverterCog(commands.Cog):
                        to: str = discord.SlashOption(description="Convert to", choices=["celsius", "fahrenheit", "kelvin"]),
                        amount: float = discord.SlashOption(required=False, default=1)):
         await interaction.response.defer()
-        self.converterLogger.debug(f"{interaction.user} used {fromt=} {to=} {amount=}")
         fromu = self.pu.Quantity(amount, fromt)
         tou = fromu.to(to)
 
@@ -85,8 +83,6 @@ class ConverterCog(commands.Cog):
         fromu = self.pu.Quantity(amount, fromt)
         tou = fromu.to(to)
 
-        self.converterLogger.debug(f"{interaction.user} used {fromu=} {to=}")
-
         embedVar = discord.Embed(
             description=f"{fromu:P} = {tou:P}",
             color=interaction.user.color, timestamp=datetime.now())
@@ -105,8 +101,6 @@ class ConverterCog(commands.Cog):
         await interaction.response.defer()
         fromu = self.pu.Quantity(amount, fromt)
         tou = fromu.to(to)
-
-        self.converterLogger.debug(f"{interaction.user} used {fromu=} {to=}")
 
         embedVar = discord.Embed(
             description=f"{fromu:P} = {tou:P}",
@@ -132,8 +126,6 @@ class ConverterCog(commands.Cog):
         await interaction.response.defer()
         fromu = self.pu.Quantity(amount, fromt)
         tou = fromu.to(to)
-
-        self.converterLogger.debug(f"{interaction.user} used {fromu=} {to=}")
 
         embedVar = discord.Embed(
             description=f"{fromu:P} = {tou:P}",

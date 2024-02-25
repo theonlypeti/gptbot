@@ -80,7 +80,6 @@ class LavaLinkCog(commands.Cog):
             await vc.guild.change_voice_state(self_deaf=True, channel=vc.channel)
         except TypeError:
             pass
-        self.logger.debug(vc)
         self.players.update({inter.guild.id: inter.guild.voice_client})
         await inter.send(f"Joined {channel.mention}.")
 
@@ -104,6 +103,7 @@ class LavaLinkCog(commands.Cog):
             inter.guild.voice_client
         )  # pyright: ignore[reportGeneralTypeIssues]
 
+        self.logger.debug(f"{inter.user} searched {query}")
         tracks = await player.fetch_tracks(query)
 
         if not tracks:
@@ -151,7 +151,7 @@ class LavaLinkCog(commands.Cog):
     @ytgroup.subcommand()
     async def seek(self, inter: discord.Interaction[discord.Client], seek: str = discord.SlashOption(name="time", description="usage (m: can be omitted) -> +m:ss / -m:ss / m:ss (seeks to that time)", required=True)):
         """Seeks to a certain time in the song. You can use + or - to seek relative to the current position."""
-        await inter.response.defer()
+        await inter.response.defer()  #TODO make sure the user can only seek when in channel, also skip etc
         player: MyPlayer = (
             inter.guild.voice_client
         )  # pyright: ignore[reportGeneralTypeIssues]

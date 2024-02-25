@@ -71,6 +71,22 @@ class ListenerCog(commands.Cog):
                     await msg.reply("This is a christian minecraft server! No naughty words!")
 
     @commands.Cog.listener("on_message")
+    async def on_reply_to_amogus(self, msg: discord.Message):
+        paid_users = ()
+        if msg.author.id not in paid_users:
+            if not msg.author.bot:
+                if msg.reference:
+                    repliedto = msg.reference.cached_message
+                    if repliedto:
+                        if repliedto.author == msg.guild.me:
+                            if repliedto.attachments:
+                                if repliedto.attachments[0].filename == "amogus.png":
+                                    if any(profanity_check.predict(msg.content.split(" "))):
+                                        text = "**0.99€** to **SK87 7500 3000 0300 1307 3022** \n+ discord username/id as comment\ndisable amogus for your account\nverification time varies"
+                                        await msg.reply(text)
+                                        self.logger.warning("Triggered lol")
+
+    @commands.Cog.listener("on_message")
     async def amogus(self, msg: discord.Message):
         if msg.guild and msg.guild.id not in (800196118570205216,):
             words = msg.content.split(" ")
@@ -93,6 +109,7 @@ class ListenerCog(commands.Cog):
                     d.multiline_text((img.width / 2, textsize + (textsize * len(word) // 38)), newquestion,
                                      **textconfig)
                     img.thumbnail((192, 231))
+
                     with BytesIO() as image_binary:
                         img.save(image_binary, "png")
                         image_binary.seek(0)

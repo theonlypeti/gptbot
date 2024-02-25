@@ -9,7 +9,10 @@ import aiohttp
 from bs4 import BeautifulSoup as html
 import emoji
 from dotenv import load_dotenv
+
+from utils.embedutil import error
 from utils.paginator import Paginator
+from utils.permcheck import can_i
 root = os.getcwd()
 load_dotenv(r"./credentials/ais.env")
 
@@ -207,6 +210,8 @@ class AisCog(commands.Cog):
     async def setupchannel(self, interaction: discord.Interaction, channel: discord.TextChannel = None):
         await interaction.response.defer()
         channel: discord.TextChannel = channel or interaction.channel
+        if not can_i(interaction).manage_roles:
+            await error(interaction, "Missing Permission: Manage Roles")
         try:
             if channel.id in self.channels:
                 await interaction.send(embed=discord.Embed(description="Tento channel už má setupované notifikácie.", color=discord.Color.red()), ephemeral=True)
@@ -218,7 +223,7 @@ class AisCog(commands.Cog):
                 role = await interaction.guild.create_role(name="Bakalarka notifications", mentionable=True, color=discord.Color.dark_red())
             await interaction.send(embed=discord.Embed(description=f"Notifikácie pre témy bakalárskych prác boli nastavené v kanáli {channel.name}.\nPridajte si rolu {role.mention} gombíkmi, aby ste dostávali pingy.", color=discord.Color.dark_red()), view=self.NotificationButton())
         except Exception as e:
-            await interaction.send(embed=discord.Embed(description=f"{e}", color=discord.Color.red()))
+            await error(interaction, str(e))  # should be redundant
             raise e
 
     @bakalarka.subcommand(name="disable", description="Remove this channel as notification channel")
@@ -244,13 +249,15 @@ class AisCog(commands.Cog):
 
         @discord.ui.button(emoji=emoji.emojize(':wastebasket:', language="alias"), label="Vymaž aj rolu", style=discord.ButtonStyle.danger)
         async def deleterole(self, button, interaction: discord.Interaction): #when ill save all channels for a server ill do this automatically //what i think i get it when i save server:channel i wont need to do this but ill keep it in
+            if not can_i(interaction).manage_roles:
+                await error(interaction, "Missing Permission: Manage Roles")
             try:
                 if (role := discord.utils.find(lambda m: m.name == 'Bakalarka notifications', interaction.guild.roles)) is not None:
                     await role.delete(reason=f"{interaction.user.name}#{interaction.user.discriminator} disabled notification channel {interaction.channel.name} for bakalarka temy")
                 await interaction.message.edit(view=None)
-            except Exception as e:
-                logging.error(e)
-                await interaction.send(embed=discord.Embed(description=f"{e}", color=discord.Color.red()))
+            except Exception as e: #should be redundant
+                await error(interaction, str(e))
+                raise e
 
         @discord.ui.button(emoji=emoji.emojize(':check_mark_button:', language="alias"), label="Iba presúvam channel")
         async def keeprole(self, button, interaction: discord.Interaction):

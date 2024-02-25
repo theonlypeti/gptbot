@@ -9,6 +9,7 @@ import nextcord as discord
 from nextcord.ext import commands
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageFilter, ImageOps
 import utils.embedutil
+from utils.permcheck import can_i
 from rembg import remove
 
 THUMBNAIL_SIZE = (720, 480)
@@ -162,18 +163,23 @@ class PillowCog(commands.Cog):
             self.selection = returnView.selection #used only for returning to previous menu
             self.cog: PillowCog = returnView.cog
             self.img = returnView.img
+            self.emotesneeded = ceil(self.img.width / 256) * ceil(self.img.height/256)
             super().__init__()
+            for ch in self.children:
+                if ch.custom_id == "splitemotesbutton":
+                    ch.label = f"Split to {self.emotesneeded} emotes"
+                    break
 
         @discord.ui.button(label="Upload as emote")
         async def uploademotebutton(self, button, interaction: discord.Interaction):
             modal = self.cog.NameEmoteModal(self, "single")
             await interaction.response.send_modal(modal)
 
-        @discord.ui.button(label="Split as multiple emotes")
+        @discord.ui.button(label="Split as multiple emotes", custom_id="splitemotesbutton")
         async def splitemotesbutton(self, button, interaction: discord.Interaction):
-            emotesneeded = ceil(self.img.width / 256) * ceil(self.img.height/256)
-            if interaction.guild.emoji_limit - len([i for i in interaction.guild.emojis if not i.animated]) < emotesneeded:
-                await interaction.send(embed=discord.Embed(description=f"Not enough emote slots on this server. {emotesneeded} needed", color=discord.Color.red()), delete_after=15)
+            emote_slots = interaction.guild.emoji_limit - len([i for i in interaction.guild.emojis if not i.animated])
+            if emote_slots < self.emotesneeded:
+                await interaction.send(embed=discord.Embed(description=f"Not enough emote slots on this server. {self.emotesneeded - emote_slots} needed", color=discord.Color.red()), delete_after=15)
                 return
             modal = self.cog.NameEmoteModal(self, "split")
             await interaction.response.send_modal(modal)
@@ -199,8 +205,8 @@ class PillowCog(commands.Cog):
     class NameEmoteModal(discord.ui.Modal):
         def __init__(self, view, mode: str):
             super().__init__(title=f"Name your {'emote' if mode != 'sticker' else 'sticker'}")
-            self.mode = mode
-            self.img = view.img
+            self.mode: str = mode
+            self.img: Image = view.img
             self.emotename = discord.ui.TextInput(label=f"{'Emote' if mode != 'sticker' else 'Sticker'} name")
             self.add_item(self.emotename)
             self.emote = discord.ui.TextInput(label="Emoji for sticker (Win + .)")
@@ -208,65 +214,101 @@ class PillowCog(commands.Cog):
                 self.add_item(self.emote)
 
         async def callback(self, interaction: discord.Interaction):
+            await interaction.response.defer()
             try:
                 name = self.emotename.value
                 if self.mode == "split":
-                    await interaction.response.defer()
-                    th, tw = 0, 0 #target height/width
-                    while th < self.img.height: #ceil(self.height/256) * 256
-                        th += 256
-                    while tw < self.img.width:
-                        tw += 256
-                    ni = Image.new(self.img.mode, (tw, th), (0, 0, 0, 0)) #make a new image, size rounded to a multiple of 256, all empty pixels
-                    ni.paste(self.img, (0, 0)) #original image anchored to top left
-                    for h in range(0, th, 256):
-                        nh = h + 256
-                        for w in range(0, tw, 256):
-                            nw = w + 256
-                            em = ni.copy()
-                            logger.debug(f"{h=},{w=},{nh=},{nw=}")
-                            em = em.crop((w, h, nw, nh)) #TODO dont copy if doesnt modify orig image
-                            with BytesIO() as image_binary:
-                                em.save(image_binary, "png")
-                                image_binary.seek(0)
-                                await interaction.guild.create_custom_emoji(name=f"{name}_{h//256}_{w//256}", image=image_binary.read())
+                    await self.split_upload(interaction, name)
 
                 elif self.mode == "sticker":
-                    await interaction.response.defer()
-                    emote = self.emote.value
-                    if not emoji.is_emoji(emote) and not emoji.is_emoji(emote := emoji.emojize(f":{emote.strip(':')}:", language="alias")):
-                        logger.debug(emote)
-                        await interaction.send(embed=discord.Embed(description="You need to supply a default emoji.", color=discord.Color.red()), delete_after=15)
-                        return
-                    em = self.img.copy()
-                    em.thumbnail((320, 320))
-                    with BytesIO() as image_binary:
-                        em.save(image_binary, "PNG")
-                        image_binary.seek(0)
-                        await interaction.guild.create_sticker(name=name, emoji=emoji.demojize(emote, language="alias", delimiters=("", "")), file=discord.File(image_binary))
+                    await self.sticker_upload(interaction, name)
 
-                else: #single emote
-                    await interaction.response.defer()
-                    em = self.img.copy()
-                    em.thumbnail((256, 256))
-                    with BytesIO() as image_binary:
-                        em.save(image_binary, "png")
-                        image_binary.seek(0)
-                        await interaction.guild.create_custom_emoji(name=name, image=image_binary.read())
+                else:
+                    await self.single_emote(interaction, name)
+
             except discord.Forbidden:
                 await interaction.send(embed=discord.Embed(description="The bot does not have manage server or manage emojis permissions.", color=discord.Color.red()))
             except discord.HTTPException as e:
                 logger.error(f"{e}")
                 await interaction.send(f"{e}")
 
-    class RescaleView(discord.ui.View): #TODO what is this for?
-        def __init__(self, returnView):
-            self.cog = returnView.cog
-            self.img: Image = returnView.img
-            self.message: discord.Message = returnView.message
-            self.filetype = returnView.filetype
-            super().__init__()
-            #TODO select with aspect ratio options
+        async def single_emote(self, interaction, name):
+            em: Image = self.img.copy()
+            em.thumbnail((256, 256))
+            with BytesIO() as image_binary:
+                em.save(image_binary, "png")
+                image_binary.seek(0)
+                await interaction.guild.create_custom_emoji(name=name, image=image_binary.read())
+
+        async def split_upload(self, interaction, name):
+            th, tw = 0, 0  # target height/width
+            while th < self.img.height:  # ceil(self.height/256) * 256
+                th += 256
+            while tw < self.img.width:
+                tw += 256
+            ni = Image.new(self.img.mode, (tw, th), (0, 0, 0, 0))  # make a new image, size rounded to a multiple of 256, all empty pixels
+            ni.paste(self.img, (0, 0))  # original image anchored to top left
+            emstring = ""
+            blank_sent = False
+
+            # from tqdm.contrib import itertools
+            # for i1, i2 in itertools.product(range(x), range(y)):
+            #     # do the emote magic
+
+            for h in range(0, th, 256):
+                nh = h + 256
+                for w in range(0, tw, 256):
+                    nw = w + 256
+                    emname = f"{name}_{h // 256}_{w // 256}"
+
+                    # em = ni.copy()
+                    logger.debug(f"{h=},{w=},{nh=},{nw=}")
+                    em = ni.crop((w, h, nw, nh))  # dont copy if doesnt modify orig image
+
+                    pixel_values = em.getextrema()
+                    if all([i[0] == i[1] == 0 for i in pixel_values[:3]]):  # alpha could be full
+                        logger.debug("empty pixels")
+                        emname = f"{name}_blank"
+                        if not blank_sent:
+                            blank_sent = True
+                        else:
+                            emstring += f":{emname}:"
+                            continue
+
+                    with BytesIO() as image_binary:
+                        em.save(image_binary, "png")
+                        image_binary.seek(0)
+                        await interaction.guild.create_custom_emoji(name=emname, image=image_binary.read())
+                    emstring += f":{emname}:"
+                emstring += "\n"
+            emstring = emstring.strip("\n")
+            await interaction.send(
+                embed=discord.Embed(
+                    description=f"Emotes created:\n```{emstring}```",
+                    color=discord.Color.green()),
+                ephemeral=False)
+
+        async def sticker_upload(self, interaction, name):
+            emote = self.emote.value
+            if not emoji.is_emoji(emote) and not emoji.is_emoji(
+                    emote := emoji.emojize(f":{emote.strip(':')}:", language="alias")):
+                logger.debug(emote)
+                await interaction.send(
+                    embed=discord.Embed(
+                        description="You need to supply a default emoji for Discord.", color=discord.Color.red()),
+                    delete_after=15)
+                return
+            else:
+                em = self.img.copy()
+                em.thumbnail((320, 320))
+                with BytesIO() as image_binary:
+                    em.save(image_binary, "PNG")
+                    image_binary.seek(0)
+                    await interaction.guild.create_sticker(
+                        name=name,
+                        emoji=emoji.demojize(emote, language="alias", delimiters=("", "")),
+                        file=discord.File(image_binary)
+                    )
 
     class FiltersDropdown(discord.ui.Select):
         def __init__(self, returnView):
@@ -836,18 +878,29 @@ class PillowCog(commands.Cog):
                 img = imgs[0]
             await self.makeEditor(interaction, img)
 
-
-
     @discord.slash_command(name="imageditor", description="Image editor in development")
     async def imageeditorcommand(self, interaction: discord.Interaction, img: discord.Attachment = discord.SlashOption(name="image", description="The image to edit.", required=True)):
         await interaction.response.defer()
         await self.makeEditor(interaction, img)
 
     async def makeEditor(self, interaction: discord.Interaction | discord.Message, img: discord.Attachment | BytesIO):
+        if not can_i(interaction).send_messages:
+            await utils.embedutil.error(interaction, "Missing permissions: Send messages")
+            return
+        if not can_i(interaction).attach_files:
+            await utils.embedutil.error(interaction, "Missing permissions: Attach files")
+            return
+
         if isinstance(img, discord.Attachment):
             filetype = img.content_type.split("/")[1]
             image = await img.read()
-            image = Image.open(BytesIO(image)) #invalid start byte
+            bio = BytesIO(image)
+            bio.seek(0)
+            # bio.seek(0, os.SEEK_END)
+            # logger.info(bio.tell())
+            # bio.seek(0)
+            print(len(bio.read()))
+            image = Image.open(bio) #invalid start byte
         else:
             logger.debug(img)
             image = Image.open(img)
@@ -913,12 +966,14 @@ class PillowCog(commands.Cog):
 
         with BytesIO() as image_binary:
             try:
-                img.save(image_binary, filetype)
+                img.save(image_binary, filetype, quality="keep")
             except Exception as e:
                 logger.error(e.__class__)
                 logger.error(e)
-                img.save(image_binary, "png")
+                img.save(image_binary, "png", quality="keep")
+            # filesize = image_binary.tell()
             image_binary.seek(0)
+            # logger.debug(f"{filesize=}")
 
             if isinstance(interface, discord.Interaction):
                 msg = await interface.send(file=discord.File(fp=image_binary, filename=f'image.{filetype}'), view=view)

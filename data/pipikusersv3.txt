@@ -39,7 +39,7 @@
             "pill_popper"
         ],
         "items": {
-            "Size Up Forte": 7,
+            "Size Up Forte": 9,
             "Calvin Extra": 2,
             "Niagara XXL": 4
         },
@@ -50,7 +50,7 @@
         "cd": null,
         "methods": 127,
         "dailyStreak": 1,
-        "dailyDate": "2024-02-10"
+        "dailyDate": "2024-02-14"
     },
     {
         "id": 307985197926973452,
@@ -905,5 +905,19 @@
         "pillPopTime": "2023-11-08T00:10:42.247618",
         "dailyStreak": 0,
         "dailyDate": "2023-11-07T00:10:42.247618"
+    },
+    {
+        "id": 757434323338133656,
+        "fap": 0,
+        "achi": [],
+        "items": {},
+        "pb": 36.201,
+        "pw": 36.201,
+        "cd": null,
+        "methods": 0,
+        "pill": null,
+        "pillPopTime": "2024-02-13T21:45:58.033840",
+        "dailyStreak": 0,
+        "dailyDate": "2024-02-12T21:45:58.033840"
     }
 ]

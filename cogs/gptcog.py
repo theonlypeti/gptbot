@@ -13,7 +13,6 @@ from EdgeGPT.EdgeGPT import Chatbot
 from nextcord.ext import commands
 from textwrap import TextWrapper
 from EdgeGPT.EdgeUtils import Cookie
-
 import utils.embedutil
 
 root = os.getcwd()
@@ -111,7 +110,7 @@ class GptCog(commands.Cog):
         await self.askbot(interaction, bot, model, query)
 
     async def askbot(self, interaction: discord.Interaction, bot: EdgeGPT.EdgeGPT.Chatbot, model: str, query: str):
-        model = model.lower()
+        model = model.lower()  #TODO make this into more like a conversation like the users response should not be in the same message as the bot's response as a title but a separate webhookmessage with their pfp and name
         try:
             response = await bot.ask(prompt=query, conversation_style=model, simplify_response=True)
             # self.logger.debug(response)
@@ -268,7 +267,7 @@ class GptCog(commands.Cog):
         await interaction.response.defer()
         ch: discord.TextChannel = interaction.channel
         prompt = "Summarize the following chat:\n"
-        for message in reversed(await ch.history(limit=num_msgs+1, oldest_first=False).flatten())[:-1]:
+        for message in reversed(await ch.history(limit=num_msgs+1, oldest_first=False).flatten()):
             prompt += f"{message.author.global_name or message.author.name}: {message.content}" + (f"({len(message.attachments)} attachments)" if message.attachments else "") + (f"({len(message.embeds)} embeds: {[i.title for i in message.embeds]})" if message.embeds else "") + "\n"
 
         self.logger.debug(f"Resulting prompt: {len(prompt)} chars/4000 long.")

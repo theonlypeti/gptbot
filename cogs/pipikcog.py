@@ -2,10 +2,9 @@ import asyncio
 import json
 import os
 import random
-import string
 from collections import defaultdict
 from copy import deepcopy
-from typing import Union, Sequence, MutableSequence
+from typing import Union, MutableSequence
 import emoji
 import nextcord as discord
 import pyowm
@@ -201,7 +200,10 @@ class PipikUser(object):
         # elif isinstance(discorduser, int): #i don't remember what was this supposed to be
         #     discorduser = discorduser
 
-        self.id = discorduser
+        if isinstance(discorduser, int):
+            self.id = discorduser
+        else:
+            self.id = discorduser.id
         self.fap: int = 0
         self.achi = []
         self.items = dict()

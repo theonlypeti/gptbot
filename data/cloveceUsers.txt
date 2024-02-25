@@ -6,7 +6,7 @@
             "items": {
                 "spinToken": 0,
                 "premSpinToken": 0,
-                "spinShards": 2
+                "spinShards": 6
             },
             "defaults": {
                 "defaults": [
@@ -123,13 +123,13 @@
             "Second places": 4,
             "Third places": 0,
             "Dice thrown": 945,
-            "Spins": 64,
+            "Spins": 66,
             "Default icons owned": 66,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":radioactive:",
         "ready": false,
-        "dailyDate": "2024-02-10",
+        "dailyDate": "2024-02-25",
         "inLobby": null
     },
     {
