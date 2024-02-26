@@ -5,11 +5,11 @@ from nextcord.ext import commands
 
 class Wordlecog(commands.Cog):
     def __init__(self, client):
-        self.wordleLogger = client.logger.getChild('wordleLogger')
+        self.logger = client.logger.getChild(f"{self.__module__}")
         self.client = client
         with open("./data/wordlewords.txt", "r") as file:
             self.words = file.readlines()
-            self.wordleLogger.debug(f"{len(self.words)} wordle words loaded")
+            self.logger.debug(f"{len(self.words)} wordle words loaded")
         self.games = []
 
     class WordleGame(discord.ui.View):

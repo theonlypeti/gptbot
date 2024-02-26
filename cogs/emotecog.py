@@ -23,11 +23,11 @@ root = os.getcwd()  # "F:\\Program Files\\Python39\\MyScripts\\discordocska\\pip
 
 class EmoteCog(commands.Cog):
     def __init__(self, client):
-        global emotelogger
+        global logger
         self.discord_emotes = dict()
         self.client = client
         self.emoteserver = None
-        emotelogger = client.logger.getChild("EmoteLogger")
+        logger = client.logger.getChild(f"{self.__module__}")
         self.readEmotes()
 
     async def flipemote(self, emote, state, orient: Literal["H"] | Literal["V"]):
@@ -42,7 +42,7 @@ class EmoteCog(commands.Cog):
         try:
             img = iio.imread(file.fp, extension="."+file.filename.split(".")[-1])  # TODO sometimes gifs have no transparency so the shape is (x,y,3) then (x,y,4), fix this //still not fixed
         except ValueError as e:
-            emotelogger.error(f"ValueError: {e=}")
+            logger.error(f"ValueError: {e=}")
             return None
         # emotelogger.debug(f"{img.shape=}")
 
@@ -61,20 +61,20 @@ class EmoteCog(commands.Cog):
             with BytesIO() as image_binary:
                 iio.imwrite(image_binary, np.array(flipped_imgs), format="gif", loop=0)
                 image_binary.seek(0)
-                emotelogger.debug(f"{img.shape=}")
+                logger.debug(f"{img.shape=}")
                 newemoji = await self.emoteserver.create_custom_emoji(name=f"{em.name}flip{orient}",
                                                                       image=image_binary.read())
         else:
-            emotelogger.debug(f"{img.shape=}")
+            logger.debug(f"{img.shape=}")
             # Handle static image
             if orient == "H":
-                emotelogger.debug(f"{img.shape=}")
+                logger.debug(f"{img.shape=}")
                 img = img[:, ::-1]
             elif orient == "V":
                 img = img[::-1, :]
             with BytesIO() as image_binary:
                 iio.imwrite(image_binary, img, format="png")
-                emotelogger.debug(f"{img.shape=}")
+                logger.debug(f"{img.shape=}")
                 image_binary.seek(0)
                 newemoji = await self.emoteserver.create_custom_emoji(name=f"{em.name}flip{orient}", image=image_binary.read())
 
@@ -83,12 +83,12 @@ class EmoteCog(commands.Cog):
     def saveEmotes(self):
         with open(root + "/data/pipikemotes.txt", "w") as file:
             json.dump(self.discord_emotes, file, indent=4)
-        emotelogger.info("saved emotes")
+        logger.info("saved emotes")
 
     def readEmotes(self):
         with open(root + "/data/pipikemotes.txt", "r") as file:
             self.discord_emotes = json.load(file)
-        emotelogger.debug(f"loaded {len(self.discord_emotes)} emotes")
+        logger.debug(f"loaded {len(self.discord_emotes)} emotes")
 
     @commands.command()
     async def registerEmote(self, ctx, *attr):
@@ -162,11 +162,11 @@ class EmoteCog(commands.Cog):
                                                     description="The text message to send along with any emotes, use :emotename: as placeholder like regular.",
                                                     required=False, default=None)):
         def check(reaction, user):
-            emotelogger.debug(f"{str(reaction.emoji)=}, {emote=}")
+            logger.debug(f"{str(reaction.emoji)=}, {emote=}")
             return not user.bot and str(reaction.emoji) == emote
 
         channel: discord.TextChannel = ctx.channel
-        emotelogger.debug(f"{ctx.user}, {emote}, {datetime.now()}")
+        logger.debug(f"{ctx.user}, {emote}, {datetime.now()}")
         if emote:
             if emote.endswith("+flipH"):
                 flipped = True
@@ -189,7 +189,7 @@ class EmoteCog(commands.Cog):
                 try:
                     _, _ = await self.client.wait_for('reaction_add', timeout=6.0, check=check)
                 except asyncio.TimeoutError:
-                    emotelogger.debug("emote timed out")
+                    logger.debug("emote timed out")
                 finally:
                     await mess.remove_reaction(emote, self.client.user)
 
@@ -210,14 +210,14 @@ class EmoteCog(commands.Cog):
                 flips = [m.start() for m in re.finditer('\+flipH', text)] #ends of emotes
                 emotestoflip = [(text.rfind("{",0,i),i) for i in flips] #beginnings of toflip emotes
                 emotestoflip = set([text[i[0]+1:i[1]] for i in emotestoflip]) #capturing their names from begin:end ranges, also making a set
-                emotelogger.debug(msg=",".join(map(str, emotestoflip)))
+                logger.debug(msg=",".join(map(str, emotestoflip)))
                 flippedemotes = [await self.flipemote(self.discord_emotes[emotetoflip], ctx.guild.me._state, orient="H") for emotetoflip in emotestoflip] #flipping, adding to server
                 self.discord_emotes.update({f"{i}+flipH": j for i, j in zip(emotestoflip, flippedemotes)}) #update the translation dict temporarily
 
                 flips = [m.start() for m in re.finditer('\+flipV', text)]  # ends of emotes
                 emotestoflipv = [(text.rfind("{", 0, i), i) for i in flips]  # beginnings of toflip emotes
                 emotestoflipv = set([text[i[0] + 1:i[1]] for i in emotestoflipv])  # capturing their names from begin:end ranges, also making a set
-                emotelogger.debug(msg=",".join(map(str, emotestoflipv)))
+                logger.debug(msg=",".join(map(str, emotestoflipv)))
                 flippedemotesv = [await self.flipemote(self.discord_emotes[emotetoflip], ctx.guild.me._state, orient="V") for emotetoflip in emotestoflipv]  # flipping, adding to server
                 self.discord_emotes.update({f"{i}+flipV": j for i, j in zip(emotestoflipv, flippedemotesv)})
 
@@ -261,7 +261,7 @@ class EmoteCog(commands.Cog):
                     del self.discord_emotes[f"{i}+flipV"]
 
             except Exception as e:
-                emotelogger.error(e)
+                logger.error(e)
                 await ctx.send(str(e), ephemeral=True)
                 raise e
 
@@ -328,7 +328,7 @@ class EmoteCog(commands.Cog):
 
         async def callback(self, interaction):
             word = ""
-            emotelogger.info(f"{interaction.user} word-reacts {self.word.value} on message {self.message.content}")
+            logger.info(f"{interaction.user} word-reacts {self.word.value} on message {self.message.content}")
             myword = antimakkcen(self.word.value)
             for letter in myword.upper():
                 if letter == "A" and chr(127397 + ord("A")) in word:

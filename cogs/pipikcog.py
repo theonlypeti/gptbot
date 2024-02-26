@@ -242,7 +242,7 @@ class PipikUser(object):
 
 class PipikBot(commands.Cog):
     def __init__(self, client):
-        self.logger = client.logger.getChild(f"{__name__}logger")
+        self.logger = client.logger.getChild(f"{self.__module__}")
         self.usedcompliments = {"placeholder", }
         self.client: discord.Client = client
         self.temperature: int = 0

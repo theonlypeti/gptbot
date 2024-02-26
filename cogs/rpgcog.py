@@ -1577,7 +1577,7 @@ class RPGCog(commands.Cog):
         self.client = client
         self.worlds = {}
         self.players = {}
-        logger = client.logger.getChild(f"{__name__}logger")
+        logger = client.logger.getChild(f"{self.__module__}")
 
     @classmethod
     async def backToMap(cls, ctx, player):

@@ -49,8 +49,8 @@ async def sendmsg(ctx, embedVar, img: list[imageio.core.Array]):
 class SympyCog(commands.Cog):
     def __init__(self, client):
         self.client = client
-        global sympylogger
-        sympylogger = client.logger.getChild("SympyLogger")
+        global logger
+        logger = client.logger.getChild(f"{self.__module__}")
 
     class SimplifyModal(discord.ui.Modal):
         def __init__(self):
@@ -67,7 +67,7 @@ class SympyCog(commands.Cog):
                 embedVar = discord.Embed(title=f'Result of {escape_markdown(expression)}', description=escape_markdown(str(result)), color=ctx.user.color)
                 await ctx.send(embed=embedVar)
             except Exception as e:
-                sympylogger.error(e)
+                logger.error(e)
                 await ctx.send(embed=discord.Embed(title="Error", description=e, color=ctx.user.color))
 
     class SubsModal(discord.ui.Modal):
@@ -91,7 +91,7 @@ class SympyCog(commands.Cog):
                 embedVar = discord.Embed(title=f'Result of {escape_markdown(expression)}', description=f"if {self.subs.value}\n{escape_markdown(str(result))}", color=ctx.user.color)
                 await ctx.send(embed=embedVar)
             except Exception as e:
-                sympylogger.error(e)
+                logger.error(e)
                 await ctx.send(embed=discord.Embed(title="Error", description=e, color=ctx.user.color))
 
     class IntegralModal(discord.ui.Modal):
@@ -132,7 +132,7 @@ class SympyCog(commands.Cog):
                 img = addbackground(f'https://latex.codecogs.com/png.image?{latexed}')
                 await sendmsg(ctx, embedVar, [question, img])
             except Exception as e:
-                sympylogger.error(e)
+                logger.error(e)
                 await ctx.send(embed=discord.Embed(title="Error", description=e, color=ctx.user.color))
                 raise e
 
@@ -163,7 +163,7 @@ class SympyCog(commands.Cog):
                 img = addbackground(f'https://latex.codecogs.com/png.image?{latexed}')
                 await sendmsg(ctx, embedVar, [questionimg, img])
             except Exception as e:
-                sympylogger.error(e)
+                logger.error(e)
                 await ctx.send(embed=discord.Embed(title="Error", description=e, color=ctx.user.color))
 
     class LimitModal(discord.ui.Modal):
@@ -195,7 +195,7 @@ class SympyCog(commands.Cog):
                 question = latex(lim).replace(" ", "%20") or "Error"
                 result = lim.doit()
             except Exception as e:
-                sympylogger.error(e)
+                logger.error(e)
                 result = "Error"
             embedVar = discord.Embed(title=f"Result of lim({escape_markdown(expression)}) {going_from}->{going_to}", description=escape_markdown(str(result)), color=ctx.user.color)
             latexed = latex(result).replace(" ", "%20")
@@ -235,24 +235,24 @@ class SympyCog(commands.Cog):
             expression = expression.replace("max(hod)", "max(density(sum(hod)).dict.keys())")
             expression = expression.replace("min(hod)", "min(density(sum(hod)).dict.keys())")
             expression = eval(expression)
-            sympylogger.debug(expression)
+            logger.debug(expression)
 
             zapravd = self.zapravd.value
             zapravd = zapravd.replace("max(hod)", "max(density(sum(hod)).dict.keys())")
             zapravd = zapravd.replace("min(hod)", "min(density(sum(hod)).dict.keys())")
             #zapravd = eval(zapravd) if zapravd else None
-            sympylogger.debug(zapravd)
+            logger.debug(zapravd)
             try:
                 result = P(expression, given_condition=eval(zapravd) if zapravd else None)
             except Exception as e:
-                sympylogger.debug(e)
+                logger.debug(e)
                 try:
                     result = density(expression, condition=eval(zapravd) if zapravd else None)
-                    sympylogger.debug(result)
+                    logger.debug(result)
                     result = {j: Rational(i.p * (max([j.q for j in result.values()]) / i.q), max([j.q for j in result.values()]), gcd=1) for j, i in result.items()}
                     result = "\n".join((f"{k}={v}" for k, v in result.items()))
                 except Exception as f:
-                    sympylogger.error(e)
+                    logger.error(e)
                     result = f"{e}\n{f}"
             embedVar = discord.Embed(description=escape_markdown(f"Result of {n} * {obj} where {self.expression.value} {'if' if zapravd else ''} {self.zapravd.value}:\n----------\n{result} ") , color=ctx.user.color)
             await ctx.send(embed=embedVar)

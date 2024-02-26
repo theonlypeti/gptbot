@@ -9,9 +9,9 @@ from utils.ps import Adress, broadcasty
 
 class PsCog(commands.Cog):
     def __init__(self, client):
-        global pslogger
+        global logger
         self.client = client
-        pslogger = client.logger.getChild(f"{__name__}logger")
+        logger = client.logger.getChild(f"{self.__module__}")
 
     class BroadcastCalcModal(discord.ui.Modal):
         def __init__(self):
@@ -24,7 +24,7 @@ class PsCog(commands.Cog):
             try:
                 gener = broadcasty(ip)
             except ValueError as e:
-                pslogger.error(e)
+                logger.error(e)
                 return interaction.send(f"Oopsie \n{e}")
             embedVar = discord.Embed(title="Broadcast kalkulačka", description=f"pre adresu {ip}", color=interaction.user.color, timestamp=datetime.now())
             broadcaststr, idstr = "", ""
@@ -77,7 +77,7 @@ class PsCog(commands.Cog):
                 calc = Adress(ip, mask)
                 #pslogger.debug(calc.__dict__)
             except ValueError as e:
-                pslogger.error(e)
+                logger.error(e)
                 await interaction.send(f"Oops {e.args[0]}")
                 return
             embedVar = discord.Embed(title="Subnetwork calc", color=interaction.user.color, timestamp=datetime.now())

@@ -21,7 +21,7 @@ import emoji
 class ColorRoleCog(commands.Cog):
     def __init__(self, client):
         global logger
-        logger = client.logger.getChild(f"{__name__}logger")
+        logger = client.logger.getChild(f"{self.__module__}")
         self.colorstopick = 4
         self.client = client
         self.getemoteserver.start()  #funky workaround but works

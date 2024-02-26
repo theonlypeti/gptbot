@@ -26,7 +26,7 @@ class PillowCog(commands.Cog):
     def __init__(self, client):
         global logger
         self.client = client
-        logger = client.logger.getChild(f"{__name__}logger")
+        logger = client.logger.getChild(f"{self.__module__}")
 
     class Selection:
         def __init__(self, img: Image, boundary: tuple):

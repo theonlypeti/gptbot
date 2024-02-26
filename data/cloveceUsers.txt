@@ -21,7 +21,8 @@
                     ":orange_circle:"
                 ],
                 "smileys": [
-                    ":thinking_face:"
+                    ":thinking_face:",
+                    ":face_with_rolling_eyes:"
                 ],
                 "plants": [
                     ":christmas_tree:"
@@ -123,13 +124,13 @@
             "Second places": 4,
             "Third places": 0,
             "Dice thrown": 945,
-            "Spins": 66,
-            "Default icons owned": 66,
+            "Spins": 67,
+            "Default icons owned": 67,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":radioactive:",
         "ready": false,
-        "dailyDate": "2024-02-25",
+        "dailyDate": "2024-02-26",
         "inLobby": null
     },
     {

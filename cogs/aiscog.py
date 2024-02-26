@@ -38,7 +38,7 @@ class Tema(object):
 class AisCog(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.aisLogger = client.logger.getChild('aisLogger')
+        logger = client.logger.getChild(f"{self.__module__}")
         self.printer.start()
         self.temy = []
         if os.path.exists(root+r'/data/ais_notif_channels.txt'):

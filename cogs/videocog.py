@@ -77,7 +77,7 @@ class VideoCog(commands.Cog):
     def __init__(self, client):
         global logger
         self.client = client
-        logger = client.logger.getChild(f"{__name__}logger")
+        logger = client.logger.getChild(f"{self.__module__}")
         self.files = []
 
     class EditorView(discord.ui.View):

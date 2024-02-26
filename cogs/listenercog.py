@@ -14,7 +14,7 @@ from nextcord.ext import commands
 
 class ListenerCog(commands.Cog):
     def __init__(self, client):
-        self.logger = client.logger.getChild(f"{__name__}Logger")
+        self.logger = client.logger.getChild(f"{self.__module__}")
         self.client = client
         self.stunlocked = None
         self.us = set()

@@ -35,7 +35,7 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
     def __init__(self, client):
         global reddithandler, logger
         self.client = client
-        logger = client.logger.getChild('topicLogger')
+        logger = client.logger.getChild(f"{self.__module__}")
         reddithandler = self.RedditHandler(self)
         reddithandler.openFilters()
 

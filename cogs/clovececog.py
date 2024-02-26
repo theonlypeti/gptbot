@@ -44,7 +44,7 @@ achi_emojis_dict = {k:v for k,v in allemojis_dict.items() if k in ("pipikachis",
 class LobbyCog(commands.Cog):
     def __init__(self, client):
         global logger
-        logger = client.logger.getChild("CloveceLogger")
+        logger = client.logger.getChild(f"{self.__module__}")
         self.users = []
 
         try:

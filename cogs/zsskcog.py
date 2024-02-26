@@ -47,7 +47,7 @@ def custom_round(num: int) -> str:
 class ZSSKCog(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.zsskLogger = client.logger.getChild(f"{__name__}Logger")
+        self.logger = client.logger.getChild(f"{self.__module__}")
 
     async def getTimeTable(self, link): #dont judge pls
         async with aiohttp.ClientSession() as session:
@@ -61,9 +61,9 @@ class ZSSKCog(commands.Cog):
                 spoj = soup.find("div", attrs={"class": "connection-details"})
                 a = spoj.find_all("a", attrs={"title": "Zobraziť detail spoja"})
                 traintype = spoj.find("img").get("alt")
-                self.zsskLogger.debug(a)
+                self.logger.debug(a)
             except Exception as e:
-                self.zsskLogger.error(e)
+                self.logger.error(e)
                 return None
             try:
                 links = []
@@ -71,7 +71,7 @@ class ZSSKCog(commands.Cog):
                     links.append(vlak.get("href"))
                 # links = a.get("href") #ez szokott errorozni mert nonetype az a
             except AttributeError as e:
-                self.zsskLogger.error(e)
+                self.logger.error(e)
                 return None
 
             tts = []
@@ -98,7 +98,7 @@ class ZSSKCog(commands.Cog):
 
                 tt = TimeTable(time, date, cities, delay, traintype or None)
                 tts.append(tt)
-        self.zsskLogger.info(f"{tts=}")
+        self.logger.info(f"{tts=}")
         return tts
 
     @discord.slash_command(name="zssk", description="Call the announcer lady to tell you about a train´s schedule", dm_permission=False)
@@ -108,10 +108,10 @@ class ZSSKCog(commands.Cog):
                    time: str = discord.SlashOption(name="time", description="hh:mm", required=False),
                    date: str = discord.SlashOption(name="date", description="dd.mm.yyyy", required=False)):
         await ctx.response.defer()
-        self.zsskLogger.info(f"{ctx.user} used zssk in {ctx.channel}: {fromcity} {tocity}")
+        self.logger.info(f"{ctx.user} used zssk in {ctx.channel}: {fromcity} {tocity}")
 
         link = f"https://cp.hnonline.sk/vlakbus/spojenie/vysledky/?"+(f"date={date}&" if date else "") + (f"time={time}&" if time else "") +f"f={fromcity}&fc=100003&t={tocity}&tc=100003&af=true&&trt=150,151,152,153" #direct=true
-        self.zsskLogger.debug(f"{link=},{len(link)=}")
+        self.logger.debug(f"{link=},{len(link)=}")
         tts: list[TimeTable] = await self.getTimeTable(link)
         if tts is None:
             await embedutil.error(ctx, f"Žiadne spoje medzi {fromcity} a {tocity}.")
@@ -126,7 +126,7 @@ class ZSSKCog(commands.Cog):
             try:
                 vclient: discord.VoiceClient = await channel.connect()
             except Exception as e:
-                self.zsskLogger.error(f"{e}")
+                self.logger.error(f"{e}")
                 vclient: discord.VoiceClient = ctx.guild.voice_client  # TODO if its lavalink player this will error out
                 if vclient is None:
                     await embedutil.error(ctx, "Could not connect to voice channel. Maybe I don´t have permissions to join it.")
@@ -161,8 +161,8 @@ class ZSSKCog(commands.Cog):
     def traintype(self, vclient: discord.VoiceClient, tt: TimeTable):
         basesound = {"normal":"NFV","medzistatny":"NFM","medzistatny povinne miestenkovy":"NRM","povinne miestenkovy":"NRV","zmeskany medzistatny":"ZFM","zmeskany medzistatny povinne miestenkovy":"ZRM","zmeskany povinne miestenkovy":"ZRV"}
         types = {"osobný vlak":"OS","rýchlik":"R","RegioJet":"REX","EuroCity":"EC","InterCity":"IC","EuroNight":"ER","EuroRegional":"ER","RegionalExpress":"REX","Expres":"EX"}
-        self.zsskLogger.debug(f"\\{basesound['normal']}{types[tt.vlaktype]}.WAV")
-        self.zsskLogger.debug(os.path.exists(maindir + f"\\V1\\{basesound['normal']}{types[tt.vlaktype]}.WAV"))
+        self.logger.debug(f"\\{basesound['normal']}{types[tt.vlaktype]}.WAV")
+        self.logger.debug(os.path.exists(maindir + f"\\V1\\{basesound['normal']}{types[tt.vlaktype]}.WAV"))
         if os.path.exists(maindir + f"\\V1\\{basesound['normal']}{types[tt.vlaktype]}.WAV"):
             sound = f"{basesound['normal']}{types[tt.vlaktype]}.WAV"
         else:
@@ -179,13 +179,13 @@ class ZSSKCog(commands.Cog):
         if len(cities) > 0:
             chosencity = cities.pop()
             try:
-                self.zsskLogger.debug(f"{chosencity=}")
+                self.logger.debug(f"{chosencity=}")
                 chosencity = soundfiles[chosencity]
             except KeyError:
-                self.zsskLogger.error(f"not found {chosencity}")
+                self.logger.error(f"not found {chosencity}")
                 self.city(vclient, tt)
             except IOError:
-                self.zsskLogger.error(f"no file found {chosencity}")
+                self.logger.error(f"no file found {chosencity}")
                 self.city(vclient, tt)
             else:
                 vclient.play(discord.FFmpegPCMAudio(executable=path, source=maindir + "\\R3\\" + chosencity+".WAV"),

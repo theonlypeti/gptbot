@@ -19,7 +19,7 @@ class Selection:
 
 class Testing(commands.Cog):
     def __init__(self, client):
-        self.logger = client.logger.getChild(__name__)
+        self.logger = client.logger.getChild(f"{self.__module__}")
         self.selection = None
         self.client: discord.Client = client
 

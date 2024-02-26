@@ -29,7 +29,7 @@ mgr = pyowm.OWM(os.getenv("OWM_TOKEN")).weather_manager() #yes same as in client
 class MiscallenousCog(commands.Cog):
     def __init__(self, client):
         global logger
-        logger = client.logger.getChild(f"{__name__}Logger")
+        logger = client.logger.getChild(f"{self.__module__}")
         self.client = client
         with open(r"data/karomkodasok.txt", "r", encoding="UTF-8") as file:
             self.karomkodasok = file.readlines()

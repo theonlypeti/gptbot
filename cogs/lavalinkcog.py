@@ -32,7 +32,7 @@ class LavaLinkCog(commands.Cog):
         self.client: discord.Client = client
         self.ready_ran = False
         self.pool = NodePool(self.client)
-        self.logger = client.logger.getChild(__name__)
+        self.logger = client.logger.getChild(f"{self.__module__}")
         self.on_ready.start()
         self.players: dict[int, MyPlayer] = {}
 

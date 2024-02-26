@@ -12,15 +12,18 @@ from BingImageCreator import ImageGenAsync
 from EdgeGPT.EdgeGPT import Chatbot
 from nextcord.ext import commands
 from textwrap import TextWrapper
-from EdgeGPT.EdgeUtils import Cookie
+from EdgeGPT.EdgeUtils import Query, Cookie
+from tabulate import tabulate
+
 import utils.embedutil
+from utils.webhook_manager import WebhookManager
 
 root = os.getcwd()
 
 
 class GptCog(commands.Cog):
     def __init__(self, client):
-        self.logger = client.logger.getChild(__name__)
+        self.logger = client.logger.getChild(f"{self.__module__}")
         self.client: discord.Client = client
 
     class TextInputModal(discord.ui.Modal):
@@ -40,8 +43,7 @@ class GptCog(commands.Cog):
                 ch.disabled = True
             self.view.children[-1].style = discord.ButtonStyle.green
             await self.msg.edit(view=self.view)
-            async with interaction.channel.typing():
-                await self.cog.askbot(interaction, self.chat, self.model, self.q.value)
+            await self.cog.askbot(interaction, self.chat, self.model, self.q.value)
 
     class SuggestionsView(discord.ui.View):
         def __init__(self, chat: EdgeGPT.EdgeGPT.Chatbot, msg: discord.Message):
@@ -71,8 +73,7 @@ class GptCog(commands.Cog):
             for child in self.view.children:
                 child.disabled = True
             await interaction.edit(view=self.view)
-            async with interaction.channel.typing():
-                await self.cog.askbot(interaction, self.chat, self.model, self.q)
+            await self.cog.askbot(interaction, self.chat, self.model, self.q)
 
     class CustomButton(discord.ui.Button):
         def __init__(self, chat, model: str, cog):
@@ -97,7 +98,7 @@ class GptCog(commands.Cog):
                                                       choices=("Creative", "Balanced", "Precise"),
                                                       default="Balanced",
                                                       required=False)):
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
         Cookie.dir_path = r"./data/cookies"
         Cookie.import_data()
         try:
@@ -110,54 +111,80 @@ class GptCog(commands.Cog):
         await self.askbot(interaction, bot, model, query)
 
     async def askbot(self, interaction: discord.Interaction, bot: EdgeGPT.EdgeGPT.Chatbot, model: str, query: str):
-        model = model.lower()  #TODO make this into more like a conversation like the users response should not be in the same message as the bot's response as a title but a separate webhookmessage with their pfp and name
-        try:
-            response = await bot.ask(prompt=query, conversation_style=model, simplify_response=True)
-            # self.logger.debug(response)
-            # await bot.close()
-        except Exception as e:
-            embed = discord.Embed(title=(query[:253] + "...") if len(query) > 255 else query, description=e, color=discord.Color.red())
-            await interaction.send(embed=embed, delete_after=180)
-            raise e
-        embeds = []
-        # combined_text = response["text"] + "\n" + "\n [".join(response["sources_text"].split("["))
-        if (response["sources_text"] in response["text"]) or (response["text"] in response["sources_text"]):
-            combined_text = response["text"] #for when there are no sources to cite, sources_text is usually a carbon copy of text
-        else:
-            combined_text = response["text"] + "\n" + "\n\u200b[".join(response["sources_text"].split("["))
-            matches = re.findall(r"\[\^\d+\^\]", combined_text)
-            for match in matches:
-                #extract the digits from the match
-                toreplace = re.findall(r"\d+", match)[0]
-                #make it a markdown hyperlink
-                res = response['sources_text'].split("](https://")
-                link = "https://" + res[int(toreplace)].split(") [")[0]
-                replacewith = f"[ [{toreplace}]]({link})"
-                combined_text = combined_text.replace(match, replacewith)
-        # combined_text = response["text"] + "\n" + response["sources_text"]
+        model = model.lower()
+        async with WebhookManager(interaction) as whm:
+            quest = await whm.send(content=query, username=interaction.user.display_name, avatar_url=interaction.user.avatar.url, wait=True)
+        async with interaction.channel.typing():
+            try:
+                response = await bot.ask(prompt=query, conversation_style=model, simplify_response=True)
 
-        tables = re.findall(r"(?:^(?:\|.+?\|)+$\n?)+", combined_text, re.MULTILINE)
-        if tables:
-            for table in tables:
-                combined_text = combined_text.replace(table, f"```md\n{table}```")
+            except Exception as e:
+                embed = discord.Embed(description=e, color=discord.Color.red())
+                await interaction.send(embed=embed, delete_after=180)
+                raise e
+            embeds = []
+            if (response["sources_text"] in response["text"]) or (response["text"] in response["sources_text"]):
+                combined_text = response["text"] #for when there are no sources to cite, sources_text is usually a carbon copy of text, not a perfect check but sometimes works
+            else:
+                combined_text = response["text"] + "\n" + "\n\u200b[".join(response["sources_text"].split("["))
 
-        for text in TextWrapper(width=4000, break_long_words=False, replace_whitespace=False).wrap(combined_text):
-            embed = discord.Embed(title=query[:253] + "..." if len(query)>256 else query, description=text, color=interaction.user.color)
-            embeds.append(embed)
-        viewObj = self.SuggestionsView(bot, None)
-        if response["suggestions"]:
-            for sugg in response["suggestions"]:
-                viewObj.add_item(self.SuggestionButton(sugg[:77] + "..." if len(sugg)>80 else sugg, bot, model, self))
-        viewObj.add_item(self.CustomButton(bot, model, self))
-        for emb in embeds[:-1]:
-            await interaction.send(embed=emb)
-        maxnum = response["max_messages"]
-        msgnum = maxnum - response["messages_left"]
-        embeds[-1].set_footer(text=f"Message limit: {msgnum}/{maxnum-1}")
-        msg = await interaction.send(embed=embeds[-1], view=viewObj)
-        viewObj.msg = msg
+                sources = response['sources_text'].split("](https://")
+                self.logger.debug(sources)
+                matches = re.findall(r"\[\^\d+\^\]", combined_text)  # replace [1] with markdown
 
-    async def askbotraw(self, interaction: discord.Interaction, bot: EdgeGPT.EdgeGPT.Chatbot, model: str, query: str, title: str = None):
+                self.logger.debug(matches)
+                for match in matches:
+                    #extract the digits from the match
+                    toreplace = re.findall(r"\d+", match)[0]
+                    self.logger.debug(toreplace)
+
+                    #make it a markdown hyperlink
+                    link = "https://" + sources[int(toreplace)].split(") [")[0]
+                    replacewith = f"[ [{toreplace}]]({link})"
+                    combined_text = combined_text.replace(match, replacewith)
+
+                matches = re.findall(r"\[([^\]]+)\]\(\^(\d)\^\)", combined_text)  # replace [text](1) with markdown
+                self.logger.debug(matches)
+                for match in matches:
+                    # extract the digits from the match
+                    self.logger.debug(match)
+                    text, toreplace = match
+                    # make it a markdown hyperlink
+
+                    link = "https://" + sources[int(toreplace)].split(") [")[0]
+                    replacewith = f"[ [{text}]]({link})"
+                    combined_text = combined_text.replace(match, replacewith)
+
+            # find tables tabulate them
+            tables = re.findall(r"(?:^(?:\|.+?\|)+$\n?)+", combined_text, re.MULTILINE)
+            if tables:
+                for table in tables:
+                    cells = [[cell.strip().strip("-").strip("*") for cell in row.split("|") if cell] for row in table.split("\n")]
+                    columns = max(len(row) for row in cells)
+                    maxwidth = 60
+                    colwidth = (maxwidth // columns) - 2
+                    newtable = [["\n".join([text for text in TextWrapper(width=colwidth, break_long_words=False, replace_whitespace=False).wrap(cell)]) for cell in row] for row in cells]
+                    newtable = tabulate(newtable[2:], newtable[0], tablefmt="fancy_grid")
+                    combined_text = combined_text.replace(table, f"```md\n{newtable}```")
+
+            for text in TextWrapper(width=4000, break_long_words=False, replace_whitespace=False).wrap(combined_text):
+                embed = discord.Embed(description=text, color=interaction.user.color)
+                embeds.append(embed)
+            viewObj = self.SuggestionsView(bot, None)
+            if response["suggestions"]:
+                for sugg in response["suggestions"]:
+                    viewObj.add_item(self.SuggestionButton(sugg[:77] + "..." if len(sugg)>80 else sugg, bot, model, self))
+            viewObj.add_item(self.CustomButton(bot, model, self))
+            for emb in embeds[:-1]:
+                await interaction.send(embed=emb)
+            maxnum = response["max_messages"]
+            msgnum = maxnum - response["messages_left"]
+            embeds[-1].set_footer(text=f"Message limit: {msgnum}/{maxnum-1} |  Try your own conversation with /chatgpt ask")
+            msg = await quest.reply(embed=embeds[-1], view=viewObj)
+            viewObj.msg = msg
+
+    @staticmethod
+    async def askbotraw(interaction: discord.Interaction, bot: EdgeGPT.EdgeGPT.Chatbot, model: str, query: str, title: str = None):
         model = model.lower()
         try:
             response = await bot.ask(prompt=query, conversation_style=model, simplify_response=True)
@@ -183,8 +210,6 @@ class GptCog(commands.Cog):
 
     @chatgpt.subcommand(name="images", description="Uses the cutting edge DALL-E 3 model to generate 4 images based on your prompt")
     async def imgen(self, interaction: discord.Interaction, prompt: str):
-        await interaction.response.defer()
-        from EdgeGPT.EdgeUtils import Query, Cookie
         Cookie.dir_path = r"./data/cookies"
         Cookie.import_data()
         Query.image_dir_path = r"./data/images"
@@ -194,17 +219,18 @@ class GptCog(commands.Cog):
         # Add embed to list of embeds
         # [embeds.append(discord.Embed(url="https://www.bing.com/").set_image(url=image_link)) for image_link in images]
         # await interaction.send(txt, embeds=embeds, wait=True)
-
-        async with ImageGenAsync(all_cookies=Cookie.current_data) as image_generator:
-            # async with ImageGenAsync(Cookie.image_token) as image_generator:
-            try:
-                images = list(filter(lambda im: not im.endswith(".svg"), await image_generator.get_images(prompt)))
-                await interaction.send(images[0])
-                for i in images[1:]:
-                    await interaction.channel.send(i)
-            except Exception as e:
-                await interaction.send(f"Error \n{e}")
-                raise e
+        msg = await interaction.send(f"Generating: {prompt}\nThis may take a while, please be patient.")
+        async with interaction.channel.typing():
+            async with ImageGenAsync(all_cookies=Cookie.current_data) as image_generator:
+                # async with ImageGenAsync(Cookie.image_token) as image_generator:
+                try:
+                    images = list(filter(lambda im: not im.endswith(".svg"), await image_generator.get_images(prompt)))
+                    await msg.reply(images[0])
+                    for i in images[:1]:
+                        await interaction.channel.send(i)
+                except Exception as e:
+                    await interaction.send(f"Error \n{e}")
+                    raise e
             # await image_generator.save_images(images, output_dir=Query.image_dir_path)
 
     @chatgpt.subcommand(description="Just a silly little experiment.")

@@ -10,7 +10,7 @@ class FujkinCog(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.fujkin.start()
-        self.logger = client.logger.getChild("FujkinLogger")
+        self.logger = client.logger.getChild(f"{self.__module__}")
         self.does_it_fujkin = False
         self.does_it_esik = False
 

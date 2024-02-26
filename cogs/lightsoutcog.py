@@ -9,7 +9,7 @@ from utils.embedutil import error
 
 class LightsOutCog(commands.Cog):
     def __init__(self, client):
-        self.logger = client.logger.getChild(f"{__name__}Logger")
+        self.logger = client.logger.getChild(f"{self.__module__}")
         self.client = client
 
     class LightsOutGame(discord.ui.View):

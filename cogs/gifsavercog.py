@@ -9,7 +9,7 @@ root = os.getcwd()  #client.root exists
 
 class GifCog(commands.Cog):
     def __init__(self, client):
-        self.gifLogger = client.logger.getChild("GifLogger")
+        self.gifLogger = client.logger.getChild(f"{self.__module__}")
         self.client = client
         self.db = self.loadGifs()
 
