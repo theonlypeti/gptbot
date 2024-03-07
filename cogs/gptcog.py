@@ -13,10 +13,12 @@ from EdgeGPT.EdgeGPT import Chatbot
 from nextcord.ext import commands
 from textwrap import TextWrapper
 from EdgeGPT.EdgeUtils import Query, Cookie
+from profanity_check import profanity_check
 from tabulate import tabulate
-
 import utils.embedutil
+from utils import embedutil
 from utils.webhook_manager import WebhookManager
+from utils.levenstein import levenshtein_distance
 
 root = os.getcwd()
 
@@ -55,7 +57,7 @@ class GptCog(commands.Cog):
             for ch in self.children:
                 ch.disabled = True
             await self.msg.edit(view=self)
-            await asyncio.sleep(60)  #in case someone has the modal open
+            await asyncio.sleep(60)  # in case someone has the modal open
             await self.chat.close()
 
     class SuggestionButton(discord.ui.Button):
@@ -112,6 +114,8 @@ class GptCog(commands.Cog):
 
     async def askbot(self, interaction: discord.Interaction, bot: EdgeGPT.EdgeGPT.Chatbot, model: str, query: str):
         model = model.lower()
+        if any(profanity_check.predict(query.split(" "))):
+            await embedutil.error(interaction, "Please refrain from using profanity in your queries. It can get the bot shadowbanned.", delete=30, ephemeral=False)
         async with WebhookManager(interaction) as whm:
             quest = await whm.send(content=query, username=interaction.user.display_name, avatar_url=interaction.user.avatar.url, wait=True)
         async with interaction.channel.typing():
@@ -119,41 +123,46 @@ class GptCog(commands.Cog):
                 response = await bot.ask(prompt=query, conversation_style=model, simplify_response=True)
 
             except Exception as e:
-                embed = discord.Embed(description=e, color=discord.Color.red())
+                embed = discord.Embed(description=f"{e.__class__}: {e}", color=discord.Color.red())
                 await interaction.send(embed=embed, delete_after=180)
                 raise e
             embeds = []
-            if (response["sources_text"] in response["text"]) or (response["text"] in response["sources_text"]):
-                combined_text = response["text"] #for when there are no sources to cite, sources_text is usually a carbon copy of text, not a perfect check but sometimes works
+            # if (response["sources_text"] in response["text"]) or (response["text"] in response["sources_text"]):
+            lvnstn = levenshtein_distance(response["text"], response["sources_text"])
+            self.logger.debug(f"{lvnstn=}")
+            max_length = max(len(response["text"]), len(response["sources_text"]))
+            self.logger.debug(f"{1-(lvnstn/max_length)=}")
+            if (1 - (lvnstn / max_length)) > 0.9:
+                combined_text = response["text"] # for when there are no sources to cite, sources_text is usually a carbon copy of text, not a perfect check but sometimes works
             else:
                 combined_text = response["text"] + "\n" + "\n\u200b[".join(response["sources_text"].split("["))
 
-                sources = response['sources_text'].split("](https://")
-                self.logger.debug(sources)
-                matches = re.findall(r"\[\^\d+\^\]", combined_text)  # replace [1] with markdown
+            sources = response['sources_text'].split("](https://")
+            self.logger.debug(sources)
+            matches = re.findall(r"\[\^\d+\^\]", combined_text)  # replace [1] with markdown
 
-                self.logger.debug(matches)
-                for match in matches:
-                    #extract the digits from the match
-                    toreplace = re.findall(r"\d+", match)[0]
-                    self.logger.debug(toreplace)
+            self.logger.debug(matches)
+            for match in matches:
+                #extract the digits from the match
+                toreplace = re.findall(r"\d+", match)[0]
+                self.logger.debug(toreplace)
 
-                    #make it a markdown hyperlink
-                    link = "https://" + sources[int(toreplace)].split(") [")[0]
-                    replacewith = f"[ [{toreplace}]]({link})"
-                    combined_text = combined_text.replace(match, replacewith)
+                #make it a markdown hyperlink
+                link = "https://" + sources[int(toreplace)].split(") [")[0]
+                replacewith = f"[ [{toreplace}]]({link})"
+                combined_text = combined_text.replace(match, replacewith)
 
-                matches = re.findall(r"\[([^\]]+)\]\(\^(\d)\^\)", combined_text)  # replace [text](1) with markdown
-                self.logger.debug(matches)
-                for match in matches:
-                    # extract the digits from the match
-                    self.logger.debug(match)
-                    text, toreplace = match
-                    # make it a markdown hyperlink
+            matches = re.findall(r"\[([^\]]+)\]\(\^(\d)\^\)", combined_text)  # replace [text](1) with markdown
+            self.logger.debug(matches)
+            for match in matches:
+                # extract the digits from the match
+                self.logger.debug(match)
+                text, toreplace = match
+                # make it a markdown hyperlink
 
-                    link = "https://" + sources[int(toreplace)].split(") [")[0]
-                    replacewith = f"[ [{text}]]({link})"
-                    combined_text = combined_text.replace(match, replacewith)
+                link = "https://" + sources[int(toreplace)].split(") [")[0]
+                replacewith = f"[ [{text}]]({link})"
+                combined_text = combined_text.replace(match, replacewith)
 
             # find tables tabulate them
             tables = re.findall(r"(?:^(?:\|.+?\|)+$\n?)+", combined_text, re.MULTILINE)
@@ -175,7 +184,11 @@ class GptCog(commands.Cog):
                 for sugg in response["suggestions"]:
                     viewObj.add_item(self.SuggestionButton(sugg[:77] + "..." if len(sugg)>80 else sugg, bot, model, self))
             viewObj.add_item(self.CustomButton(bot, model, self))
-            for emb in embeds[:-1]:
+
+            if response.get("image", None):
+                embeds[0].set_image(url=response["image"])
+
+            for emb in embeds[:-1]:  # todo why reply with the last one instead of first??
                 await interaction.send(embed=emb)
             maxnum = response["max_messages"]
             msgnum = maxnum - response["messages_left"]
@@ -219,14 +232,15 @@ class GptCog(commands.Cog):
         # Add embed to list of embeds
         # [embeds.append(discord.Embed(url="https://www.bing.com/").set_image(url=image_link)) for image_link in images]
         # await interaction.send(txt, embeds=embeds, wait=True)
-        msg = await interaction.send(f"Generating: {prompt}\nThis may take a while, please be patient.")
+        msg = await interaction.send(f"Generating: `{prompt}`\nThis may take a while, please be patient.")
+        msg = await msg.fetch()
         async with interaction.channel.typing():
             async with ImageGenAsync(all_cookies=Cookie.current_data) as image_generator:
                 # async with ImageGenAsync(Cookie.image_token) as image_generator:
                 try:
-                    images = list(filter(lambda im: not im.endswith(".svg"), await image_generator.get_images(prompt)))
+                    images = await image_generator.get_images(prompt)
                     await msg.reply(images[0])
-                    for i in images[:1]:
+                    for i in images[1:]:
                         await interaction.channel.send(i)
                 except Exception as e:
                     await interaction.send(f"Error \n{e}")

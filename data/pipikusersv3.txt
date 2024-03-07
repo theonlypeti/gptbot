@@ -50,7 +50,7 @@
         "cd": null,
         "methods": 127,
         "dailyStreak": 1,
-        "dailyDate": "2024-02-14"
+        "dailyDate": "2024-02-14T00:00:00"
     },
     {
         "id": 307985197926973452,
@@ -626,7 +626,7 @@
             "nice"
         ],
         "items": {},
-        "pb": 159.736,
+        "pb": 176.504,
         "pw": 1.278,
         "cd": null,
         "methods": 4,

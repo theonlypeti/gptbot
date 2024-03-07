@@ -43,8 +43,7 @@ parser.add_argument("--no_linecount", action="store_true", help="Turns off line 
 parser.add_argument("--profiling", action="store_true", help="Measures the bootup time and outputs it to profile.prof.")
 args = parser.parse_args()
 
-mylogger.init(args) #initializing the logger
-from utils.mylogger import baselogger as pipikLogger
+pipikLogger = mylogger.init(args) #initializing the logger
 
 if args.logfile:
     pipikLogger.setLevel(5)

@@ -108,7 +108,8 @@
                     ":farmer:",
                     ":ninja:",
                     ":man_wearing_turban:",
-                    ":detective:"
+                    ":detective:",
+                    ":mermaid:"
                 ],
                 "cloveceachis": [
                     ":chess_pawn:"
@@ -124,13 +125,13 @@
             "Second places": 4,
             "Third places": 0,
             "Dice thrown": 945,
-            "Spins": 67,
-            "Default icons owned": 67,
+            "Spins": 68,
+            "Default icons owned": 68,
             "Custom server icons owned": "Coming Soon"
         },
         "icon": ":radioactive:",
         "ready": false,
-        "dailyDate": "2024-02-26",
+        "dailyDate": "2024-02-27",
         "inLobby": null
     },
     {

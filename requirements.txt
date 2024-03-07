@@ -22,6 +22,7 @@ pycaw
 pint
 tabulate
 EdgeGPT
+BingImageCreator-fork
 snakeviz
 alt-profanity-check
 

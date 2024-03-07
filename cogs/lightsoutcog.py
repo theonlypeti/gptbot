@@ -45,7 +45,6 @@ class LightsOutCog(commands.Cog):
                 if interaction.user != self.game.player:
                     await error(interaction, f"This is not your game. Start yours with {mentionCommand(interaction.client, 'lightsout')}")
                     return
-                print(self.view.id)
                 buttons: list[LightsOutCog.LightsOutGame.Light] = self.game.children
                 self.state = not self.state
                 self.draw()
@@ -75,7 +74,7 @@ class LightsOutCog(commands.Cog):
                 return True
             return False
 
-    @discord.slash_command(name="lightsout", description="Start a game of Lights out.", guild_ids=(860527626100015154,))
+    @discord.slash_command(name="lightsout", description="Start a game of Lights out.")
     async def lightsout(self, interaction: discord.Interaction, size: Literal["3x3", "5x5"]):
         game = LightsOutCog.LightsOutGame(size, interaction.user)
         game.message = await interaction.send("Light up every square by clicking on them. Every square changes the state of their neighbouring ones too.", view=game)

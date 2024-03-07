@@ -27,13 +27,14 @@ class Testing(commands.Cog):
         def __init__(self, client: discord.Client):
             self.msg = None
             self.client = client
-            super().__init__(timeout=50)
+            super().__init__(timeout=5)
 
         @discord.ui.button(label="test", emoji="<:spin:957469682917572728>")
         async def test(self, button: discord.Button, interaction: discord.Interaction):
             print("test")
             button.style = discord.ButtonStyle.green
-            [await v.on_timeout() for v in self.client.all_views if isinstance(v, self.__class__)]
+            await self.msg.edit(view=self)
+            # [await v.on_timeout() for v in self.client.all_views if isinstance(v, self.__class__)]
 
             # await self.msg.edit(view=self)
 

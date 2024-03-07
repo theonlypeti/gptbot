@@ -15,6 +15,7 @@ from utils.mentionCommand import mentionCommand
 # TODO retrofit this cog with my newfound knowledge of lobbies
 #TODO redo emoji selection to paginators
 #TODO import unittest
+# TODO do i really not have achievements done?
 #from unittest.mock import Mock
 
 sleepTimeMult = 1

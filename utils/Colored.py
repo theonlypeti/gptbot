@@ -1,5 +1,5 @@
+import itertools
 import textwrap
-from math import ceil
 from typing import List
 import nextcord as discord
 
@@ -34,9 +34,15 @@ class Rainbow(ColorGroup):
             texts[4] = "".join(texts[4:])
             return "".join([f"{color.string(txt)}" for txt, color in zip(texts, colors)]) + "\033[0m"
 
+
+class Murica(ColorGroup):
+    def __init__(self, name: str = "Murica", emote_s: str = None, emote_r: str = None, emote_h: str = None):
+        super().__init__(discord.Color.red(), name, None, emote_s, emote_r, emote_h)
+
     @classmethod
-    def text(self, input_string: str) -> str:
-        return f"```ansi\n{self.string(input_string)}\033[0m\n```"
+    def string(cls, text: str) -> str:
+            colors = [Colored.red, Colored.blue, Colored.white]
+            return "".join([f"{color.string(txt)}" for txt, color in zip(text, itertools.cycle(colors))]) + "\033[0m"
 
 
 class Colored:
@@ -53,11 +59,11 @@ class Colored:
     black = ColorGroup(discord.Colour.from_rgb(20, 20, 20), "Black", "\033[30m", "⬛", "⚫", "🖤")
     brown = ColorGroup(discord.Colour.dark_gold(), "Brown", "\033[41m\033[30m", "🟫", "🟤", "🤎")
     rainbow = Rainbow("Rainbow", "🌈", "🌈", "🌈")
+    murica = Murica("Murica", "🇺🇸", "🇺🇸", "🇺🇸")
 
     @classmethod
     def list(cls) -> dict[str, ColorGroup]:
-        return {att: getattr(cls, att) for att in dir(cls) if not att.startswith("_") and att not in ("list", "get_color", "text", "rainbowstring")}
-        # return {att: getattr(cls, att) for att in dir(cls) if not att.startswith("_") and not callable(att)}
+        return {att: getattr(cls, att) for att in dir(cls) if isinstance(getattr(cls, att), ColorGroup)}
 
     @classmethod
     def get_color(cls, name: str) -> ColorGroup:

@@ -46,6 +46,8 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             super().__init__(placeholder="Choose multiple subreddits", options=opts, min_values=1, max_values=len(opts))
 
         async def callback(self, interaction: discord.Interaction):
+            self.disabled = True
+            await self.view.msg.edit(view=self.view)
             await interaction.response.defer()
             await self.cog.nexttopic(interaction.channel, "+".join(self.values), interaction.user)
 
@@ -112,7 +114,8 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
             embedVar.set_footer(text="{} = Comments | {} = Next question | {} = Random question | {} = Try to refresh topics".format(emoji.emojize(":memo:"), emoji.emojize(":right_arrow:"), emoji.emojize(":shuffle_tracks_button:"), emoji.emojize(":counterclockwise_arrows_button:")))
             viewObj = discord.ui.View()
             viewObj.add_item(self.TopicDropdown(self))
-            await ctx.send(embed=embedVar, view=viewObj)
+            msg = await ctx.send(embed=embedVar, view=viewObj)
+            viewObj.msg = msg
 
     class TopicNextButtons(discord.ui.View):
         def __init__(self, cog, sub="AskReddit"):
@@ -240,8 +243,7 @@ class TopicCog(commands.Cog): #TODO make reddithandler not global, and have mult
         await ctx.send(embed=embedVar, view=viewObj)
 
     @discord.slash_command(name="sub", description="Retrieve a random post from a given subreddit.")
-    async def sub(self, ctx: discord.Interaction, subreddit: str = discord.SlashOption(name="subreddit",
-                                                                                       description="a subreddit name without the /r/")):
+    async def sub(self, ctx: discord.Interaction, subreddit: str = discord.SlashOption(name="subreddit", description="a subreddit name without the /r/")):
         await ctx.response.defer()
         sub = await reddit.subreddit(subreddit.strip("/r/"))
         await sub.load()

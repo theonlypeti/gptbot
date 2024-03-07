@@ -38,7 +38,7 @@ class Tema(object):
 class AisCog(commands.Cog):
     def __init__(self, client):
         self.client = client
-        logger = client.logger.getChild(f"{self.__module__}")
+        self.logger = client.logger.getChild(f"{self.__module__}")
         self.printer.start()
         self.temy = []
         if os.path.exists(root+r'/data/ais_notif_channels.txt'):
@@ -76,9 +76,9 @@ class AisCog(commands.Cog):
             c = b.find_all("tr")
             temy = list(map(Tema, c))
         except AttributeError:
-            self.aisLogger.info("No temy found")
+            self.logger.info("No temy found")
             return
-        self.aisLogger.info(f"Checking for témy, {len(temy)} found.")
+        self.logger.info(f"Checking for témy, {len(temy)} found.")
 
         embeds = []
         if len(self.temy) > 0:
@@ -132,9 +132,9 @@ class AisCog(commands.Cog):
                         await pagi.render(channel)
         self.temy = temy
 
-    @printer.before_loop #i could comment this out but then it would look not pretty how my bootup time shot up by 5s haha
+    @printer.before_loop  # i could comment this out but then it would look not pretty how my bootup time shot up by 5s haha
     async def before_printer(self):
-        self.aisLogger.debug('getting temy')
+        self.logger.debug('getting temy')
         await self.client.wait_until_ready()
 
     class NotificationButton(discord.ui.View):
